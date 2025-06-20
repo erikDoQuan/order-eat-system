@@ -1,0 +1,40 @@
+{
+  "extends": "@loyalty-system/tsconfig/base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@tests/*": ["./__tests__/*"],
+      "@mocks/*": ["./__mocks__/*"],
+      // These paths are for IDE navigation only (Go to Definition)
+      // The build will use the proper package imports via Vite aliases
+      "@loyalty-system/shared-universal": ["../../packages/shared-universal/src/index.ts"],
+      "@loyalty-system/shared-universal/*": ["../../packages/shared-universal/src/*"],
+      "@loyalty-system/react-web-ui-shadcn": ["../../packages/react-web-ui-shadcn/src/index.ts"],
+      "@loyalty-system/react-web-ui-shadcn/*": ["../../packages/react-web-ui-shadcn/src/*"],
+      "@loyalty-system/shared-web": ["../../packages/shared-web/src/index.ts"],
+      "@loyalty-system/shared-web/*": ["../../packages/shared-web/src/*"]
+    },
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "skipLibCheck": true,
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "noImplicitAny": false
+  },
+  "include": ["src", "vite-env.d.ts"],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ]
+}

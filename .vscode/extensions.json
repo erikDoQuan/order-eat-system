@@ -1,0 +1,21 @@
+{
+  "recommendations": [
+    "formulahendry.auto-rename-tag",
+    "EditorConfig.EditorConfig",
+    "dbaeumer.vscode-eslint",
+    "eamodio.gitlens",
+    "usernamehw.errorlens",
+    "oderwat.indent-rainbow",
+    "mikestead.dotenv",
+    "quicktype.quicktype",
+    "esbenp.prettier-vscode",
+    "mrmlnc.vscode-scss",
+    "standard.vscode-standard",
+    "bradlc.vscode-tailwindcss",
+    "Gruntfuggly.todo-tree",
+    "shardulm94.trailing-spaces",
+    "ChakrounAnas.turbo-console-log",
+    "GitHub.github-vscode-theme",
+    "epivision.vscode-file-header"
+  ]
+}

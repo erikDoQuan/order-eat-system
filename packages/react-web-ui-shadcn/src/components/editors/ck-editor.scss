@@ -1,0 +1,188 @@
+/* Mixins */
+@mixin powered-by {
+  --ck-powered-by-line-height: 10px;
+  --ck-powered-by-padding-vertical: 2px;
+  --ck-powered-by-padding-horizontal: 4px;
+  --ck-powered-by-text-color: var(--ck-color-base-foreground);
+  --ck-powered-by-border-radius: 100px;
+  --ck-powered-by-background: var(--ck-color-base-background);
+  --ck-powered-by-border-color: var(--ck-color-focus-border);
+}
+
+@mixin generic-colors {
+  --ck-color-focus-border-coordinates: 0, 68%, 43%;
+  --ck-color-focus-border: hsl(var(--primary));
+  --ck-color-focus-outer-shadow: hsl(var(--primary));
+  --ck-color-focus-disabled-shadow: hsla(209, 90%, 72%, 0.3);
+  --ck-color-focus-error-shadow: hsla(9, 100%, 56%, 0.3);
+  --ck-color-text: var(--ck-color-base-text);
+  --ck-color-shadow-drop: hsla(0, 0%, 0%, 0.15);
+  --ck-color-shadow-drop-active: hsla(0, 0%, 0%, 0.2);
+  --ck-color-shadow-inner: hsla(0, 0%, 0%, 0.1);
+}
+
+/* Apply mixins to :root and .dark */
+:root,
+.dark {
+  @include powered-by;
+
+  --ck-border-radius: 6px;
+
+  /* Colors */
+  --ck-color-base-foreground: hsl(var(--foreground));
+  --ck-color-base-background: hsl(var(--background));
+  --ck-color-base-border: hsl(var(--border));
+  --ck-color-base-action: hsl(var(--primary));
+  --ck-color-base-focus: hsl(209, 92%, 70%);
+  --ck-color-base-text: hsl(var(--foreground));
+  --ck-color-base-active: hsl(218.1, 100%, 58%);
+  --ck-color-base-active-focus: hsl(218.2, 100%, 52.5%);
+  --ck-color-base-error: hsl(15, 100%, 43%);
+
+  @include generic-colors;
+
+  /* Buttons */
+  --ck-color-button-default-background: transparent;
+  --ck-color-button-default-hover-background: hsl(var(--accent));
+  --ck-color-button-default-active-background: hsl(var(--accent));
+  --ck-color-button-default-disabled-background: transparent;
+  --ck-color-button-on-background: hsl(var(--primary));
+  --ck-color-button-on-hover-background: hsl(var(--primary));
+  --ck-color-button-on-active-background: hsl(var(--primary));
+  --ck-color-button-on-disabled-background: hsl(211, 15%, 95%);
+  --ck-color-button-on-color: hsl(var(--foreground));
+  --ck-color-button-action-background: var(--ck-color-base-action);
+  --ck-color-button-action-hover-background: hsl(var(--primary));
+  --ck-color-button-action-active-background: hsl(var(--primary));
+  --ck-color-button-action-disabled-background: hsl(104, 44%, 58%);
+  --ck-color-button-action-text: var(--ck-color-base-foreground);
+  --ck-color-button-save: hsl(120, 100%, 27%);
+  --ck-color-button-cancel: hsl(15, 100%, 43%);
+  --ck-color-switch-button-off-background: hsl(0, 0%, 57.6%);
+  --ck-color-switch-button-off-hover-background: hsl(0, 0%, 49%);
+  --ck-color-switch-button-on-background: var(--ck-color-button-action-background);
+  --ck-color-switch-button-on-hover-background: hsl(var(--primary));
+  --ck-color-switch-button-inner-background: var(--ck-color-base-background);
+  --ck-color-switch-button-inner-shadow: hsla(0, 0%, 0%, 0.1);
+
+  /* Dropdown */
+  --ck-color-dropdown-panel-background: var(--ck-color-base-background);
+  --ck-color-dropdown-panel-border: var(--ck-color-base-border);
+
+  /* Dialog */
+  --ck-color-dialog-background: hsl(var(--card));
+  --ck-color-dialog-form-header-border: var(--border);
+
+  /* Input */
+  --ck-color-input-background: var(--ck-color-base-background);
+  --ck-color-input-border: var(--ck-color-base-border);
+  --ck-color-input-error-border: var(--ck-color-base-error);
+  --ck-color-input-text: var(--ck-color-base-text);
+  --ck-color-input-disabled-background: hsl(0, 0%, 95%);
+  --ck-color-input-disabled-border: var(--ck-color-base-border);
+  --ck-color-input-disabled-text: hsl(0, 0%, 46%);
+
+  /* List */
+  --ck-color-list-background: var(--ck-color-base-background);
+  --ck-color-list-button-hover-background: hsl(var(--accent));
+  --ck-color-list-button-on-background: hsl(var(--primary));
+  --ck-color-list-button-on-background-focus: hsl(var(--primary));
+  --ck-color-list-button-on-text: hsl(var(--foreground));
+
+  /* Panel */
+  --ck-color-panel-background: hsl(var(--card));
+  --ck-color-panel-border: var(--ck-color-base-border);
+
+  /* Toolbar */
+  --ck-color-toolbar-background: var(--ck-color-base-background);
+  --ck-color-toolbar-border: var(--ck-color-base-border);
+
+  /* Tooltip */
+  --ck-color-tooltip-background: var(--ck-color-base-text);
+  --ck-color-tooltip-text: var(--ck-color-base-background);
+
+  /* Engine */
+  --ck-color-engine-placeholder-text: hsl(0, 0%, 44%);
+
+  /* Upload */
+  --ck-color-upload-bar-background: hsl(209, 92%, 70%);
+
+  /* Link */
+  --ck-color-labeled-field-label-background: hsl(var(--background));
+  --ck-color-link-default: hsl(240, 100%, 47%);
+  --ck-color-link-selected-background: hsla(201, 100%, 56%, 0.1);
+  --ck-color-link-fake-selection: hsla(201, 100%, 56%, 0.3);
+
+  /* Search result highlight */
+  --ck-color-highlight-background: hsl(60, 100%, 50%);
+
+  /* Additional generic colors */
+  --ck-color-light-red: hsl(0, 100%, 90%);
+
+  /* Focus styles */
+  --ck-focus-outer-shadow-geometry: 0 0 0 0;
+  --ck-focus-outer-shadow: var(--ck-focus-outer-shadow-geometry) var(--ck-color-focus-outer-shadow);
+  --ck-focus-disabled-outer-shadow: var(--ck-focus-outer-shadow-geometry) var(--ck-color-focus-disabled-shadow);
+  --ck-focus-error-outer-shadow: var(--ck-focus-outer-shadow-geometry) var(--ck-color-focus-error-shadow);
+  --ck-focus-ring: 2px solid var(--ck-color-focus-border);
+
+  /* Shadow styles */
+  --ck-inner-shadow: 2px 2px 3px var(--ck-color-shadow-inner) inset;
+  --ck-drop-shadow: 0 1px 2px 1px var(--ck-color-shadow-drop);
+  --ck-drop-shadow-active: 0 3px 6px 1px var(--ck-color-shadow-drop-active);
+}
+
+.wysiwyg.backgroundless .ck.ck-editor__main > .ck-editor__editable {
+  background-color: transparent !important;
+}
+.wysiwyg.backgroundless .ck-toolbar {
+  background-color: transparent !important;
+}
+.wysiwyg.borderless .ck-content {
+  border: none !important;
+  box-shadow: none !important;
+}
+.wysiwyg.borderless .ck-sticky-panel__content {
+  border: none !important;
+  box-shadow: none !important;
+  border-bottom: 1px solid var(--ck-color-base-border) !important;
+}
+.wysiwyg.borderless .ck-toolbar {
+  border-radius: 0 !important;
+}
+.wysiwyg {
+  .ck.ck-dropdown__panel {
+    box-shadow: none !important;
+    .ck-button,
+    .ck-list {
+      border-radius: 5px !important;
+    }
+  }
+  .ck-toolbar__items .ck.ck-dropdown .ck-button.ck-dropdown__button.ck-on {
+    transition: none !important;
+    border-radius: 5px !important;
+  }
+  textarea {
+    @apply h-full bg-background text-sm;
+  }
+  .ck-placeholder:before {
+    @apply text-muted-foreground;
+  }
+  .ck-content .ck-columns {
+    @apply flex w-full;
+  }
+  .ck-content .ck-column {
+    @apply flex-1 border border-dotted border-blue-500;
+  }
+
+  .ck .ck-editor__nested-editable.ck-column {
+    @apply flex-1 border border-dotted border-blue-500;
+  }
+}
+
+@media (forced-colors: none) {
+  .ck .ck-editor__nested-editable.ck-editor__nested-editable_focused,
+  .ck .ck-editor__nested-editable:focus {
+    background-color: var(--ck-color-base-background);
+  }
+}
