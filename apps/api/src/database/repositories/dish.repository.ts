@@ -38,7 +38,7 @@ export class DishRepository {
         offset,
         orderBy: desc(dishes.createdAt),
         columns: {
-          // Ẩn cột nếu cần, ví dụ: basePrice: false,
+
         },
       }),
       this.drizzle.db.select({ count: count() }).from(dishes).where(whereCondition),
@@ -54,7 +54,7 @@ export class DishRepository {
     return this.drizzle.db.query.dishes.findFirst({
       where: eq(dishes.id, id),
       columns: {
-        basePrice: false, // ẩn nếu không muốn trả về giá
+        basePrice: false, 
       },
     });
   }

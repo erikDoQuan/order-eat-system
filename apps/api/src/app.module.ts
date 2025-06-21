@@ -13,6 +13,7 @@ import { UsersModule } from './modules/user/users.module';
 import { LoggerModule } from './shared-modules/logger/logger.module';
 import { MiddlewareModule } from './shared-modules/middleware/middleware.module';
 import { CategoryModule } from './modules/category/category.module';
+import { OrderModule } from './modules/order/order.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { CategoryModule } from './modules/category/category.module';
     UsersModule,
     DishModule,
     CategoryModule,
+    OrderModule,
   ],
   controllers: [],
   exports: [],
