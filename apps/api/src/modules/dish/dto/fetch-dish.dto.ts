@@ -1,45 +1,29 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsArray, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
+import { DishWithoutPrice } from '~/database/schema/dishes';
 
 export class FetchDishesDto {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Tìm kiếm theo tên món ăn' })
   @IsOptional()
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Số lượng bỏ qua' })
   @IsOptional()
   @IsNumber()
   offset?: number;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Số lượng lấy ra' })
   @IsOptional()
   @IsNumber()
   limit?: number;
 
-  @ApiPropertyOptional({ type: [String], format: 'uuid' })
+  @ApiPropertyOptional({ type: [String], format: 'uuid', description: 'Lọc theo danh mục' })
   @IsOptional()
   @IsArray()
   @IsUUID('4', { each: true })
   categoryIds?: string[];
 }
 
-export class FetchDishesResponseDto {
-  @ApiProperty()
-  id: string;
 
-  @ApiProperty()
-  name: string;
 
-  @ApiProperty()
-  basePrice: string;
-
-  @ApiPropertyOptional()
-  imageUrl?: string;
-
-  @ApiPropertyOptional()
-  categoryId?: string;
-
-  @ApiProperty()
-  createdAt: Date;
-}
