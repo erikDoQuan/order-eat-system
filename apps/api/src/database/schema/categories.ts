@@ -1,25 +1,35 @@
-import { pgEnum, pgTable, varchar, text, boolean, timestamp, integer } from 'drizzle-orm/pg-core';
 import { InferInsertModel, InferSelectModel, relations } from 'drizzle-orm';
+import { text, varchar, pgEnum, pgTable } from 'drizzle-orm/pg-core';
 
 import { baseColumns } from './_base';
 import { users } from './users';
 import { dishes } from './dishes';
 
+// Enum trạng thái danh mục
 export const categoryStatusEnum = pgEnum('category_status', ['active', 'inactive']);
 
+// Bảng categories
 export const categories = pgTable('categories', {
   ...baseColumns,
   name: varchar('name', { length: 100 }).notNull(),
   description: text('description'),
-  status: categoryStatusEnum('status').default('active')
+  status: categoryStatusEnum('status').notNull().default('active'),
 });
 
+// Quan hệ
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
-  createdByUser: one(users, { fields: [categories.createdBy], references: [users.id] }),
-  updatedByUser: one(users, { fields: [categories.updatedBy], references: [users.id] }),
+  createdByUser: one(users, {
+    fields: [categories.createdBy],
+    references: [users.id],
+  }),
+  updatedByUser: one(users, {
+    fields: [categories.updatedBy],
+    references: [users.id],
+  }),
   dishes: many(dishes),
 }));
 
+// Kiểu dữ liệu
 export type Category = InferSelectModel<typeof categories>;
 export type CategoryInsert = InferInsertModel<typeof categories>;
 export type CategoryUpdate = Partial<CategoryInsert>;
