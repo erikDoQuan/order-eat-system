@@ -5,7 +5,10 @@ import { removeDiacritics } from '~/common/utils/diacritics.utils';
 import { DrizzleService } from '~/database/drizzle/drizzle.service';
 import { Dish, DishUpdate, DishWithoutPrice, dishes } from '~/database/schema/dishes';
 import { CreateDishDto } from '~/modules/dish/dto/create-dish.dto';
-import { FetchDishesDto, FetchDishesResponseDto } from '~/modules/dish/dto/fetch-dish.dto';
+import { FetchDishesResponseDto } from '~/modules/dish/dto/fetch-dish-response.dto';
+import { FetchDishesDto, } from '~/modules/dish/dto/fetch-dish.dto';
+// import { FetchDishesResponseDto } from '~/modules/dish/dto/fetch-dishes-response.dto';
+
 
 import { UpdateDishDto } from '~/modules/dish/dto/update-dish.dto';
 
@@ -14,7 +17,8 @@ export class DishRepository {
   constructor(private readonly drizzle: DrizzleService) {}
 
   async find(fetchDishesDto: FetchDishesDto): Promise<{
-    data: FetchDishesResponseDto[];
+data: FetchDishesResponseDto  [];
+
     totalItems: number;
   }> {
     const { search, offset, limit, categoryIds } = fetchDishesDto;

@@ -13,8 +13,8 @@ import { UsersService } from './users.service';
 
 @Controller({ path: 'users' })
 @ApiTags('Users')
-@UseGuards(AccessTokenGuard)
-@ApiBearerAuth('accessToken')
+// @UseGuards(AccessTokenGuard)
+// @ApiBearerAuth('accessToken')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 

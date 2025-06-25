@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, IsBoolean } from 'class-validator';
 
 export enum CategoryStatus {
   ACTIVE = 'active',
@@ -40,4 +40,12 @@ export class CreateCategoryDto {
   @IsUUID()
   @IsNotEmpty()
   createdBy: string;
+
+  @ApiPropertyOptional({
+    description: 'Trạng thái hoạt động của danh mục',
+    example: true,
+  })
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }

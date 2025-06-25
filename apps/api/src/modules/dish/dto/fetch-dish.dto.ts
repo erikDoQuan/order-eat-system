@@ -24,6 +24,3 @@ export class FetchDishesDto {
   @IsUUID('4', { each: true })
   categoryIds?: string[];
 }
-
-
-

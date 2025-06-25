@@ -61,14 +61,15 @@ export class CategoryRepository {
     });
   }
 
-  async create(data: CreateCategoryDto): Promise<Category | null> {
-    const [created] = await this.drizzle.db
-      .insert(categories)
-      .values(data as CategoryInsert)
-      .returning();
+ async create(data: CreateCategoryDto): Promise<Category | null> {
+  const [created] = await this.drizzle.db
+    .insert(categories)
+    .values(data as CategoryInsert)
+    .returning();
 
-    return this.findOne(created.id);
-  }
+  return this.findOne(created.id);
+}
+
 
   async update(id: string, data: CategoryUpdate): Promise<Category | null> {
     const [updated] = await this.drizzle.db

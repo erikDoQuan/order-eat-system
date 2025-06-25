@@ -58,6 +58,3 @@ export type Dish = InferSelectModel<typeof dishes>;
 export type DishWithoutPrice = Omit<Dish, 'basePrice'>;
 export type DishInsert = InferInsertModel<typeof dishes>;
 export type DishUpdate = Partial<DishInsert>;
-
-
-
