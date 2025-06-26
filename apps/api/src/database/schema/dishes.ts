@@ -11,10 +11,11 @@ import {
 import { baseColumns } from './_base';
 import { categories } from './categories';
 import { users } from './users';
+import { DISH_SIZE, DISH_STATUS } from '~/modules/dish/constant/dish.constant';
 
 // Enum định nghĩa trạng thái và kích thước món ăn
-export const dishStatusEnum = pgEnum('dish_status', ['available', 'unavailable']);
-export const dishSizeEnum = pgEnum('dish_size', ['small', 'medium', 'large']);
+export const dishStatusEnum = pgEnum('dish_status', [DISH_STATUS.AVAILABLE, DISH_STATUS.UNAVAILABLE, DISH_STATUS.COMING_SOON]);
+export const dishSizeEnum = pgEnum('dish_size', [DISH_SIZE.SMALL, DISH_SIZE.MEDIUM, DISH_SIZE.LARGE]);
 
 // Bảng dishes
 export const dishes = pgTable('dishes', {

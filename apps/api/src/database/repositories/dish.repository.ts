@@ -3,12 +3,11 @@ import { and, count, desc, eq, ilike, inArray, sql, SQL } from 'drizzle-orm';
 
 import { removeDiacritics } from '~/common/utils/diacritics.utils';
 import { DrizzleService } from '~/database/drizzle/drizzle.service';
-import { Dish, DishUpdate, DishWithoutPrice, dishes } from '~/database/schema/dishes';
+import { Dish, dishes, DishUpdate, DishWithoutPrice } from '~/database/schema/dishes';
 import { CreateDishDto } from '~/modules/dish/dto/create-dish.dto';
 import { FetchDishesResponseDto } from '~/modules/dish/dto/fetch-dish-response.dto';
-import { FetchDishesDto, } from '~/modules/dish/dto/fetch-dish.dto';
+import { FetchDishesDto } from '~/modules/dish/dto/fetch-dish.dto';
 // import { FetchDishesResponseDto } from '~/modules/dish/dto/fetch-dishes-response.dto';
-
 
 import { UpdateDishDto } from '~/modules/dish/dto/update-dish.dto';
 
@@ -17,8 +16,7 @@ export class DishRepository {
   constructor(private readonly drizzle: DrizzleService) {}
 
   async find(fetchDishesDto: FetchDishesDto): Promise<{
-data: FetchDishesResponseDto  [];
-
+    data: FetchDishesResponseDto[];
     totalItems: number;
   }> {
     const { search, offset, limit, categoryIds } = fetchDishesDto;
@@ -42,34 +40,33 @@ data: FetchDishesResponseDto  [];
         limit,
         offset,
         orderBy: desc(dishes.createdAt),
-        columns: {
-
-        },
       }),
       this.drizzle.db.select({ count: count() }).from(dishes).where(whereCondition),
     ]);
 
+  
+    const mapped = query.map((dish: any) => ({
+      ...dish,
+      createdAt: dish.createdAt instanceof Date ? dish.createdAt.toISOString() : dish.createdAt,
+      updatedAt: dish.updatedAt instanceof Date ? dish.updatedAt.toISOString() : dish.updatedAt,
+      basePrice: dish.basePrice?.toString?.() ?? dish.basePrice,
+    }));
+
     return {
-      data: query as FetchDishesResponseDto[],
+      data: mapped,
       totalItems: countQuery?.[0]?.count || 0,
     };
   }
 
-  async findOne(id: string): Promise<DishWithoutPrice | null> {
+  async findOne(id: string): Promise<Dish | null> {
     return this.drizzle.db.query.dishes.findFirst({
       where: eq(dishes.id, id),
-      columns: {
-        basePrice: false, 
-      },
     });
   }
 
-  async findAll(): Promise<DishWithoutPrice[]> {
+  async findAll(): Promise<Dish[]> {
     return this.drizzle.db.query.dishes.findMany({
       orderBy: desc(dishes.createdAt),
-      columns: {
-        basePrice: false,
-      },
     });
   }
 

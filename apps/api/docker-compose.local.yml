@@ -25,6 +25,7 @@ services:
           memory: 512M
     networks:
       - food_ordering-system
+
 #   minio:
 #     image: minio/minio:latest
 #     container_name: food_ordering-system-minio

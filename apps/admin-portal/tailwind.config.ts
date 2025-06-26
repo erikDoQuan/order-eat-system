@@ -15,6 +15,11 @@ const customConfig: Pick<Config, 'content' | 'presets' | 'theme'> = {
     fontFamily: {
       notosans: ['"Noto Sans"'],
     },
+    extend: {
+      colors: {
+        primary: '#006A31',
+      },
+    },
   },
 };
 

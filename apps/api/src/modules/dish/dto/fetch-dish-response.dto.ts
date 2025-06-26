@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+
 import { DishSize, DishStatus } from './create-dish.dto';
 
 export class FetchDishesResponseDto {
@@ -37,4 +38,7 @@ export class FetchDishesResponseDto {
 
   @ApiProperty()
   updatedBy: string;
+
+  @ApiProperty({ description: 'Giá gốc của món ăn (string, decimal)' })
+  basePrice: string;
 }
