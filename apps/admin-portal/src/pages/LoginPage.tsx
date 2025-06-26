@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
+import { AuthContext } from '../context/AuthContext';
 import { login } from '../services/auth.api';
 
 export default function LoginPage() {
@@ -9,17 +11,34 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState<'user' | 'admin'>('user');
 
+  const navigate = useNavigate();
+  const { user, setUser } = useContext(AuthContext);
+
+  // ✅ Auto navigate khi user thay đổi
+  useEffect(() => {
+    if (user) {
+      navigate(user.role === 'admin' ? '/admin' : '/', { replace: true });
+    }
+  }, [user, navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
+
     const result = await login(email, password, role);
+    setLoading(false);
+
     if (result.success) {
-      setMessage('Đăng nhập thành công');
+      setUser({
+        email,
+        role,
+        firstName: result.firstName,
+        lastName: result.lastName,
+      });
     } else {
       setMessage(result.message || 'Đăng nhập thất bại');
     }
-    setLoading(false);
   };
 
   return (

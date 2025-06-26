@@ -1,14 +1,13 @@
 import { Dish } from '../types/dish.type';
 
 export default function DishCard({ dish }: { dish: Dish }) {
-  // Xử lý giá trị basePrice
   let priceText = 'Liên hệ';
   if (dish.basePrice && !isNaN(Number(dish.basePrice))) {
     priceText = Number(dish.basePrice).toLocaleString() + '₫';
   }
 
   return (
-    <div className="group relative mx-auto flex min-w-[340px] max-w-xl flex-col rounded-3xl bg-white p-10 shadow-2xl transition-all duration-200 hover:shadow-2xl">
+    <div className="group relative mx-auto flex max-w-xl flex-col rounded-3xl bg-white p-10 shadow-md transition-all duration-200 hover:shadow-lg">
       {dish.imageUrl ? (
         <img
           src={dish.imageUrl}
@@ -27,15 +26,13 @@ export default function DishCard({ dish }: { dish: Dish }) {
           <span className="mb-0.5 text-xs font-medium text-gray-500">Giá chỉ từ</span>
           <span className="text-2xl font-bold text-primary">{priceText}</span>
         </div>
-        <button className="flex items-center gap-2 rounded-lg border-2 border-primary bg-white px-5 py-2.5 text-base font-semibold text-primary transition hover:bg-primary hover:text-white hover:shadow-lg">
+        <button className="flex items-center gap-1.5 rounded-md border border-primary bg-white px-3 py-1.5 text-sm font-medium text-primary transition hover:bg-primary hover:text-white hover:shadow-md">
           Mua ngay
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12h10.5m0 0l-4.5-4.5m4.5 4.5l-4.5 4.5" />
           </svg>
         </button>
       </div>
-      {/* Không hiển thị kích thước nữa */}
-      {/*  bỏ badge trạng thái "Hiển thị" */}
     </div>
   );
 }

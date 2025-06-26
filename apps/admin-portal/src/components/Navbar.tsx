@@ -1,7 +1,11 @@
+import { useContext } from 'react';
 import { ShoppingCart, User } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
+import { AuthContext } from '../context/AuthContext';
+
 export default function Navbar() {
+  const { user } = useContext(AuthContext);
   return (
     <nav
       className="sticky top-0 z-50 w-full border-b border-transparent bg-white/90 shadow-lg backdrop-blur"
@@ -19,12 +23,18 @@ export default function Navbar() {
           <div className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-[#005024] bg-[#e6f4ed] text-[#005024]">
             <User size={20} />
           </div>
-          <NavLink to="/login" className="ml-2 rounded-xl bg-transparent px-4 py-2 text-sm font-semibold transition hover:bg-[#e6f4ed]">
-            Đăng nhập
-          </NavLink>
-          <NavLink to="/register" className="ml-2 rounded-xl bg-transparent px-4 py-2 text-sm font-semibold transition hover:bg-[#e6f4ed]">
-            Tạo tài khoản
-          </NavLink>
+          {user ? (
+            <span className="ml-2 text-base font-semibold text-primary">{user.firstName || user.email}</span>
+          ) : (
+            <>
+              <NavLink to="/login" className="ml-2 rounded-xl bg-transparent px-4 py-2 text-sm font-semibold transition hover:bg-[#e6f4ed]">
+                Đăng nhập
+              </NavLink>
+              <NavLink to="/register" className="ml-2 rounded-xl bg-transparent px-4 py-2 text-sm font-semibold transition hover:bg-[#e6f4ed]">
+                Tạo tài khoản
+              </NavLink>
+            </>
+          )}
         </div>
       </div>
 
