@@ -19,6 +19,15 @@ const customConfig: Pick<Config, 'content' | 'presets' | 'theme'> = {
       colors: {
         primary: '#006A31',
       },
+      keyframes: {
+        tilt: {
+          '0%, 100%': { transform: 'rotate(0deg)' },
+          '50%': { transform: 'rotate(10deg)' },
+        },
+      },
+      animation: {
+        tilt: 'tilt 0.4s ease-in-out',
+      },
     },
   },
 };

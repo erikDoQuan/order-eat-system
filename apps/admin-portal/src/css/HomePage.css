@@ -1,0 +1,72 @@
+/* HomePage.css - Style for HomePage component */
+
+.homepage-category-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+.homepage-category-item {
+  cursor: pointer;
+  border-radius: 9999px;
+  background: #f3f4f6;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  color: #374151;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  transition: background 0.2s;
+}
+.homepage-category-item:hover {
+  background: #e5e7eb;
+}
+.homepage-banner {
+  margin-bottom: 2.5rem;
+  width: 100%;
+  position: relative;
+  height: 300px;
+  overflow: hidden;
+}
+@media (min-width: 768px) {
+  .homepage-banner {
+    height: 400px;
+  }
+}
+.homepage-banner-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.homepage-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+}
+.homepage-banner-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  text-align: center;
+}
+.homepage-section-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #000;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+@media (min-width: 640px) {
+  .homepage-section-title {
+    font-size: 2.5rem;
+  }
+}
+@media (min-width: 768px) {
+  .homepage-section-title {
+    font-size: 3rem;
+  }
+}

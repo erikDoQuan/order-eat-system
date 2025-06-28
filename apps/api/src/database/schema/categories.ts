@@ -1,9 +1,9 @@
 import { InferInsertModel, InferSelectModel, relations } from 'drizzle-orm';
-import { text, varchar, pgEnum, pgTable } from 'drizzle-orm/pg-core';
+import { pgEnum, pgTable, text, varchar } from 'drizzle-orm/pg-core';
 
 import { baseColumns } from './_base';
-import { users } from './users';
 import { dishes } from './dishes';
+import { users } from './users';
 
 // Enum trạng thái danh mục
 export const categoryStatusEnum = pgEnum('category_status', ['active', 'inactive']);
