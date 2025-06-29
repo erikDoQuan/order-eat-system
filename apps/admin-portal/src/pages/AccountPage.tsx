@@ -1,18 +1,16 @@
 import React, { useContext } from 'react';
 
-import Navbar from '../components/Navbar';
 import { AuthContext } from '../context/AuthContext';
 
 import '../css/AccountPage.css';
 
 export default function AccountPage() {
   const { user } = useContext(AuthContext);
-  const phone = user?.phoneNumber || user?.phone_number || '---';
+  const phone = user?.phoneNumber || user?.phone_number;
   const address = user?.address || '---';
 
   return (
     <>
-      <Navbar />
       <div className="account-container">
         <div className="account-sidebar">
           <div className="account-title">
@@ -47,7 +45,7 @@ export default function AccountPage() {
               </div>
               <div>
                 <b>Số điện thoại</b>
-                <span>{phone}</span>
+                <span>{phone ? phone : <span className="text-gray-400">Đang tải...</span>}</span>
               </div>
               <div>
                 <b>Email</b>

@@ -24,7 +24,7 @@
     "local:start": "docker-compose --env-file ./apps/api/.env -f docker-compose.local.yml up -d",
     "local:stop": "docker-compose -f docker-compose.local.yml stop",
     "local:remove": "docker-compose -f docker-compose.local.yml down",
-    "local:create-s3-bucket": "bash -c 'source ./apps/api/.env && ./scripts/create_s3_bucket.sh $AWS_S3_BUCKET_NAME $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY download minioadmin minioadmin $AWS_ENDPOINT'",
+    "local:create-s3-bucket": "bash -c \"source ./apps/api/.env && ./scripts/create_s3_bucket.sh $AWS_S3_BUCKET_NAME $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY download minioadmin minioadmin $AWS_ENDPOINT\"",
     "typecheck": "pnpm run --parallel typecheck"
   },
   "prettier": "@loyalty-system/prettier-config",

@@ -3,10 +3,10 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 const adminMenu = [
   { label: 'Tổng quan', path: '/admin' },
-  { label: 'Quản lý món ăn', path: '/admin/dishes' },
-  { label: 'Đơn hàng', path: '/admin/orders' },
+  { label: 'Quản lý danh mục', path: '/admin/dishes' },
+  { label: 'Quản lý món ăn', path: '/admin/orders' },
   { label: 'Khách hàng', path: '/admin/customers' },
-  { label: 'Báo cáo', path: '/admin/reports' },
+  { label: 'Đơn hàng', path: '/admin/reports' },
   { label: 'Cài đặt', path: '/admin/settings' },
 ];
 

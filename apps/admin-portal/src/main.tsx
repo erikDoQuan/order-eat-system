@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
+import AccountAdminPage from './admin/AccountAdminPage';
 import AdminPage from './admin/AdminPage';
 import { AuthContext } from './context/AuthContext';
 import AuthProvider from './context/AuthProvider';
@@ -29,20 +30,30 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           {/* Các route dùng layout */}
           <Route path="/" element={<MainLayout />}>
             <Route index element={<HomePage />} />
-            <Route
-              path="admin"
-              element={
-                <AdminRoute>
-                  <AdminPage />
-                </AdminRoute>
-              }
-            />
+            <Route path="profile" element={<AccountPage />} />
           </Route>
+
+          {/* Route admin không dùng layout => không bị render Navbar */}
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/profile"
+            element={
+              <AdminRoute>
+                <AccountAdminPage />
+              </AdminRoute>
+            }
+          />
 
           {/* Các route không dùng layout */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/profile" element={<AccountPage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

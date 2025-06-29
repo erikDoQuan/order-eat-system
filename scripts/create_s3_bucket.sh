@@ -102,6 +102,11 @@ setup_minio_client() {
                     ;;
                 esac
                 ;;
+            MINGW*|MSYS*|CYGWIN*)
+                # For Windows (Git Bash or similar)
+                MC_URL="https://dl.min.io/client/mc/release/windows-amd64/mc.exe"
+                MC_BIN="$MINIO_CLIENT_DIR/mc.exe"
+                ;;
             *)
                 log_error "Unsupported operating system: $OS_TYPE"
                 ;;
@@ -112,14 +117,14 @@ setup_minio_client() {
             curl -s --location "$MC_URL" -o "$MC_BIN" ||
                 log_error "Failed to download MinIO client"
 
-            # Make it executable
+            # Make it executable (not needed for Windows, but harmless)
             chmod +x "$MC_BIN" || log_error "Failed to make MinIO client executable"
             log_success "MinIO client installed successfully"
         fi
     fi
 
     # Configure the MinIO client
-    echo $MINIO_USER
+    log_info "Configuring MinIO client..."
     "$MC_BIN" alias set myminio "$MINIO_ENDPOINT" "$MINIO_USER" "$MINIO_PASSWORD" ||
         log_error "Failed to configure MinIO client"
     log_success "MinIO client configured"
@@ -264,8 +269,7 @@ main() {
     log_info "Endpoint: $MINIO_ENDPOINT"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-    # Execute the steps
-    setup_minio_client
+    # Execute the_setup_minio_client
     create_bucket_if_not_exists
     create_user_if_not_exists
     apply_bucket_anonymous_policy

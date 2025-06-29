@@ -1,6 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import Navbar from '../components/Navbar';
 import { AuthContext } from '../context/AuthContext';
 import { register } from '../services/user.api';
 
@@ -46,100 +47,103 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="register-container">
-      <div className="register-box">
-        <h2 className="register-title">Tạo tài khoản</h2>
-        <form className="register-form space-y-5" onSubmit={handleSubmit} autoComplete="off">
-          <div className="flex gap-4">
-            <div className="w-1/2">
-              <label>Họ</label>
+    <>
+      <Navbar />
+      <div className="register-container">
+        <div className="register-box">
+          <h2 className="register-title">Tạo tài khoản</h2>
+          <form className="register-form space-y-5" onSubmit={handleSubmit} autoComplete="off">
+            <div className="flex gap-4">
+              <div className="w-1/2">
+                <label>Họ</label>
+                <input
+                  type="text"
+                  placeholder="Nguyễn"
+                  name="lastName"
+                  autoComplete="off"
+                  required
+                  value={lastName}
+                  onChange={e => setLastName(e.target.value)}
+                />
+              </div>
+              <div className="w-1/2">
+                <label>Tên</label>
+                <input
+                  type="text"
+                  placeholder="Văn A"
+                  name="firstName"
+                  autoComplete="off"
+                  required
+                  value={firstName}
+                  onChange={e => setFirstName(e.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <label>Email</label>
               <input
-                type="text"
-                placeholder="Nguyễn"
-                name="lastName"
+                type="email"
+                placeholder="example@gmail.com"
+                name="email"
                 autoComplete="off"
                 required
-                value={lastName}
-                onChange={e => setLastName(e.target.value)}
+                value={email}
+                onChange={e => setEmail(e.target.value)}
               />
             </div>
-            <div className="w-1/2">
-              <label>Tên</label>
+            <div>
+              <label>Số điện thoại</label>
               <input
                 type="text"
-                placeholder="Văn A"
-                name="firstName"
+                placeholder="0123456789"
+                name="phoneNumber"
                 autoComplete="off"
-                required
-                value={firstName}
-                onChange={e => setFirstName(e.target.value)}
+                value={phoneNumber}
+                onChange={e => setPhoneNumber(e.target.value)}
               />
             </div>
-          </div>
-          <div>
-            <label>Email</label>
-            <input
-              type="email"
-              placeholder="example@gmail.com"
-              name="email"
-              autoComplete="off"
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-            />
-          </div>
-          <div>
-            <label>Số điện thoại</label>
-            <input
-              type="text"
-              placeholder="0123456789"
-              name="phoneNumber"
-              autoComplete="off"
-              value={phoneNumber}
-              onChange={e => setPhoneNumber(e.target.value)}
-            />
-          </div>
-          <div>
-            <label>Địa chỉ</label>
-            <input
-              type="text"
-              placeholder="123 Đường ABC, Quận 1"
-              name="address"
-              autoComplete="off"
-              value={address}
-              onChange={e => setAddress(e.target.value)}
-            />
-          </div>
-          <div>
-            <label>Mật khẩu</label>
-            <input
-              type="password"
-              placeholder="Nhập mật khẩu"
-              name="password"
-              autoComplete="new-password"
-              required
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-            />
-          </div>
-          <div>
-            <label>Xác nhận mật khẩu</label>
-            <input
-              type="password"
-              placeholder="Nhập lại mật khẩu"
-              name="confirmPassword"
-              autoComplete="new-password"
-              required
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
-            />
-          </div>
-          <button type="submit" className="register-btn" disabled={loading}>
-            {loading ? 'Đang đăng ký...' : 'Đăng ký'}
-          </button>
-        </form>
-        {message && <div className={`register-message ${message.includes('thành công') ? 'success' : 'error'}`}>{message}</div>}
+            <div>
+              <label>Địa chỉ</label>
+              <input
+                type="text"
+                placeholder="123 Đường ABC, Quận 1"
+                name="address"
+                autoComplete="off"
+                value={address}
+                onChange={e => setAddress(e.target.value)}
+              />
+            </div>
+            <div>
+              <label>Mật khẩu</label>
+              <input
+                type="password"
+                placeholder="Nhập mật khẩu"
+                name="password"
+                autoComplete="new-password"
+                required
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+              />
+            </div>
+            <div>
+              <label>Xác nhận mật khẩu</label>
+              <input
+                type="password"
+                placeholder="Nhập lại mật khẩu"
+                name="confirmPassword"
+                autoComplete="new-password"
+                required
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+              />
+            </div>
+            <button type="submit" className="register-btn" disabled={loading}>
+              {loading ? 'Đang đăng ký...' : 'Đăng ký'}
+            </button>
+          </form>
+          {message && <div className={`register-message ${message.includes('thành công') ? 'success' : 'error'}`}>{message}</div>}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

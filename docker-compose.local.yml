@@ -1,0 +1,59 @@
+  services:
+    db.food-ordering-system:
+      container_name: food-ordering-system-db
+      image: postgres:16.4
+      restart: always
+      ports:
+        - 5432:5432
+      environment:
+        POSTGRES_DB: food_ordering_system_local
+        POSTGRES_USER: food_ordering_user
+        POSTGRES_PASSWORD: food_ordering_system_password
+        TZ: UTC
+        # Performance tuning parameters
+        POSTGRES_INITDB_ARGS: --data-checksums
+        POSTGRES_HOST_AUTH_METHOD: md5
+      volumes:
+        - food-ordering-system-postgres-data:/var/lib/postgresql/data
+      command: >
+        postgres -c shared_buffers=512MB -c effective_cache_size=1024MB -c maintenance_work_mem=128MB -c work_mem=8MB -c max_connections=30
+      deploy:
+        resources:
+          limits:
+            memory: 2G
+          reservations:
+            memory: 512M
+      networks:
+        - food-ordering-system
+
+    minio:
+      image: minio/minio:latest
+      container_name: food-ordering-system-minio
+      restart: always
+      command: server /data --console-address ":9001"
+      env_file:
+        - ./apps/api/.env
+      environment:
+        MINIO_ROOT_USER: minioadmin
+        MINIO_ROOT_PASSWORD: minioadmin
+      volumes:
+        - food-ordering-system-minio:/data
+      ports:
+        - "9000:9000" # Web UI
+        - "9001:9001" # MinIO Console
+      networks:
+        - food-ordering-system
+      deploy:
+        resources:
+          limits:
+            memory: 1G
+          reservations:
+            memory: 256M
+
+  volumes:
+    food-ordering-system-postgres-data:
+    food-ordering-system-minio:
+
+  networks:
+    food-ordering-system:
+      name: food-ordering-system
