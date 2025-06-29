@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+
+import { fetchMe } from '../services/me.api';
 import { AuthContext, AuthUser } from './AuthContext';
 
 const STORAGE_KEY = 'order-eat-user';
@@ -10,7 +12,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   });
 
   const setUser = (u: AuthUser | null) => {
-    console.log(' setUser called:', u); 
     setUserState(u);
     if (u) localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
     else localStorage.removeItem(STORAGE_KEY);
@@ -23,6 +24,41 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     };
     window.addEventListener('storage', sync);
     return () => window.removeEventListener('storage', sync);
+  }, []);
+
+  // Chỉ fetchMe, không fetchUserByEmail để tránh bị ghi đè user admin thành user thường
+  useEffect(() => {
+    const accessToken = localStorage.getItem('order-eat-access-token');
+    if (!accessToken) {
+      setUser(null);
+      return;
+    }
+    fetchMe().then(me => {
+      if (me && me.email) {
+        setUserState({
+          email: me.email,
+          firstName: me.firstName,
+          lastName: me.lastName,
+          phoneNumber: me.phoneNumber,
+          address: me.address,
+          role: me.role,
+        });
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            email: me.email,
+            firstName: me.firstName,
+            lastName: me.lastName,
+            phoneNumber: me.phoneNumber,
+            address: me.address,
+            role: me.role,
+          }),
+        );
+      } else {
+        setUser(null);
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    });
   }, []);
 
   return <AuthContext.Provider value={{ user, setUser }}>{children}</AuthContext.Provider>;

@@ -1,10 +1,8 @@
 import { Body, Controller, Post, Req, Res } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Response as ExpressResponse, Request } from 'express';
 
-import { ApiDocumentResponse } from '~/common/decorators/api-document-response.decorator';
-import { Response } from '~/common/decorators/response.decorator';
 import { AppConfigsService } from '~/config/config.service';
 import { AuthService } from './auth.service';
 import { LoginWithCredentialsDoc, SignOutDoc } from './docs/auth.doc';
@@ -21,13 +19,13 @@ export class AuthController {
   @Post('login')
   @Throttle({ default: { limit: 10, ttl: 10000 } })
   @ApiOperation({ summary: 'Login with credentials' })
-  @ApiDocumentResponse({ message: 'Login successfully', model: LoginWithCredentialsDoc })
-  @Response({ message: 'Login successfully' })
+  @ApiOkResponse({ description: 'Login successfully', type: LoginWithCredentialsDoc })
   async login(@Req() req: Request, @Res({ passthrough: true }) response: ExpressResponse, @Body() signInDto: SignInDto) {
     const ip = req.ip;
     const ua = req.headers['user-agent'] || '';
 
     const resp = await this.authService.signIn(signInDto, ip, ua);
+    console.log('[LOGIN] User logged in:', resp.user?.email || resp.user?.id, 'Role:', resp.user?.role);
     const appEnv = this.configService.get('app').appEnv;
 
     response.cookie('refreshToken', resp.refreshToken, {
@@ -35,14 +33,13 @@ export class AuthController {
       secure: appEnv !== 'development',
     });
 
-    delete resp.refreshToken;
-
+    // Không xóa resp.refreshToken, giữ nguyên accessToken trong response
     return resp;
   }
+
   @Post('logout')
   @ApiOperation({ summary: 'Log out' })
-  @ApiDocumentResponse({ message: 'Logout successfully', model: SignOutDoc })
-  @Response({ message: 'Logout successfully' })
+  @ApiOkResponse({ description: 'Logout successfully', type: SignOutDoc })
   async signOut(@Req() req: Request) {
     const ip = req.ip;
     const ua = req.headers['user-agent'] || '';

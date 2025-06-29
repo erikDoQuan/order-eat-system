@@ -1,13 +1,35 @@
-import { useContext } from 'react';
-import { ShoppingCart, User } from 'lucide-react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { useContext, useEffect, useRef, useState } from 'react';
+import { LogOut, ShoppingCart, User as UserIcon } from 'lucide-react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 
 import { AuthContext } from '../context/AuthContext';
 
+import '../css/Navbar.css';
+
 export default function Navbar() {
-  const { user } = useContext(AuthContext);
+  const { user, setUser } = useContext(AuthContext);
   const location = useLocation();
+  const navigate = useNavigate();
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+  const [showMenu, setShowMenu] = useState(false);
+  const userIconRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (userIconRef.current && !userIconRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    if (showMenu) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showMenu]);
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('order-eat-access-token');
+    setShowMenu(false);
+    navigate('/', { replace: true });
+  };
 
   return (
     <nav
@@ -17,17 +39,48 @@ export default function Navbar() {
       {/* Dòng trên: logo + tên + user + đăng nhập */}
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
         <div className="flex min-w-[220px] items-center gap-3">
-          <img src="/logo.png" alt="Logo" className="h-11 w-11 rounded-full border-2 border-[#C92A15] bg-white object-contain shadow" />
-          <span className="text-2xl font-extrabold tracking-wide" style={{ color: '#C92A15' }}>
+          <img
+            src="/logo.png"
+            alt="Logo"
+            className="h-11 w-11 cursor-pointer rounded-full border-2 border-[#C92A15] bg-white object-contain shadow"
+            onClick={() => navigate('/')}
+          />
+          <span className="cursor-pointer text-2xl font-extrabold tracking-wide" style={{ color: '#C92A15' }} onClick={() => navigate('/')}>
             BẾP CỦA MẸ
           </span>
         </div>
         <div className="flex min-w-[180px] items-center justify-end gap-4">
-          <div className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-[#C92A15] bg-[#e6f4ed] text-[#C92A15]">
-            <User size={20} />
+          <div
+            ref={userIconRef}
+            className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-[#C92A15] bg-[#e6f4ed] text-[#C92A15]"
+            onClick={() => user && setShowMenu(v => !v)}
+          >
+            <UserIcon size={20} />
+            {/* Dropdown menu */}
+            {user && showMenu && (
+              <div className="absolute right-0 top-12 z-50 min-w-[180px] rounded-xl border bg-white py-2 shadow-xl">
+                <button
+                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  onClick={() => {
+                    setShowMenu(false);
+                    navigate('/profile');
+                  }}
+                >
+                  <UserIcon size={18} className="text-gray-500" />
+                  Tài khoản
+                </button>
+                <button className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100" onClick={handleLogout}>
+                  <LogOut size={18} className="text-red-400" />
+                  Đăng xuất
+                </button>
+              </div>
+            )}
           </div>
           {user ? (
-            <span className="ml-2 text-base font-semibold text-primary">{user.firstName || user.email}</span>
+            <span className="ml-2 text-base font-semibold text-black underline underline-offset-2 hover:text-blue-700" style={{ cursor: 'pointer' }}>
+              {user.firstName || ''} {user.lastName || ''}
+              {!(user.firstName || user.lastName) && user.email}
+            </span>
           ) : (
             !isAuthPage && (
               <>

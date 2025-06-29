@@ -2,7 +2,10 @@ import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { AuthContext } from '../context/AuthContext';
+import { adminLogin } from '../services/adminAuth.api';
 import { login } from '../services/auth.api';
+
+import '../css/LoginPage.css';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -17,65 +20,73 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setMessage('');
-
-    const result = await login(email, password);
-    setLoading(false);
-
-    if (result.success && result.user) {
-      setUser(result.user);
-
-      // 👉 Điều hướng dựa vào role của user từ backend
-      if (result.user.role === 'admin') {
-        navigate('/admin', { replace: true });
-      } else {
-        navigate('/', { replace: true });
-      }
-    } else {
-      setMessage(result.message || 'Đăng nhập thất bại');
+    let result = await adminLogin({ email, password });
+    if (result && result.user && result.user.role === 'admin') {
+      setUser({
+        email: result.user.email,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
+        phoneNumber: result.user.phoneNumber || result.user.phone_number,
+        phone_number: result.user.phone_number || result.user.phoneNumber,
+        role: result.user.role,
+      });
+      setMessage('Đăng nhập admin thành công!');
+      setLoading(false);
+      navigate('/admin', { replace: true });
+      return;
     }
+    result = await login(email, password);
+    setLoading(false);
+    if (result && result.success && result.user) {
+      setUser({
+        email: result.user.email,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
+        phoneNumber: result.user.phoneNumber || result.user.phone_number,
+        phone_number: result.user.phone_number || result.user.phoneNumber,
+        role: result.user.role,
+      });
+      setMessage('Đăng nhập thành công!');
+      navigate('/', { replace: true });
+      return;
+    }
+    setMessage(result?.message || 'Đăng nhập thất bại');
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-lg">
-        <h2 className="mb-6 text-center text-3xl font-bold text-primary">Đăng nhập</h2>
-        <form className="space-y-5" onSubmit={handleSubmit}>
+    <div className="login-container">
+      <div className="login-box">
+        <h2 className="login-title">Đăng nhập</h2>
+        <form className="login-form space-y-5" onSubmit={handleSubmit} autoComplete="off">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
+            <label>Email</label>
             <input
               type="email"
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              placeholder="example@gmail.com"
+              name="email"
+              autoComplete="off"
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
             />
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-gray-700">Mật khẩu</label>
+            <label>Mật khẩu</label>
             <input
               type="password"
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              placeholder="Nhập mật khẩu"
+              name="password"
+              autoComplete="current-password"
               required
               value={password}
               onChange={e => setPassword(e.target.value)}
             />
           </div>
-
-          <button
-            type="submit"
-            className="w-full rounded-md bg-primary px-4 py-2 font-semibold text-white transition hover:bg-primary/90"
-            disabled={loading}
-          >
+          <button type="submit" className="login-btn" disabled={loading}>
             {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
           </button>
         </form>
-
-        {message && (
-          <div className="mt-4 text-center text-base font-semibold text-primary">
-            {message}
-          </div>
-        )}
+        {message && <div className={`login-message ${message.includes('thành công') ? 'success' : 'error'}`}>{message}</div>}
       </div>
     </div>
   );

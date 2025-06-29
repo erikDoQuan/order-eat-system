@@ -1,0 +1,79 @@
+.register-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  padding: 1rem;
+}
+
+.register-box {
+  width: 100%;
+  max-width: 40rem;
+  border-radius: 1.25rem;
+  background: #fff;
+  padding: 2rem;
+  box-shadow: 0 4px 24px 0 #0001;
+}
+
+.register-title {
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #c92a15;
+}
+
+.register-form label {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #111;
+}
+
+.register-form input {
+  margin-top: 0.25rem;
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid #d1d5db;
+  padding: 0.5rem 1rem;
+  color: #111;
+  outline: none;
+  font-size: 1rem;
+  transition: border 0.2s;
+}
+
+.register-form input:focus {
+  border: 1.5px solid #c92a15;
+}
+
+.register-btn {
+  width: 100%;
+  border-radius: 9999px;
+  background: #c92a15;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  transition: background 0.2s;
+  margin-top: 1rem;
+}
+
+.register-btn:hover {
+  background: #a01f10;
+}
+
+.register-message {
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.register-message.success {
+  color: #16a34a;
+}
+
+.register-message.error {
+  color: #e11d48;
+}

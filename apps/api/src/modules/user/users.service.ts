@@ -84,15 +84,14 @@ export class UsersService {
       updateDto.password = await hashPassword(updateDto.password);
     }
 
-   if (updateDto.email) {
-  updateDto.email = updateDto.email.toLowerCase();
+    if (updateDto.email) {
+      updateDto.email = updateDto.email.toLowerCase();
 
-  const existingUser = await this.userRepository.findByEmail(updateDto.email);
-  if (existingUser && existingUser.id !== id) {
-    throw new BadRequestException('Email already in use');
-  }
-}
-
+      const existingUser = await this.userRepository.findByEmail(updateDto.email);
+      if (existingUser && existingUser.id !== id) {
+        throw new BadRequestException('Email already in use');
+      }
+    }
 
     return this.userRepository.update(id, updateDto);
   }

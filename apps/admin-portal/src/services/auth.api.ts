@@ -1,10 +1,18 @@
 export async function login(
   email: string,
-  password: string
+  password: string,
 ): Promise<{
   success: boolean;
   message: string;
-  user?: { email: string; firstName?: string; lastName?: string; role: 'user' | 'admin' };
+  accessToken?: string;
+  user?: {
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    phoneNumber?: string;
+    phone_number?: string;
+    role: 'user' | 'admin';
+  };
 }> {
   try {
     const res = await fetch('http://localhost:3000/api/v1/auth/login', {
@@ -15,14 +23,19 @@ export async function login(
 
     const data = await res.json().catch(() => null);
 
-    if (res.status === 200 && data?.accessToken && data?.user) {
+    if (res.ok && data?.accessToken && data?.user) {
+      // Lưu accessToken vào localStorage để sử dụng cho các request cần token
+      localStorage.setItem('order-eat-access-token', data.accessToken);
       return {
         success: true,
         message: 'Đăng nhập thành công',
+        accessToken: data.accessToken,
         user: {
           email: data.user.email,
           firstName: data.user.firstName,
           lastName: data.user.lastName,
+          phoneNumber: data.user.phoneNumber,
+          phone_number: data.user.phone_number || data.user.phoneNumber,
           role: data.user.role,
         },
       };

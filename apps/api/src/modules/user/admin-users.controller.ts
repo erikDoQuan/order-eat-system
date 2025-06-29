@@ -13,9 +13,9 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 
 @Controller({ path: 'admin/users' })
-// @ApiTags('Admin Users')
-//  @UseGuards(AccessTokenGuard)
-//  @ApiBearerAuth('accessToken')
+@ApiTags('Admin Users')
+ @UseGuards(AccessTokenGuard)
+ @ApiBearerAuth('accessToken')
 export class AdminUsersController {
   constructor(private readonly usersService: UsersService) {}
 

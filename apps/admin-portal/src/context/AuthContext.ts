@@ -4,6 +4,10 @@ export interface AuthUser {
   email: string;
   firstName?: string;
   lastName?: string;
+  name?: string;
+  phoneNumber?: string;
+  phone_number?: string;
+  address?: string; // Chỉ dùng address (thường), không cần Address (hoa)
   role: 'user' | 'admin';
 }
 

@@ -1,14 +1,13 @@
 import { Body, Controller, Post, Req, Res } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import {  ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Response as ExpressResponse, Request } from 'express';
 
-import { ApiDocumentResponse } from '~/common/decorators/api-document-response.decorator';
-import { Response } from '~/common/decorators/response.decorator';
 import { AppConfigsService } from '~/config/config.service';
 import { AuthService } from './auth.service';
 import { LoginWithCredentialsDoc, SignOutDoc } from './docs/auth.doc';
 import { SignInDto } from './dto/auth.dto';
+import { ApiDocumentResponse } from '~/common/decorators/api-document-response.decorator';
 
 @ApiTags('Admin Authentication')
 @Controller('admin/auth')
@@ -22,7 +21,6 @@ export class AdminAuthController {
   @Throttle({ default: { limit: 10, ttl: 10000 } })
   @ApiOperation({ summary: 'Login with credentials' })
   @ApiDocumentResponse({ message: 'Login successfully', model: LoginWithCredentialsDoc })
-  @Response({ message: 'Login successfully' })
   async login(@Req() req: Request, @Res({ passthrough: true }) response: ExpressResponse, @Body() signInDto: SignInDto) {
     const ip = req.ip;
     const ua = req.headers['user-agent'] || '';
@@ -42,7 +40,6 @@ export class AdminAuthController {
   @Post('logout')
   @ApiOperation({ summary: 'Log out' })
   @ApiDocumentResponse({ message: 'Logout successfully', model: SignOutDoc })
-  @Response({ message: 'Logout successfully' })
   async signOut(@Req() req: Request) {
     const ip = req.ip;
     const ua = req.headers['user-agent'] || '';
