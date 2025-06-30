@@ -36,6 +36,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     fetchMe().then(me => {
       if (me && me.email) {
         setUserState({
+          id: me.id,
           email: me.email,
           firstName: me.firstName,
           lastName: me.lastName,
@@ -46,6 +47,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         localStorage.setItem(
           STORAGE_KEY,
           JSON.stringify({
+            id: me.id,
             email: me.email,
             firstName: me.firstName,
             lastName: me.lastName,

@@ -11,6 +11,10 @@ export async function adminLogin({ email, password }: { email: string; password:
       user.firstName = firstName;
       user.lastName = lastNameArr.join(' ');
     }
+    // Đảm bảo user có id
+    if (data.user && data.user.id) {
+      user.id = data.user.id;
+    }
     // Lưu accessToken vào localStorage để giữ đăng nhập admin khi reload
     if (data.accessToken) {
       localStorage.setItem('order-eat-access-token', data.accessToken);
