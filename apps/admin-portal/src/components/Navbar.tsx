@@ -1,8 +1,11 @@
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { LogOut, ShoppingCart, User as UserIcon } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 
 import { AuthContext } from '../context/AuthContext';
+import { CartIcon } from './CartIcon';
+import { CartPopup } from './CartPopup';
+import { useCart } from '../context/CartContext';
 
 import '../css/Navbar.css';
 
@@ -13,6 +16,8 @@ export default function Navbar() {
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
   const [showMenu, setShowMenu] = useState(false);
   const userIconRef = useRef<HTMLDivElement>(null);
+  const [showCartPopup, setShowCartPopup] = useState(false);
+  const { fetchCart } = useCart();
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -30,6 +35,11 @@ export default function Navbar() {
     setShowMenu(false);
     navigate('/', { replace: true });
   };
+
+  const handleOpenCart = useCallback(async () => {
+    await fetchCart();
+    setShowCartPopup(true);
+  }, [fetchCart]);
 
   return (
     <nav
@@ -115,7 +125,7 @@ export default function Navbar() {
                     style={{ borderColor: '#C92A15' }}
                   >
                     {item.dropdown.map(drop => (
-                      <li key={drop.path}>
+                      <li key={drop.path + '-' + drop.label}>
                         <NavLink
                           to={drop.path}
                           className={({ isActive }) =>
@@ -129,7 +139,7 @@ export default function Navbar() {
                   </ul>
                 </li>
               ) : (
-                <li key={item.path}>
+                <li key={item.path + '-' + item.label}>
                   <NavLink
                     to={item.path}
                     end={item.path === '/'}
@@ -145,13 +155,11 @@ export default function Navbar() {
           </ul>
 
           {/* Giỏ hàng nằm phía cuối bên phải (ĐÃ SỬA: thêm border-radius đẹp) */}
-          <NavLink
-            to="/cart"
-            className="ml-auto flex items-center gap-2 rounded-full border-2 border-white bg-white px-4 py-2 transition hover:shadow-lg"
-          >
-            <ShoppingCart size={20} className="text-[#C92A15]" />
+          <div className="ml-auto flex items-center gap-2 rounded-full border-2 border-white bg-white px-4 py-2 transition hover:shadow-lg" style={{ cursor: 'pointer', position: 'relative' }} onClick={handleOpenCart}>
+            <CartIcon />
             <span className="text-sm font-bold text-[#a01f10]">Giỏ hàng</span>
-          </NavLink>
+            {showCartPopup && <CartPopup onClose={() => setShowCartPopup(false)} />}
+          </div>
         </div>
       </div>
     </nav>

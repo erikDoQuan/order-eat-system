@@ -24,7 +24,7 @@ export class AuthService {
     }
 
     if (!user.isActive) {
-      throw new UnauthorizedException('User is inactive');
+      throw new UnauthorizedException('Tài khoản đã bị tắt, vui lòng liên hệ quản trị viên.');
     }
 
     if (user.role !== USER_ROLE.ADMIN) {
@@ -64,7 +64,7 @@ export class AuthService {
     }
 
     if (!user.isActive) {
-      throw new UnauthorizedException('User is inactive');
+      throw new UnauthorizedException('Tài khoản đã bị tắt, vui lòng liên hệ quản trị viên.');
     }
 
     if (user.role !== USER_ROLE.USER) {

@@ -6,6 +6,13 @@ export type User = {
   firstName?: string;
   lastName?: string;
   name?: string;
+  phoneNumber?: string;
+  address?: string;
+  role?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  password?: string;
 };
 
 export const getAllUsers = async (): Promise<User[]> => {
@@ -45,3 +52,18 @@ export async function register(
     return { success: false, message: 'Có lỗi xảy ra' };
   }
 }
+
+export const createUser = async (data: Partial<User> & { password: string }) => {
+  const res = await axios.post('/api/v1/admin/users', data);
+  return res.data;
+};
+
+export const updateUser = async (id: string, data: Partial<User>) => {
+  const res = await axios.patch(`/api/v1/admin/users/${id}`, data);
+  return res.data;
+};
+
+export const deleteUser = async (id: string) => {
+  const res = await axios.delete(`/api/v1/admin/users/${id}`);
+  return res.data;
+};

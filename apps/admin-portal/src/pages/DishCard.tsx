@@ -1,19 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
 
 import '../css/DishCard.css';
 
 import { Dish } from '../types/dish.type';
+import { AuthContext } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 
 /* -------------------------------------------------
  *  Modal chi tiết món ăn (Size, Đế + Topping radio)
  * ------------------------------------------------- */
-function DishDetailModal({ dish, onClose }: { dish: Dish; onClose: () => void }) {
+function DishDetailModal({ dish, onClose, categoryName }: { dish: Dish; onClose: () => void; categoryName?: string }) {
   /* ---------- tuỳ chọn cố định ---------- */
   const sizeOptions = [
-    { label: 'Nhỏ 6”', value: 'small', price: 0 },
-    { label: 'Vừa 9”', value: 'medium', price: 90_000 },
-    { label: 'Lớn 12”', value: 'large', price: 190_000 },
+    { label: 'Nhỏ 6"', value: 'small', price: 0 },
+    { label: 'Vừa 9"', value: 'medium', price: 90_000 },
+    { label: 'Lớn 12"', value: 'large', price: 190_000 },
   ];
 
   /* ---------- state ---------- */
@@ -47,13 +49,11 @@ function DishDetailModal({ dish, onClose }: { dish: Dish; onClose: () => void })
   const getPrice = () => {
     const base = Number(dish.basePrice) || 0;
     const sizeExtra = sizeOptions.find(s => s.value === selectedSize)?.price || 0;
-
     const toppingExtra = (() => {
       const t = toppingDishes.find(td => td.id === selectedVariant);
       return Number(t?.basePrice) || 0;
     })();
-
-    return (base + sizeExtra + toppingExtra).toLocaleString() + '₫';
+    return (base + sizeExtra + toppingExtra).toLocaleString('vi-VN') + '₫';
   };
 
   /* ---------- label mô tả variant ---------- */
@@ -62,6 +62,9 @@ function DishDetailModal({ dish, onClose }: { dish: Dish; onClose: () => void })
     const t = toppingDishes.find(td => td.id === selectedVariant);
     return t ? t.name : '—';
   })();
+
+  /* Thêm biến kiểm tra có phải danh mục gà không */
+  const isChickenCategory = (categoryName || '').toLowerCase().includes('gà');
 
   /* ---------- render ---------- */
   return (
@@ -78,69 +81,82 @@ function DishDetailModal({ dish, onClose }: { dish: Dish; onClose: () => void })
           <button className="absolute right-6 top-6 text-2xl font-bold text-gray-400 hover:text-black" onClick={onClose}>
             ×
           </button>
-          <h2 className="mb-2 text-3xl font-bold text-[#C92A15]">{dish.name}</h2>
+          <h2 className="mb-2 text-3xl font-bold text-black">{dish.name}</h2>
 
-          <div className="mb-2 text-base font-medium text-green-600">
-            Kích thước {sizeOptions.find(s => s.value === selectedSize)?.label} – Đế {variantLabel}
-          </div>
+          {/* Chỉ hiển thị size và đế nếu KHÔNG phải danh mục gà */}
+          {!isChickenCategory && (
+            <>
+              <div className="mb-2 text-base font-medium text-green-600">
+                Kích thước {sizeOptions.find(s => s.value === selectedSize)?.label} – Đế {variantLabel}
+              </div>
+            </>
+          )}
 
           <p className="mb-4 text-base text-gray-700">{dish.description}</p>
 
           {/* ----- Size ----- */}
-          <div className="mb-2 font-semibold text-black">KÍCH THƯỚC</div>
-          <div className="mb-4 flex gap-3">
-            {sizeOptions.map(size => (
-              <button
-                key={size.value}
-                className={`rounded-lg border px-4 py-2 text-base font-semibold transition ${
-                  selectedSize === size.value
-                    ? 'border-[#C92A15] bg-[#C92A15] text-white'
-                    : 'border-gray-300 bg-white text-black hover:border-[#C92A15]'
-                }`}
-                onClick={() => setSelectedSize(size.value as 'small' | 'medium' | 'large')}
-              >
-                {size.label}
-                {size.price > 0 && <span className="ml-1 text-sm font-normal">+{size.price.toLocaleString()}₫</span>}
-              </button>
-            ))}
-          </div>
+          {!isChickenCategory && (
+            <>
+              <div className="mb-2 font-semibold text-black">KÍCH THƯỚC</div>
+              <div className="mb-4 flex gap-3">
+                {sizeOptions.map(size => (
+                  <button
+                    key={size.value}
+                    className={`rounded-lg border px-4 py-2 text-base font-semibold transition ${
+                      selectedSize === size.value
+                        ? 'border-[#C92A15] bg-[#C92A15] text-white'
+                        : 'border-gray-300 bg-white text-black hover:border-[#C92A15]'
+                    }`}
+                    onClick={() => setSelectedSize(size.value as 'small' | 'medium' | 'large')}
+                  >
+                    {size.label}
+                    {size.price > 0 && <span className="ml-1 text-sm font-normal">+{size.price.toLocaleString('vi-VN')}₫</span>}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
 
           {/* ----- Đế + Topping (radio) ----- */}
-          <div className="mb-2 font-semibold text-black">ĐẾ</div>
-          <div className="mb-4 flex max-h-40 flex-col gap-2 overflow-y-auto pr-2">
-            {(['dày', 'mỏng'] as const).map(base => (
-              <label key={base} className="flex cursor-pointer items-center gap-2">
-                <input
-                  type="radio"
-                  name="base"
-                  checked={selectedVariant === base}
-                  onChange={() => setSelectedVariant(base)}
-                  className="accent-[#C92A15]"
-                />
-                {base.charAt(0).toUpperCase() + base.slice(1)}
-              </label>
-            ))}
+          {!isChickenCategory && (
+            <>
+              <div className="mb-2 font-semibold text-black">ĐẾ</div>
+              <div className="mb-4 flex max-h-40 flex-col gap-2 overflow-y-auto pr-2">
+                {(['dày', 'mỏng'] as const).map(base => (
+                  <label key={base} className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="radio"
+                      name="base"
+                      checked={selectedVariant === base}
+                      onChange={() => setSelectedVariant(base)}
+                      className="accent-[#C92A15]"
+                    />
+                    {base.charAt(0).toUpperCase() + base.slice(1)}
+                  </label>
+                ))}
 
-            {toppingDishes.map(t => (
-              <label key={t.id} className="flex cursor-pointer items-center gap-2">
-                <input
-                  type="radio"
-                  name="base"
-                  checked={selectedVariant === t.id}
-                  onChange={() => setSelectedVariant(t.id)}
-                  className="accent-[#C92A15]"
-                />
-                <span className="flex-1">{t.name}</span>
-                {/* chỉ hiển thị giá khi được chọn */}
-                {selectedVariant === t.id && t.basePrice && (
-                  <span className="text-sm font-medium text-gray-600">+{Number(t.basePrice).toLocaleString()}₫</span>
-                )}
-              </label>
-            ))}
-          </div>
+                {toppingDishes.map(t => (
+                  <label key={t.id} className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="radio"
+                      name="base"
+                      checked={selectedVariant === t.id}
+                      onChange={() => setSelectedVariant(t.id)}
+                      className="accent-[#C92A15]"
+                    />
+                    <span className="flex-1">{t.name}</span>
+                    {/* chỉ hiển thị giá khi được chọn */}
+                    {selectedVariant === t.id && t.basePrice && (
+                      <span className="text-sm font-medium text-gray-600">+{Number(t.basePrice).toLocaleString('vi-VN')}₫</span>
+                    )}
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
 
           {/* ----- Ghi chú ----- */}
-          <div className="mb-2 font-semibold text-black">GHI CHÚ</div>
+          <div className="mb-2 font-semibold text-[#C92A15]">GHI CHÚ</div>
           <textarea
             className="mb-4 w-full rounded-lg border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
             placeholder="Nhập ghi chú của bạn tại đây"
@@ -149,7 +165,7 @@ function DishDetailModal({ dish, onClose }: { dish: Dish; onClose: () => void })
             rows={2}
           />
 
-          <button className="mt-2 w-full rounded-lg bg-[#C92A15] px-6 py-3 text-lg font-bold text-white hover:bg-[#a81f10]">THÊM VÀO GIỎ HÀNG</button>
+          <button className="mt-2 w-full rounded-lg bg-[#C92A15] px-6 py-3 text-lg font-bold text-white hover:bg-[#a81f10]" onClick={onClose}>THÊM VÀO GIỎ HÀNG</button>
         </div>
       </div>
     </div>
@@ -159,10 +175,12 @@ function DishDetailModal({ dish, onClose }: { dish: Dish; onClose: () => void })
 /* --------------------------------------------------
  *  Thẻ card món ăn – export mặc định
  * -------------------------------------------------- */
-export default function DishCard({ dish }: { dish: Dish }) {
+export default function DishCard({ dish, categoryName }: { dish: Dish, categoryName?: string }) {
   const [showDetail, setShowDetail] = useState(false);
+  const { user } = useContext(AuthContext);
+  const { addToCart } = useCart();
 
-  const priceText = dish.basePrice !== undefined && !isNaN(Number(dish.basePrice)) ? Number(dish.basePrice).toLocaleString() + '₫' : 'Miễn phí';
+  const priceText = dish.basePrice !== undefined && !isNaN(Number(dish.basePrice)) ? Number(dish.basePrice).toLocaleString('vi-VN') + '₫' : 'Miễn phí';
 
   return (
     <>
@@ -212,7 +230,7 @@ export default function DishCard({ dish }: { dish: Dish }) {
         </div>
       </div>
 
-      {showDetail && <DishDetailModal dish={dish} onClose={() => setShowDetail(false)} />}
+      {showDetail && <DishDetailModal dish={dish} onClose={() => setShowDetail(false)} categoryName={categoryName} />}
     </>
   );
 }

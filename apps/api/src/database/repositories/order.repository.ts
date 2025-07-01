@@ -25,7 +25,7 @@ export class OrderRepository {
 
   async find(
     fetchOrdersDto: FetchOrdersDto,
-  ): Promise<{ data: FetchOrdersResponseDto[]; totalItems: number }> {
+  ): Promise<{ data: Order[]; totalItems: number }> {
     const { search, offset, limit, status } = fetchOrdersDto;
 
     const baseConditions: SQL[] = [];
@@ -56,7 +56,7 @@ export class OrderRepository {
     const [results, countResult] = await Promise.all([query, countQuery]);
 
     return {
-      data: results as unknown as FetchOrdersResponseDto[],
+      data: results as Order[],
       totalItems: countResult?.[0]?.count || 0,
     };
   }

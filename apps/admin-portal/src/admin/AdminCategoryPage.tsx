@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Edit, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '../components/AdminSidebar';
 import { AuthContext } from '../context/AuthContext';
@@ -28,6 +28,7 @@ const AdminCategoryPage: React.FC = () => {
   const [users, setUsers] = useState<UserType[]>([]);
   const [status, setStatus] = useState('active');
   const [isActive, setIsActive] = useState(true);
+  const [search, setSearch] = useState('');
 
   // User dropdown logic
   const handleLogout = () => {
@@ -158,6 +159,15 @@ const AdminCategoryPage: React.FC = () => {
             + Thêm danh mục
           </button>
         </div>
+        <div className="mb-4 flex justify-end">
+          <input
+            type="text"
+            placeholder="Tìm kiếm danh mục..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full max-w-xs rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+          />
+        </div>
         {loading && <div>Đang tải...</div>}
         {error && <div style={{ color: 'red' }}>{error}</div>}
         {!loading && !error && (
@@ -173,7 +183,7 @@ const AdminCategoryPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {categories.filter(cat => cat.status !== 'inactive').map(cat => (
+                {categories.filter(cat => cat.status !== 'inactive' && cat.name.toLowerCase().includes(search.toLowerCase())).map(cat => (
                   <tr key={cat.id} className="hover:bg-gray-50 transition">
                     <td className="py-2 px-3 border-b text-xs text-gray-500">{cat.id}</td>
                     <td className="py-2 px-3 border-b font-medium">{cat.name}</td>
@@ -182,19 +192,23 @@ const AdminCategoryPage: React.FC = () => {
                     </td>
                     <td className="py-2 px-3 border-b text-xs">{getUserName(cat.createdBy)}</td>
                     <td className="py-2 px-3 border-b">
-                      <button
-                        onClick={() => handleEdit(cat)}
-                        className="btn-admin btn-edit"
-                      >
-                        Sửa
-                      </button>
-                      <button
-                        onClick={() => handleDelete(cat.id)}
-                        disabled={saving}
-                        className="btn-admin btn-delete"
-                      >
-                        Xóa
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEdit(cat)}
+                          title="Sửa"
+                          className="p-2 rounded hover:bg-blue-100 text-blue-600"
+                        >
+                          <Edit size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(cat.id)}
+                          disabled={saving}
+                          title="Xóa"
+                          className="p-2 rounded hover:bg-red-100 text-red-600 disabled:opacity-50"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

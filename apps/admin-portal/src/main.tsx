@@ -14,6 +14,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminCategoryPage from './admin/AdminCategoryPage';
 import AdminDishPage from './admin/AdminDishPage';
+import AdminUserPage from './admin/AdminUserPage';
 
 import './globals.scss';
 
@@ -88,6 +89,22 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             element={
               <AdminRoute>
                 <AdminDishPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/dishes/add"
+            element={
+              <AdminRoute>
+                <AdminDishPage showAddForm={true} />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/customers"
+            element={
+              <AdminRoute>
+                <AdminUserPage />
               </AdminRoute>
             }
           />

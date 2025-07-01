@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 
 import AdminSidebar from '../components/AdminSidebar';
 import { AuthContext } from '../context/AuthContext';
+import { getAllDishes } from '../services/dish.api';
+import { getAllUsers } from '../services/user.api';
 
 import '../css/AdminSidebar.css';
 
@@ -15,6 +17,14 @@ export default function AdminPage() {
   /* -------------------- dropdown state & helpers -------------------- */
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const [dishCount, setDishCount] = useState<number>(0);
+  const [userCount, setUserCount] = useState<number>(0);
+
+  useEffect(() => {
+    getAllDishes().then(dishes => setDishCount(dishes.length));
+    getAllUsers().then(users => setUserCount(users.filter(u => u.role === 'user' && u.isActive !== false).length));
+  }, []);
 
   const handleLogout = () => {
     setUser(null);
@@ -80,10 +90,10 @@ export default function AdminPage() {
 
         <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: 'Tổng món ăn', value: 24, bg: 'bg-blue-500', icon: '🍕' },
+            { label: 'Tổng món ăn', value: dishCount, bg: 'bg-blue-500', icon: '🍕' },
             { label: 'Đơn hàng hôm nay', value: 12, bg: 'bg-green-500', icon: '📦' },
             { label: 'Doanh thu hôm nay', value: '2.4 M', bg: 'bg-yellow-500', icon: '💰' },
-            { label: 'Khách hàng mới', value: 8, bg: 'bg-purple-500', icon: '👥' },
+            { label: 'Khách hàng mới', value: userCount, bg: 'bg-purple-500', icon: '👥' },
           ].map(card => (
             <div key={card.label} className="rounded-lg bg-white p-6 shadow-sm">
               <div className="flex items-center">
@@ -112,6 +122,7 @@ export default function AdminPage() {
                 icon: '➕',
                 bg: 'bg-blue-100',
                 color: 'text-blue-600',
+                onClick: () => navigate('/admin/dishes/add'),
               },
               {
                 title: 'Quản lý đơn hàng',
@@ -135,7 +146,11 @@ export default function AdminPage() {
                 color: 'text-purple-600',
               },
             ].map(action => (
-              <button key={action.title} className="rounded-lg bg-white p-4 text-left shadow-sm transition-shadow hover:shadow-md">
+              <button
+                key={action.title}
+                className="rounded-lg bg-white p-4 text-left shadow-sm transition-shadow hover:shadow-md"
+                onClick={action.onClick}
+              >
                 <div className="flex items-center">
                   <div className={`flex h-10 w-10 items-center justify-center rounded-md ${action.bg}`}>
                     <span className={`text-lg ${action.color}`}>{action.icon}</span>

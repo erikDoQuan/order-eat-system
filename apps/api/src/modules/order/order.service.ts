@@ -7,10 +7,13 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 
 @Injectable()
 export class OrderService {
-  constructor(private readonly orderRepository: OrderRepository) {}
+  constructor(
+    private readonly orderRepository: OrderRepository,
+  ) {}
 
   async findAll(dto: FetchOrdersDto) {
-    return this.orderRepository.find(dto);
+    const result = await this.orderRepository.find(dto);
+    return result;
   }
 
   async findOne(id: string) {
