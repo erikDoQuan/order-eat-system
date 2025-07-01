@@ -32,6 +32,8 @@ export class DishRepository {
       baseConditions.push(inArray(dishes.categoryId, categoryIds));
     }
 
+    baseConditions.push(eq(dishes['isActive'], true));
+
     const whereCondition = baseConditions.length ? and(...baseConditions) : undefined;
 
     const [query, countQuery] = await Promise.all([
@@ -66,6 +68,7 @@ export class DishRepository {
 
   async findAll(): Promise<Dish[]> {
     return this.drizzle.db.query.dishes.findMany({
+      where: eq(dishes['isActive'], true),
       orderBy: desc(dishes.createdAt),
     });
   }
@@ -86,7 +89,11 @@ export class DishRepository {
   }
 
   async delete(id: string): Promise<DishWithoutPrice | null> {
-    const [deleted] = await this.drizzle.db.delete(dishes).where(eq(dishes.id, id)).returning();
+    const [deleted] = await this.drizzle.db
+      .update(dishes)
+      .set({ isActive: false })
+      .where(eq(dishes.id, id))
+      .returning();
     return deleted ? this.findOne(deleted.id) : null;
   }
 }

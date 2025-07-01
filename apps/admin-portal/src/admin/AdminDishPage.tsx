@@ -140,7 +140,7 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
   };
 
   const selectedCategory = categories.find(c => c.id === categoryId);
-  const showSize = selectedCategory && selectedCategory.name.toLowerCase().includes('pizza');
+  const showSize = selectedCategory && selectedCategory.name.toLowerCase().includes('pizza') && !selectedCategory.name.toLowerCase().includes('mỳ ý') && !selectedCategory.name.toLowerCase().includes('gà');
 
   // User dropdown logic
   const handleLogout = () => {

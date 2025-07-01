@@ -65,6 +65,11 @@ export default defineConfig(({ mode }: UserConfig) => {
           timeout: 1000 * 60 * 1,
           proxyTimeout: 1000 * 60 * 1,
         },
+        '^/orders': {
+          target: env.VITE_API_BASE_URL,
+          changeOrigin: true,
+          secure: false,
+        },
       },
     },
   };

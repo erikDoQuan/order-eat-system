@@ -26,9 +26,13 @@ export class OrderRepository {
   async find(
     fetchOrdersDto: FetchOrdersDto,
   ): Promise<{ data: Order[]; totalItems: number }> {
-    const { search, offset, limit, status } = fetchOrdersDto;
+    const { search, offset, limit, status, userId } = fetchOrdersDto;
 
     const baseConditions: SQL[] = [];
+
+    if (userId) {
+      baseConditions.push(eq(orders.userId, userId));
+    }
 
     if (status && status.length > 0) {
       baseConditions.push(inArray(orders.status, status as OrderStatus[]));
@@ -38,6 +42,9 @@ export class OrderRepository {
       const searchTerm = `%${removeDiacritics(search.trim())}%`;
       baseConditions.push(ilike(sql`unaccent(${orders.status})`, searchTerm));
     }
+
+    // Chỉ lấy các order còn hoạt động
+    baseConditions.push(eq(orders['isActive'], true));
 
     const whereCondition = and(...baseConditions);
 
@@ -76,11 +83,13 @@ export class OrderRepository {
   }
 
   async update(id: string, data: UpdateOrderDto): Promise<Order | null> {
+    console.log('[ORDER][PATCH] Update order', id, JSON.stringify(data));
     const [updated] = await this.drizzle.db
       .update(orders)
       .set(data as OrderUpdate)
       .where(eq(orders.id, id))
       .returning();
+    console.log('[ORDER][PATCH] Updated order result', updated);
     return updated ?? null;
   }
 

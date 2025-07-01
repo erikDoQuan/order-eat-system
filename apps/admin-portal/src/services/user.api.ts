@@ -67,3 +67,40 @@ export const deleteUser = async (id: string) => {
   const res = await axios.delete(`/api/v1/admin/users/${id}`);
   return res.data;
 };
+
+// Lấy tất cả order_items của user
+export async function getOrderItemsByUserId(userId: string) {
+  const url = `/api/v1/orders?userId=${userId}`;
+  console.log('[DEBUG] Gọi API:', url);
+  const res = await fetch(url);
+  console.log('[DEBUG] Status:', res.status);
+  let data;
+  try {
+    data = await res.json();
+    console.log('[DEBUG] Response data:', data);
+  } catch (e) {
+    console.error('[DEBUG] Lỗi parse JSON:', e);
+    throw new Error('Không lấy được order_items');
+  }
+  if (!res.ok) {
+    throw new Error(data?.message || 'Không lấy được order_items');
+  }
+  const orders = data.data?.data || [];
+  let allItems: any[] = [];
+  for (const order of orders) {
+    if (order?.isActive === false) continue;
+    let orderItems = order?.orderItems;
+    if (typeof orderItems === 'string') {
+      try {
+        orderItems = JSON.parse(orderItems);
+      } catch (e) {
+        console.error('[DEBUG] Lỗi parse orderItems:', e, orderItems);
+      }
+    }
+    if (orderItems?.items) {
+      allItems = allItems.concat(orderItems.items.map(item => ({ ...item, orderId: order.id })));
+    }
+  }
+  console.log('[DEBUG] allItems:', allItems);
+  return allItems;
+}

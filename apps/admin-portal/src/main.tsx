@@ -15,6 +15,7 @@ import RegisterPage from './pages/RegisterPage';
 import AdminCategoryPage from './admin/AdminCategoryPage';
 import AdminDishPage from './admin/AdminDishPage';
 import AdminUserPage from './admin/AdminUserPage';
+import { CartProvider } from './context/CartContext';
 
 import './globals.scss';
 
@@ -36,7 +37,7 @@ axios.interceptors.request.use((config) => {
   return config;
 });
 
-// Thêm interceptor cho axios để tự động xử lý lỗi 401: nếu gặp lỗi 401 thì xóa accessToken và chuyển hướng về trang /login.
+
 axios.interceptors.response.use(
   response => response,
   error => {
@@ -48,71 +49,38 @@ axios.interceptors.response.use(
   }
 );
 
+function AppWithCartProvider() {
+  const { user } = useContext(AuthContext);
+  // Chỉ render CartProvider khi đã có userId hợp lệ
+  if (!user?.id) return null;
+  return (
+    <CartProvider userId={user.id}>
+      <Routes>
+        {/* Các route dùng layout */}
+        <Route path="/" element={<MainLayout />}>
+          <Route index element={<HomePage />} />
+          <Route path="profile" element={<AccountPage />} />
+        </Route>
+        {/* Route admin không dùng layout => không bị render Navbar */}
+        <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+        <Route path="/admin/profile" element={<AdminRoute><AccountAdminPage /></AdminRoute>} />
+        <Route path="/admin/category" element={<AdminRoute><AdminCategoryPage /></AdminRoute>} />
+        <Route path="/admin/dishes" element={<AdminRoute><AdminDishPage /></AdminRoute>} />
+        <Route path="/admin/dishes/add" element={<AdminRoute><AdminDishPage showAddForm={true} /></AdminRoute>} />
+        <Route path="/admin/customers" element={<AdminRoute><AdminUserPage /></AdminRoute>} />
+        {/* Các route không dùng layout */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+      </Routes>
+    </CartProvider>
+  );
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          {/* Các route dùng layout */}
-          <Route path="/" element={<MainLayout />}>
-            <Route index element={<HomePage />} />
-            <Route path="profile" element={<AccountPage />} />
-          </Route>
-
-          {/* Route admin không dùng layout => không bị render Navbar */}
-          <Route
-            path="/admin"
-            element={
-              <AdminRoute>
-                <AdminPage />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/profile"
-            element={
-              <AdminRoute>
-                <AccountAdminPage />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/category"
-            element={
-              <AdminRoute>
-                <AdminCategoryPage />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/dishes"
-            element={
-              <AdminRoute>
-                <AdminDishPage />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/dishes/add"
-            element={
-              <AdminRoute>
-                <AdminDishPage showAddForm={true} />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/customers"
-            element={
-              <AdminRoute>
-                <AdminUserPage />
-              </AdminRoute>
-            }
-          />
-
-          {/* Các route không dùng layout */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-        </Routes>
+        <AppWithCartProvider />
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>,

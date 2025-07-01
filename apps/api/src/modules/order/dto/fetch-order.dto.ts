@@ -1,4 +1,4 @@
-import { IsOptional, IsArray, IsString, IsNumber, IsEnum } from 'class-validator';
+import { IsOptional, IsArray, IsString, IsNumber, IsEnum, IsUUID } from 'class-validator';
 import { orderStatusEnum } from '~/database/schema/orders';
 
 // Kiểu enum trạng thái đơn hàng
@@ -21,6 +21,10 @@ export class FetchOrdersDto {
   @IsOptional()
   @IsNumber()
   limit?: number;
+
+  @IsOptional()
+  @IsUUID()
+  userId?: string;
 }
 
 

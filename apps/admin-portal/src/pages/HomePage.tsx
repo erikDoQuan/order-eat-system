@@ -22,7 +22,7 @@ export default function HomePage() {
     getAllCategories().then(c => setCategories(c || []));
   }, []);
 
-  // Đồng bộ filterPizzaType với URL
+
   useEffect(() => {
     if (location.pathname === '/') setFilterPizzaType('Tất cả');
     else if (location.pathname === '/dishes') setFilterPizzaType('Pizza Hải Sản');

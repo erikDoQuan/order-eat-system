@@ -11,6 +11,8 @@ import { useCart } from '../context/CartContext';
  *  Modal chi tiết món ăn (Size, Đế + Topping radio)
  * ------------------------------------------------- */
 function DishDetailModal({ dish, onClose, categoryName }: { dish: Dish; onClose: () => void; categoryName?: string }) {
+  const { addToCart } = useCart();
+
   /* ---------- tuỳ chọn cố định ---------- */
   const sizeOptions = [
     { label: 'Nhỏ 6"', value: 'small', price: 0 },
@@ -63,8 +65,11 @@ function DishDetailModal({ dish, onClose, categoryName }: { dish: Dish; onClose:
     return t ? t.name : '—';
   })();
 
-  /* Thêm biến kiểm tra có phải danh mục gà không */
-  const isChickenCategory = (categoryName || '').toLowerCase().includes('gà');
+  /* Thêm biến kiểm tra có phải danh mục pizza, mỳ ý, gà không */
+  const category = (categoryName || '').toLowerCase();
+  const isPizzaCategory = category.includes('pizza');
+  const isSpaghettiCategory = category.includes('mỳ ý');
+  const isChickenCategory = category.includes('gà');
 
   /* ---------- render ---------- */
   return (
@@ -83,8 +88,8 @@ function DishDetailModal({ dish, onClose, categoryName }: { dish: Dish; onClose:
           </button>
           <h2 className="mb-2 text-3xl font-bold text-black">{dish.name}</h2>
 
-          {/* Chỉ hiển thị size và đế nếu KHÔNG phải danh mục gà */}
-          {!isChickenCategory && (
+          {/* Chỉ hiển thị size và đế nếu là pizza */}
+          {isPizzaCategory && !isSpaghettiCategory && !isChickenCategory && (
             <>
               <div className="mb-2 text-base font-medium text-green-600">
                 Kích thước {sizeOptions.find(s => s.value === selectedSize)?.label} – Đế {variantLabel}
@@ -95,7 +100,7 @@ function DishDetailModal({ dish, onClose, categoryName }: { dish: Dish; onClose:
           <p className="mb-4 text-base text-gray-700">{dish.description}</p>
 
           {/* ----- Size ----- */}
-          {!isChickenCategory && (
+          {isPizzaCategory && !isSpaghettiCategory && !isChickenCategory && (
             <>
               <div className="mb-2 font-semibold text-black">KÍCH THƯỚC</div>
               <div className="mb-4 flex gap-3">
@@ -118,7 +123,7 @@ function DishDetailModal({ dish, onClose, categoryName }: { dish: Dish; onClose:
           )}
 
           {/* ----- Đế + Topping (radio) ----- */}
-          {!isChickenCategory && (
+          {isPizzaCategory && !isSpaghettiCategory && !isChickenCategory && (
             <>
               <div className="mb-2 font-semibold text-black">ĐẾ</div>
               <div className="mb-4 flex max-h-40 flex-col gap-2 overflow-y-auto pr-2">
@@ -165,7 +170,33 @@ function DishDetailModal({ dish, onClose, categoryName }: { dish: Dish; onClose:
             rows={2}
           />
 
-          <button className="mt-2 w-full rounded-lg bg-[#C92A15] px-6 py-3 text-lg font-bold text-white hover:bg-[#a81f10]" onClick={onClose}>THÊM VÀO GIỎ HÀNG</button>
+          <button
+            className="mt-2 w-full rounded-lg bg-[#C92A15] px-6 py-3 text-lg font-bold text-white hover:bg-[#a81f10]"
+            onClick={async () => {
+              try {
+                if (isPizzaCategory && !isSpaghettiCategory && !isChickenCategory) {
+                  await addToCart(dish.id, {
+                    quantity: 1,
+                    size: selectedSize,
+                    base: selectedVariant,
+                    note,
+                  });
+                } else {
+                  await addToCart(dish.id, {
+                    quantity: 1,
+                    note,
+                  });
+                }
+                alert('Thêm vào giỏ hàng thành công!');
+                onClose();
+              } catch (err) {
+                alert('Thêm vào giỏ hàng thất bại!');
+                console.error('Lỗi thêm vào giỏ hàng:', err);
+              }
+            }}
+          >
+            THÊM VÀO GIỎ HÀNG
+          </button>
         </div>
       </div>
     </div>
