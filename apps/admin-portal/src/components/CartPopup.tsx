@@ -15,17 +15,46 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const navigate = useNavigate();
   const [confirmRemove, setConfirmRemove] = useState<{ open: boolean; item: any | null }>({ open: false, item: null });
 
+  // Hàm lấy phụ phí size
+  const sizeOptions = [
+    { value: 'small', price: 0 },
+    { value: 'medium', price: 90000 },
+    { value: 'large', price: 190000 },
+  ];
+  // Lấy danh sách topping (dishes có category là topping)
+  const [toppingDishes, setToppingDishes] = useState<Dish[]>([]);
   useEffect(() => {
-    getAllDishes().then(setDishes).catch(() => setDishes([]));
+    getAllDishes().then(all => {
+      setDishes(all);
+      // Lấy topping
+      fetch('/api/v1/categories').then(res => res.json()).then(catRes => {
+        const categories = catRes.data || [];
+        const toppingCat = categories.find((c: any) => (c.nameLocalized || c.name)?.toLowerCase().includes('topping'));
+        if (toppingCat) setToppingDishes(all.filter(d => d.categoryId === toppingCat.id));
+      });
+    }).catch(() => setDishes([]));
   }, []);
 
   const getDish = (dishId: string) => dishes.find(d => d.id === dishId);
 
-  // Tính tổng tiền
-  const totalAmount = orderItems.reduce((sum, item) => {
+  // Hàm tính giá đúng cho từng item
+  const getItemPrice = (item: any) => {
     const dish = getDish(item.dishId);
-    const price = dish && dish.basePrice ? Number(dish.basePrice) : 0;
-    return sum + price * (item.quantity || 1);
+    if (!dish) return 0;
+    let price = Number(dish.basePrice) || 0;
+    if (item.size) {
+      price += sizeOptions.find(s => s.value === item.size)?.price || 0;
+    }
+    if (item.base && item.base !== 'dày' && item.base !== 'mỏng') {
+      const topping = toppingDishes.find(t => t.id === item.base);
+      if (topping) price += Number(topping.basePrice) || 0;
+    }
+    return price;
+  };
+
+  // Tính tổng tiền đúng
+  const totalAmount = orderItems.reduce((sum, item) => {
+    return sum + getItemPrice(item) * (item.quantity || 1);
   }, 0);
 
   // Xử lý xóa item khỏi cart hiện tại, cập nhật UI trước, đồng bộ localStorage qua context
@@ -78,7 +107,7 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                       <div style={{ color: '#666', fontSize: 14 }}>Ghi chú: {item.note}</div>
                     )}
                     {dish && dish.basePrice && (
-                      <div style={{ color: '#C92A15', fontWeight: 500 }}>Giá: {Number(dish.basePrice).toLocaleString('vi-VN')}₫</div>
+                      <div style={{ color: '#C92A15', fontWeight: 500 }}>Giá: {getItemPrice(item).toLocaleString('vi-VN')}₫</div>
                     )}
                   </div>
                   <button

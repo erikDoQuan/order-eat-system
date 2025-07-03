@@ -22,43 +22,49 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setMessage('');
-    let result = await adminLogin({ email, password });
-    if (result && result.user && result.user.role === 'admin') {
+
+    // 1. Thử đăng nhập user trước
+    const resultUser = await login(email, password);
+    setLoading(false);
+    if (resultUser && resultUser.success && resultUser.user) {
       setUser({
-        id: result.user.id,
-        email: result.user.email,
-        firstName: result.user.firstName,
-        lastName: result.user.lastName,
-        phoneNumber: result.user.phoneNumber || result.user.phone_number,
-        phone_number: result.user.phone_number || result.user.phoneNumber,
-        role: result.user.role,
+        id: resultUser.user.id,
+        email: resultUser.user.email,
+        firstName: resultUser.user.firstName,
+        lastName: resultUser.user.lastName,
+        phoneNumber: resultUser.user.phoneNumber || resultUser.user.phone_number,
+        phone_number: resultUser.user.phone_number || resultUser.user.phoneNumber,
+        address: resultUser.user.address,
+        role: resultUser.user.role,
+      });
+      setMessage('Đăng nhập thành công!');
+      if (resultUser.user.role === 'admin') {
+        window.location.href = '/admin';
+      } else {
+        navigate('/', { replace: true });
+      }
+      return;
+    }
+
+    // 2. Nếu đăng nhập user thất bại, thử đăng nhập admin
+    setLoading(true);
+    const resultAdmin = await adminLogin({ email, password });
+    setLoading(false);
+    if (resultAdmin && resultAdmin.user && resultAdmin.user.role === 'admin') {
+      setUser({
+        id: resultAdmin.user.id,
+        email: resultAdmin.user.email,
+        firstName: resultAdmin.user.firstName,
+        lastName: resultAdmin.user.lastName,
+        phoneNumber: resultAdmin.user.phoneNumber || resultAdmin.user.phone_number,
+        phone_number: resultAdmin.user.phone_number || resultAdmin.user.phoneNumber,
+        role: resultAdmin.user.role,
       });
       setMessage('Đăng nhập admin thành công!');
-      setLoading(false);
-      navigate('/admin', { replace: true });
+      window.location.href = '/admin';
       return;
     }
-    result = await login(email, password);
-    setLoading(false);
-    if (result && result.success && result.user) {
-      // Gọi fetchMe để lấy thông tin user đầy đủ (bao gồm số điện thoại)
-      const me = await fetchMe();
-      if (me && me.email) {
-        setUser({
-          id: me.id,
-          email: me.email,
-          firstName: me.firstName,
-          lastName: me.lastName,
-          phoneNumber: me.phoneNumber,
-          address: me.address,
-          role: me.role,
-        });
-      }
-      setMessage('Đăng nhập thành công!');
-      navigate('/', { replace: true });
-      return;
-    }
-    setMessage(result?.message || 'Đăng nhập thất bại');
+    setMessage('Đăng nhập không thành công, hãy kiểm tra lại email hoặc mật khẩu');
   };
 
   return (
@@ -96,7 +102,9 @@ export default function LoginPage() {
               {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </button>
           </form>
-          {message && <div className={`login-message ${message.includes('thành công') ? 'success' : 'error'}`}>{message}</div>}
+          {message && (
+            <div className={`login-message ${message.toLowerCase().includes('thành công') ? 'success' : 'error'}`}>{message}</div>
+          )}
         </div>
       </div>
     </>

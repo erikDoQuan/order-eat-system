@@ -71,47 +71,60 @@ export default function Navbar() {
           </span>
         </div>
         <div className="flex min-w-[180px] items-center justify-end gap-4">
-          <div
-            ref={userIconRef}
-            className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-[#C92A15] bg-[#e6f4ed] text-[#C92A15]"
-            onClick={() => user && setShowMenu(v => !v)}
-          >
-            <UserIcon size={20} />
-            {/* Dropdown menu */}
-            {user && showMenu && (
-              <div className="absolute right-0 top-12 z-50 min-w-[180px] rounded-xl border bg-white py-2 shadow-xl">
-                <button
-                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                  onClick={() => {
-                    setShowMenu(false);
-                    navigate('/profile');
-                  }}
-                >
-                  <UserIcon size={18} className="text-gray-500" />
-                  Tài khoản
-                </button>
-                <button className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100" onClick={handleLogout}>
-                  <LogOut size={18} className="text-red-400" />
-                  Đăng xuất
-                </button>
-              </div>
-            )}
-          </div>
           {user ? (
-            <span className="ml-2 text-base font-semibold text-black underline underline-offset-2 hover:text-blue-700" style={{ cursor: 'pointer' }}>
-              {user.firstName || ''} {user.lastName || ''}
-              {!(user.firstName || user.lastName) && user.email}
-            </span>
+            <div className="flex items-center gap-2">
+              <div
+                ref={userIconRef}
+                className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-[#C92A15] bg-[#e6f4ed] text-[#C92A15]"
+                onClick={() => setShowMenu(v => !v)}
+              >
+                <UserIcon size={20} />
+                {/* Dropdown menu */}
+                {showMenu && (
+                  <div className="absolute right-0 top-12 z-50 min-w-[180px] rounded-xl border bg-white py-2 shadow-xl">
+                    <button
+                      className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => {
+                        setShowMenu(false);
+                        navigate('/profile');
+                      }}
+                    >
+                      <UserIcon size={18} className="text-gray-500" />
+                      Tài khoản
+                    </button>
+                    <button className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100" onClick={handleLogout}>
+                      <LogOut size={18} className="text-red-400" />
+                      Đăng xuất
+                    </button>
+                  </div>
+                )}
+              </div>
+              <span className="text-base font-semibold text-black" style={{ cursor: 'pointer' }}>
+                {user.firstName || ''} {user.lastName || ''}
+                {!(user.firstName || user.lastName) && user.email}
+              </span>
+            </div>
           ) : (
             !isAuthPage && (
-              <>
-                <NavLink to="/login" className="ml-2 rounded-xl bg-transparent px-4 py-2 text-sm font-semibold transition hover:bg-[#e6f4ed]">
+              <div className="flex items-center gap-1">
+                <NavLink
+                  to="/login"
+                  className="flex items-center gap-2 rounded-xl bg-transparent px-4 py-2 text-base font-semibold transition hover:bg-[#e6f4ed]"
+                  style={{ fontWeight: 500 }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: '50%', border: '2px solid #C92A15', background: '#e6f4ed', color: '#C92A15', marginRight: 8 }}>
+                    <UserIcon size={24} />
+                  </span>
                   Đăng nhập
                 </NavLink>
-                <NavLink to="/register" className="ml-2 rounded-xl bg-transparent px-4 py-2 text-sm font-semibold transition hover:bg-[#e6f4ed]">
+                <NavLink
+                  to="/register"
+                  className="rounded-xl bg-transparent py-2 text-base font-semibold transition hover:bg-[#e6f4ed]"
+                  style={{ fontWeight: 500 }}
+                >
                   Tạo tài khoản
                 </NavLink>
-              </>
+              </div>
             )
           )}
         </div>

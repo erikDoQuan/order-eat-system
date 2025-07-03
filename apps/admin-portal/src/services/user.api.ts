@@ -13,6 +13,10 @@ export type User = {
   createdAt?: string;
   updatedAt?: string;
   password?: string;
+  avatar?: string;
+  lastLogin?: string;
+  createdBy?: string;
+  updatedBy?: string;
 };
 
 export const getAllUsers = async (): Promise<User[]> => {

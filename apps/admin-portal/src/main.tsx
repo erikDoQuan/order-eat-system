@@ -19,17 +19,75 @@ import { CartProvider } from './context/CartContext';
 
 import './globals.scss';
 
-axios.interceptors.request.use((config) => {
-  return config;
-});
+declare global {
+  interface Window {
+    __REACT_ROUTER_DISABLE_WARNINGS?: boolean;
+  }
+}
 
-// Thêm interceptor cho axios để tự động xử lý lỗi 401: nếu gặp lỗi 401 thì xóa accessToken và chuyển hướng về trang /login.
+// Đảm bảo axios luôn gửi access token trong header Authorization mỗi lần app khởi động
+const accessToken = localStorage.getItem('order-eat-access-token');
+if (accessToken) {
+  axios.defaults.headers.common['Authorization'] = 'Bearer ' + accessToken;
+}
+
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 axios.interceptors.response.use(
   response => response,
-  error => {
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('order-eat-access-token');
-      window.location.href = '/login';
+  async error => {
+    const originalRequest = error.config;
+    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      const refreshToken = localStorage.getItem('order-eat-refresh-token');
+      if (refreshToken) {
+        if (isRefreshing) {
+          return new Promise(function (resolve, reject) {
+            failedQueue.push({ resolve, reject });
+          })
+            .then(token => {
+              originalRequest.headers['Authorization'] = 'Bearer ' + token;
+              return axios(originalRequest);
+            })
+            .catch(err => Promise.reject(err));
+        }
+        originalRequest._retry = true;
+        isRefreshing = true;
+        try {
+          const res = await axios.post('/api/v1/auth/refresh-token', { refreshToken });
+          const { accessToken, refreshToken: newRefreshToken } = res.data;
+          localStorage.setItem('order-eat-access-token', accessToken);
+          if (newRefreshToken) {
+            localStorage.setItem('order-eat-refresh-token', newRefreshToken);
+          }
+          axios.defaults.headers.common['Authorization'] = 'Bearer ' + accessToken;
+          processQueue(null, accessToken);
+          originalRequest.headers['Authorization'] = 'Bearer ' + accessToken;
+          return axios(originalRequest);
+        } catch (err) {
+          processQueue(err, null);
+          localStorage.removeItem('order-eat-access-token');
+          localStorage.removeItem('order-eat-refresh-token');
+          window.location.href = '/login';
+          return Promise.reject(err);
+        } finally {
+          isRefreshing = false;
+        }
+      } else {
+        localStorage.removeItem('order-eat-access-token');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -44,10 +102,10 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppWithCartProvider() {
-  const { user } = useContext(AuthContext);
-  // Luôn render CartProvider, truyền userId nếu có
+  // const { user } = useContext(AuthContext);
+  // Luôn render CartProvider, không cần truyền userId
   return (
-    <CartProvider userId={user?.id}>
+    <CartProvider>
       <Routes>
         {/* Các route dùng layout */}
         <Route path="/" element={<MainLayout />}>

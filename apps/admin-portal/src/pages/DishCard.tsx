@@ -187,7 +187,6 @@ function DishDetailModal({ dish, onClose, categoryName }: { dish: Dish; onClose:
                     note,
                   });
                 }
-                alert('Thêm vào giỏ hàng thành công!');
                 onClose();
               } catch (err) {
                 alert('Thêm vào giỏ hàng thất bại!');

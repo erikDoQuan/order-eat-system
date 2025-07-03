@@ -19,9 +19,21 @@ const CheckoutPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const [confirmRemove, setConfirmRemove] = useState<{ open: boolean; item: any | null }>({ open: false, item: null });
+  const [toppingDishes, setToppingDishes] = useState<Dish[]>([]);
 
   useEffect(() => {
-    getAllDishes().then(setDishes).catch(() => setDishes([]));
+    let ignore = false;
+    getAllDishes().then(all => {
+      if (ignore) return;
+      setDishes(all);
+      fetch('/api/v1/categories').then(res => res.json()).then(catRes => {
+        if (ignore) return;
+        const categories = catRes.data || [];
+        const toppingCat = categories.find((c: any) => (c.nameLocalized || c.name)?.toLowerCase().includes('topping'));
+        if (toppingCat) setToppingDishes(all.filter(d => d.categoryId === toppingCat.id));
+      });
+    }).catch(() => { if (!ignore) setDishes([]); });
+    return () => { ignore = true; };
   }, []);
 
   const getDish = (dishId: string) => dishes.find(d => d.id === dishId);
@@ -55,10 +67,31 @@ const CheckoutPage: React.FC = () => {
     });
   };
 
-  const totalAmount = orderItems.reduce((sum, item) => {
+  // Hàm lấy phụ phí size
+  const sizeOptions = [
+    { value: 'small', price: 0 },
+    { value: 'medium', price: 90000 },
+    { value: 'large', price: 190000 },
+  ];
+
+  // Hàm tính giá đúng cho từng item
+  const getItemPrice = (item: any) => {
     const dish = getDish(item.dishId);
-    const unitPrice = dish?.basePrice ? Number(dish.basePrice) : 0;
-    return sum + unitPrice * (item.quantity || 1);
+    if (!dish) return 0;
+    let price = Number(dish.basePrice) || 0;
+    if (item.size) {
+      price += sizeOptions.find(s => s.value === item.size)?.price || 0;
+    }
+    if (item.base && item.base !== 'dày' && item.base !== 'mỏng') {
+      const topping = toppingDishes.find(t => t.id === item.base);
+      if (topping) price += Number(topping.basePrice) || 0;
+    }
+    return price;
+  };
+
+  // Tính tổng tiền đúng
+  const totalAmount = orderItems.reduce((sum, item) => {
+    return sum + getItemPrice(item) * (item.quantity || 1);
   }, 0);
 
   return (
@@ -92,7 +125,6 @@ const CheckoutPage: React.FC = () => {
             <div style={{ marginBottom: 24 }}>
               {orderItems.map((item, idx) => {
                 const dish = getDish(item.dishId);
-                const unitPrice = dish?.basePrice ? Number(dish.basePrice) : 0;
                 return (
                   <div
                     key={idx}
@@ -214,7 +246,7 @@ const CheckoutPage: React.FC = () => {
                           fontWeight: 600,
                         }}
                       >
-                        {(unitPrice * item.quantity).toLocaleString('vi-VN')}₫
+                        {dishes.length === 0 ? '' : (getItemPrice(item) * item.quantity).toLocaleString('vi-VN') + '₫'}
                       </div>
                       <button
                         title="Xóa món này"
@@ -281,7 +313,8 @@ const CheckoutPage: React.FC = () => {
         visible={confirmRemove.open}
         title="Xác nhận xoá"
         message={`Bạn có chắc muốn xoá món '${getDish(confirmRemove.item?.dishId)?.name || ''}' khỏi giỏ hàng không?`}
-        btnYes={<span style={{ color: '#fff' }}>Xoá</span>}
+        btnYes="Xoá"
+        btnYesClassName="bg-[#dc2626] hover:bg-[#b91c1c] text-white border-none"
         btnNo="Huỷ"
         onYes={() => {
           if (confirmRemove.item) {
@@ -295,7 +328,6 @@ const CheckoutPage: React.FC = () => {
           setConfirmRemove({ open: false, item: null });
         }}
         onNo={() => setConfirmRemove({ open: false, item: null })}
-        btnYesProps={{ style: { background: '#dc2626', color: '#fff', border: 'none' } }}
       />
     </div>
   );

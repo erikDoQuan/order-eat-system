@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import type { Dish } from '../types/dish.type';
+import { AuthContext } from './AuthContext';
 
 export interface CartItem {
   dishId: string;
@@ -47,9 +48,11 @@ const CartContext = createContext<CartContextProps>({
 
 export const useCart = () => useContext(CartContext);
 
-const CART_KEY = 'order-eat-cart';
+export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useContext(AuthContext);
+  const userId = user?.id || 'guest';
+  const CART_KEY = `order-eat-cart-${userId}`;
 
-export const CartProvider: React.FC<{ userId?: string; children: React.ReactNode }> = ({ userId, children }) => {
   const [cart, setCart] = useState<Cart | null>(null);
   const [orders, setOrders] = useState<Cart[]>([]);
   const [orderItems, setOrderItems] = useState<any[]>([]);
@@ -103,7 +106,7 @@ export const CartProvider: React.FC<{ userId?: string; children: React.ReactNode
       if (size) newItem.size = size;
       if (base) newItem.base = base;
       if (note) newItem.note = note;
-      items.push(newItem);
+      items = [newItem, ...items];
     }
     const filteredItems = items.filter(i => i.quantity > 0);
     let totalAmount = 0;
@@ -115,11 +118,11 @@ export const CartProvider: React.FC<{ userId?: string; children: React.ReactNode
       totalAmount += price * (item.quantity || 1);
     }
     const newCart: Cart = {
-      userId: userId || 'guest',
+      userId: userId,
       orderItems: { items: filteredItems },
       totalAmount,
       status: 'pending',
-      createdBy: userId || 'guest',
+      createdBy: userId,
       id: cart?.id,
     };
     saveCart(newCart);
@@ -143,11 +146,11 @@ export const CartProvider: React.FC<{ userId?: string; children: React.ReactNode
       totalAmount += price * (item.quantity || 1);
     }
     const newCart: Cart = {
-      userId: userId || 'guest',
+      userId: userId,
       orderItems: { items: filteredItems },
       totalAmount,
       status: 'pending',
-      createdBy: userId || 'guest',
+      createdBy: userId,
       id: cart?.id,
     };
     saveCart(newCart);
