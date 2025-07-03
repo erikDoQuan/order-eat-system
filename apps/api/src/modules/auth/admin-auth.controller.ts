@@ -35,7 +35,8 @@ export class AdminAuthController {
 
     delete resp.refreshToken;
 
-    return resp;
+    response.status(200).json(resp);
+    return;
   }
   @Post('logout')
   @ApiOperation({ summary: 'Log out' })

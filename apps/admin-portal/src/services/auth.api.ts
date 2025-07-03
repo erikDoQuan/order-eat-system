@@ -6,12 +6,21 @@ export async function login(
   message: string;
   accessToken?: string;
   user?: {
+    id: string;
     email: string;
     firstName?: string;
     lastName?: string;
     phoneNumber?: string;
     phone_number?: string;
+    address?: string;
     role: 'user' | 'admin';
+    isActive: boolean;
+    lastLogin: string;
+    createdAt: string;
+    updatedAt: string;
+    createdBy: string;
+    updatedBy: string;
+    avatar?: string;
   };
 }> {
   try {
@@ -31,12 +40,21 @@ export async function login(
         message: 'Đăng nhập thành công',
         accessToken: data.accessToken,
         user: {
+          id: data.user.id,
           email: data.user.email,
           firstName: data.user.firstName,
           lastName: data.user.lastName,
           phoneNumber: data.user.phoneNumber,
           phone_number: data.user.phone_number || data.user.phoneNumber,
+          address: data.user.address,
           role: data.user.role,
+          isActive: data.user.isActive,
+          lastLogin: data.user.lastLogin,
+          createdAt: data.user.createdAt,
+          updatedAt: data.user.updatedAt,
+          createdBy: data.user.createdBy,
+          updatedBy: data.user.updatedBy,
+          avatar: data.user.avatar,
         },
       };
     }

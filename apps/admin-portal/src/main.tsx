@@ -45,10 +45,9 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
 function AppWithCartProvider() {
   const { user } = useContext(AuthContext);
-  // Chỉ render CartProvider khi đã có userId hợp lệ
-  if (!user?.id) return null;
+  // Luôn render CartProvider, truyền userId nếu có
   return (
-    <CartProvider userId={user.id}>
+    <CartProvider userId={user?.id}>
       <Routes>
         {/* Các route dùng layout */}
         <Route path="/" element={<MainLayout />}>
@@ -71,7 +70,18 @@ function AppWithCartProvider() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+const container = document.getElementById('root');
+if (!container) throw new Error('Root container missing in index.html');
+
+// Use a global variable to avoid duplicate createRoot in HMR/dev
+// @ts-ignore
+if (!window.__REACT_ROOT__) {
+  // @ts-ignore
+  window.__REACT_ROOT__ = ReactDOM.createRoot(container);
+}
+// @ts-ignore
+const root = window.__REACT_ROOT__;
+root.render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>

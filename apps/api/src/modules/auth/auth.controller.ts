@@ -34,7 +34,8 @@ export class AuthController {
     });
 
     // Không xóa resp.refreshToken, giữ nguyên accessToken trong response
-    return resp;
+    response.status(200).json(resp);
+    return;
   }
 
   @Post('logout')

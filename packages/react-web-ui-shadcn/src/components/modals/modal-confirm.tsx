@@ -19,9 +19,10 @@ type ModalConfirmProps = {
   btnNo?: string;
   onYes: () => void;
   onNo: () => void;
+  btnYesClassName?: string;
 };
 
-export const ModalConfirm: FC<ModalConfirmProps> = ({ visible = false, title, message, btnYes, btnNo, onYes, onNo }) => {
+export const ModalConfirm: FC<ModalConfirmProps> = ({ visible = false, title, message, btnYes, btnNo, onYes, onNo, btnYesClassName }) => {
   return (
     <AlertDialog open={visible}>
       <AlertDialogContent>
@@ -31,7 +32,7 @@ export const ModalConfirm: FC<ModalConfirmProps> = ({ visible = false, title, me
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onNo}>{btnNo ?? 'No'}</AlertDialogCancel>
-          <AlertDialogAction onClick={onYes}>{btnYes ?? 'Yes'}</AlertDialogAction>
+          <AlertDialogAction onClick={onYes} className={btnYesClassName}>{btnYes ?? 'Yes'}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

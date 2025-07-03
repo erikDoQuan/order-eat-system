@@ -5,32 +5,19 @@ import { getAllDishes } from '../services/dish.api';
 import type { Dish } from '../types/dish.type';
 import { Trash2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useNavigate } from 'react-router-dom';
+import { ModalConfirm } from '../../../../packages/react-web-ui-shadcn/src/components/modals/modal-confirm';
 
 export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const { user } = useContext(AuthContext);
-  const { removeFromCart } = useCart();
-  const [orderItems, setOrderItems] = useState<any[]>([]);
+  const { orderItems, removeFromCart } = useCart();
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const [confirmRemove, setConfirmRemove] = useState<{ open: boolean; item: any | null }>({ open: false, item: null });
 
   useEffect(() => {
     getAllDishes().then(setDishes).catch(() => setDishes([]));
   }, []);
-
-  useEffect(() => {
-    if (user?.id) {
-      setLoading(true);
-      getOrderItemsByUserId(user.id)
-        .then(items => {
-          setOrderItems(items);
-        })
-        .catch((e) => {
-          // Không hiển thị lỗi ra UI, chỉ log
-          console.error('Không lấy được dữ liệu giỏ hàng', e);
-        })
-        .finally(() => setLoading(false));
-    }
-  }, [user?.id]);
 
   const getDish = (dishId: string) => dishes.find(d => d.id === dishId);
 
@@ -41,29 +28,19 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     return sum + price * (item.quantity || 1);
   }, 0);
 
-  // Xử lý xóa item khỏi cart hiện tại, cập nhật UI trước, đồng bộ backend sau
+  // Xử lý xóa item khỏi cart hiện tại, cập nhật UI trước, đồng bộ localStorage qua context
   const handleRemove = async (itemToRemove: any) => {
     const dish = getDish(itemToRemove.dishId);
     const confirmMsg = `Bạn có chắc muốn xóa món '${dish ? dish.name : itemToRemove.dishId}' khỏi giỏ hàng không?`;
     if (!window.confirm(confirmMsg)) return;
-    // Cập nhật UI trước
-    setOrderItems(prev => {
-      const newItems = prev.filter(i => !(
-        i.dishId === itemToRemove.dishId &&
-        i.size === itemToRemove.size &&
-        i.base === itemToRemove.base &&
-        i.note === itemToRemove.note
-      ));
-      if (newItems.length === 0) onClose();
-      return newItems;
-    });
-    // Gọi API để đồng bộ backend
     await removeFromCart({
       dishId: itemToRemove.dishId,
       size: itemToRemove.size,
       base: itemToRemove.base,
       note: itemToRemove.note,
     });
+    // Đóng popup nếu hết hàng
+    if (orderItems.length === 1) onClose();
   };
 
   return (
@@ -79,7 +56,7 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             {orderItems.map((item, idx) => {
               const dish = getDish(item.dishId);
               return (
-                <div key={`${item.orderId}-${item.dishId}-${item.size || ''}-${item.base || ''}-${item.note || ''}-${idx}`} style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
+                <div key={`${item.dishId}-${item.size || ''}-${item.base || ''}-${item.note || ''}-${idx}`} style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
                   {dish && dish.imageUrl && (
                     <img src={dish.imageUrl} alt={dish.name} style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, marginRight: 12 }} />
                   )}
@@ -91,7 +68,11 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                       <div style={{ color: '#666', fontSize: 14 }}>Size: {item.size}</div>
                     )}
                     {item.base && (
-                      <div style={{ color: '#666', fontSize: 14 }}>Đế: {item.base}</div>
+                      <div style={{ color: '#666', fontSize: 14 }}>
+                        Đế: {item.base === 'dày' || item.base === 'mỏng'
+                          ? item.base.charAt(0).toUpperCase() + item.base.slice(1)
+                          : (dishes.find(d => d.id === item.base)?.name || item.base)}
+                      </div>
                     )}
                     {item.note && item.note.trim() && (
                       <div style={{ color: '#666', fontSize: 14 }}>Ghi chú: {item.note}</div>
@@ -101,19 +82,19 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     )}
                   </div>
                   <button
-                    onClick={() => handleRemove(item)}
+                    onClick={() => setConfirmRemove({ open: true, item })}
                     style={{
                       marginLeft: 8,
                       background: 'none',
                       border: 'none',
-                      color: '#C92A15',
+                      color: '#dc2626',
                       fontSize: 18,
                       cursor: 'pointer',
                       alignSelf: 'center',
                     }}
                     title="Xóa món này"
                   >
-                    <Trash2 size={20} />
+                    <Trash2 size={20} color="#dc2626" />
                   </button>
                 </div>
               );
@@ -123,7 +104,13 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           <div style={{ fontWeight: 600, fontSize: 17, color: '#C92A15', textAlign: 'right', margin: '8px 0 12px' }}>
             Tổng tiền: {totalAmount.toLocaleString('vi-VN')}₫
           </div>
-          <button style={{ width: '100%', background: '#17823c', color: 'white', border: 'none', borderRadius: 8, padding: '12px 0', fontWeight: 700, fontSize: 17, marginTop: 12, cursor: 'pointer' }}>Thanh toán</button>
+          <button
+            style={{ width: '100%', background: '#17823c', color: 'white', border: 'none', borderRadius: 8, padding: '12px 0', fontWeight: 700, fontSize: 17, marginTop: 12, cursor: 'pointer' }}
+            onClick={() => {
+              onClose();
+              navigate('/checkout');
+            }}
+          >Thanh toán</button>
         </>
       )}
       <button
@@ -147,6 +134,26 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       >
         &times;
       </button>
+      <ModalConfirm
+        visible={confirmRemove.open}
+        title="Xác nhận xoá"
+        message={`Bạn có chắc muốn xoá món '${getDish(confirmRemove.item?.dishId)?.name || ''}' khỏi giỏ hàng không?`}
+        btnYes="Xoá"
+        btnNo="Huỷ"
+        onYes={async () => {
+          if (confirmRemove.item) {
+            await removeFromCart({
+              dishId: confirmRemove.item.dishId,
+              size: confirmRemove.item.size,
+              base: confirmRemove.item.base,
+              note: confirmRemove.item.note,
+            });
+          }
+          setConfirmRemove({ open: false, item: null });
+        }}
+        onNo={() => setConfirmRemove({ open: false, item: null })}
+        btnYesClassName="bg-[#dc2626] hover:bg-[#b91c1c] text-white border-none"
+      />
     </div>
   );
 }; 
