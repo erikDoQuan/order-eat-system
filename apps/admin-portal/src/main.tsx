@@ -1,43 +1,29 @@
 import React, { useContext } from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
-
-import AccountAdminPage from './admin/AccountAdminPage';
-import AdminPage from './admin/AdminPage';
-import { AuthContext } from './context/AuthContext';
-import AuthProvider from './context/AuthProvider';
 import MainLayout from './layouts/MainLayout';
-import AccountPage from './pages/AccountPage';
 import HomePage from './pages/HomePage';
+import AccountPage from './pages/AccountPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminCategoryPage from './admin/AdminCategoryPage';
 import AdminDishPage from './admin/AdminDishPage';
 import AdminUserPage from './admin/AdminUserPage';
+import AdminPage from './admin/AdminPage';
+import AccountAdminPage from './admin/AccountAdminPage';
+import CheckoutPage from './pages/CheckoutPage';
+import AuthProvider from './context/AuthProvider';
+import { AuthContext } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 
 import './globals.scss';
 
-function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user } = useContext(AuthContext);
-  if (!user || user.role !== 'admin') {
-    return <Navigate to="/login" replace />;
-  }
-  return <>{children}</>;
-}
-
-// Thiết lập interceptor cho axios để tự động gửi accessToken
 axios.interceptors.request.use((config) => {
-  const token = localStorage.getItem('order-eat-access-token');
-  if (token) {
-    config.headers = config.headers || {};
-    config.headers.Authorization = `Bearer ${token}`;
-  }
   return config;
 });
 
-
+// Thêm interceptor cho axios để tự động xử lý lỗi 401: nếu gặp lỗi 401 thì xóa accessToken và chuyển hướng về trang /login.
 axios.interceptors.response.use(
   response => response,
   error => {
@@ -48,6 +34,14 @@ axios.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useContext(AuthContext);
+  if (!user || user.role !== 'admin') {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+}
 
 function AppWithCartProvider() {
   const { user } = useContext(AuthContext);
@@ -71,6 +65,7 @@ function AppWithCartProvider() {
         {/* Các route không dùng layout */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
       </Routes>
     </CartProvider>
   );
@@ -83,5 +78,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <AppWithCartProvider />
       </AuthProvider>
     </BrowserRouter>
-  </React.StrictMode>,
+  </React.StrictMode>
 );

@@ -20,7 +20,7 @@ export class AdminAuthController {
   @Post('login')
   @Throttle({ default: { limit: 10, ttl: 10000 } })
   @ApiOperation({ summary: 'Login with credentials' })
-  @ApiDocumentResponse({ message: 'Login successfully', model: LoginWithCredentialsDoc })
+  @ApiDocumentResponse({ status: 200, message: 'Login successfully', model: LoginWithCredentialsDoc })
   async login(@Req() req: Request, @Res({ passthrough: true }) response: ExpressResponse, @Body() signInDto: SignInDto) {
     const ip = req.ip;
     const ua = req.headers['user-agent'] || '';
@@ -39,7 +39,7 @@ export class AdminAuthController {
   }
   @Post('logout')
   @ApiOperation({ summary: 'Log out' })
-  @ApiDocumentResponse({ message: 'Logout successfully', model: SignOutDoc })
+  @ApiDocumentResponse({ status: 200, message: 'Logout successfully', model: SignOutDoc })
   async signOut(@Req() req: Request) {
     const ip = req.ip;
     const ua = req.headers['user-agent'] || '';

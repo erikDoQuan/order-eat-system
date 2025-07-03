@@ -32,6 +32,7 @@ export class OrderRepository {
 
     if (userId) {
       baseConditions.push(eq(orders.userId, userId));
+      baseConditions.push(eq(orders.isActive, true));
     }
 
     if (status && status.length > 0) {
@@ -42,9 +43,6 @@ export class OrderRepository {
       const searchTerm = `%${removeDiacritics(search.trim())}%`;
       baseConditions.push(ilike(sql`unaccent(${orders.status})`, searchTerm));
     }
-
-    // Chỉ lấy các order còn hoạt động
-    baseConditions.push(eq(orders['isActive'], true));
 
     const whereCondition = and(...baseConditions);
 
@@ -62,9 +60,12 @@ export class OrderRepository {
 
     const [results, countResult] = await Promise.all([query, countQuery]);
 
+    // Lọc lại ở đây để đảm bảo chỉ trả về order còn hoạt động
+    const filteredResults = (results as Order[]);
+    console.log('[ORDER][FIND] Kết quả trả về:', filteredResults.map(o => o.id));
     return {
-      data: results as Order[],
-      totalItems: countResult?.[0]?.count || 0,
+      data: filteredResults,
+      totalItems: filteredResults.length,
     };
   }
 
@@ -75,6 +76,18 @@ export class OrderRepository {
   }
 
   async create(data: CreateOrderDto): Promise<Order> {
+    // Kiểm tra đã có order pending cho user chưa
+    const existing = await this.drizzle.db.query.orders.findFirst({
+      where: and(
+        eq(orders.userId, data.userId),
+        eq(orders.status, 'pending'),
+        eq(orders.isActive, true)
+      ),
+      orderBy: desc(orders.createdAt),
+    });
+    if (existing) {
+      return existing;
+    }
     const [created] = await this.drizzle.db
       .insert(orders)
       .values(data as OrderInsert)
@@ -93,12 +106,15 @@ export class OrderRepository {
     return updated ?? null;
   }
 
-  async delete(id: string): Promise<Order | null> {
-    const [deleted] = await this.drizzle.db
-      .update(orders)
-      .set({ isActive: false } as OrderUpdate)
-      .where(eq(orders.id, id))
-      .returning();
-    return deleted ?? null;
+  async findOrderByItemId(orderItemId: string): Promise<Order | null> {
+    const ordersList = await this.drizzle.db.query.orders.findMany({});
+    // Đảm bảo chỉ trả về object đúng kiểu Order
+    return (ordersList as unknown as Order[]).find(order =>
+      ((order.orderItems as { items: any[] })?.items || []).some((item: any) => item.id === orderItemId)
+    ) || null;
+  }
+
+  async hardDelete(id: string): Promise<void> {
+    await this.drizzle.db.delete(orders).where(eq(orders.id, id));
   }
 }

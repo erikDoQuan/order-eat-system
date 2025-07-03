@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 import '../css/HomePage.css';
@@ -8,6 +8,9 @@ import type { Dish } from '../types/dish.type';
 import { getAllCategories } from '../services/category.api';
 import { getAllDishes } from '../services/dish.api';
 import DishCard from './DishCard';
+import { CartPopup } from '../components/CartPopup';
+import { getOrderItemsByUserId } from '../services/user.api';
+import { AuthContext } from '../context/AuthContext';
 
 export default function HomePage() {
   const [dishes, setDishes] = useState<Dish[]>([]);
@@ -16,12 +19,15 @@ export default function HomePage() {
   const [visibleChickenCount, setVisibleChickenCount] = useState(3);
   const [filterPizzaType, setFilterPizzaType] = useState<string>('Tất cả');
   const location = useLocation();
+  const [showCart, setShowCart] = useState(false);
+  const [orderItems, setOrderItems] = useState<any[]>([]);
+  const [cartLoading, setCartLoading] = useState(false);
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     getAllDishes().then(d => setDishes(d || []));
     getAllCategories().then(c => setCategories(c || []));
   }, []);
-
 
   useEffect(() => {
     if (location.pathname === '/') setFilterPizzaType('Tất cả');
@@ -48,6 +54,17 @@ export default function HomePage() {
     if (filterPizzaType === 'Pizza Truyền Thống') return dish.typeName?.trim().toLowerCase() === 'truyền thống';
     return true;
   });
+
+  const handleOpenCart = () => {
+    if (user?.id) {
+      setCartLoading(true);
+      getOrderItemsByUserId(user.id)
+        .then(items => setOrderItems(items))
+        .finally(() => setCartLoading(false));
+    }
+    setShowCart(true);
+  };
+  const handleCloseCart = () => setShowCart(false);
 
   return (
     <div className="min-h-screen bg-white py-8">
@@ -141,6 +158,25 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+      )}
+      {showCart && (
+        <>
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh',
+              background: 'rgba(0,0,0,0.1)',
+              zIndex: 99,
+            }}
+            onClick={handleCloseCart}
+          />
+          <CartPopup
+            onClose={handleCloseCart}
+          />
+        </>
       )}
     </div>
   );

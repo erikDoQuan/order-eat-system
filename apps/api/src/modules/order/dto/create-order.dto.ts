@@ -28,7 +28,7 @@ export class CreateOrderDto {
     example: 289000,
   })
   @IsNumber()
-  totalAmount: number;
+  totalAmount: string;
 
   @ApiProperty({
     description: 'Trạng thái đơn hàng',

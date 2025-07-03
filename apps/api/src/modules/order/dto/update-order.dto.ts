@@ -1,4 +1,4 @@
-import { IsOptional, IsEnum, IsUUID, IsNumber, IsObject } from 'class-validator';
+import { IsOptional, IsEnum, IsUUID, IsNumber, IsObject, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { orderStatusEnumValues } from '../constants/order-status.constant';
 
@@ -23,7 +23,7 @@ export class UpdateOrderDto {
   })
   @IsOptional()
   @IsNumber()
-  totalAmount?: number;
+  totalAmount?: string;
 
   @ApiProperty({
     description: 'Cập nhật trạng thái đơn hàng',
@@ -43,4 +43,13 @@ export class UpdateOrderDto {
   @IsOptional()
   @IsUUID()
   updatedBy?: string;
+
+  @ApiProperty({
+    description: 'Trạng thái hoạt động của đơn hàng',
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

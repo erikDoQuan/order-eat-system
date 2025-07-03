@@ -31,6 +31,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     const accessToken = localStorage.getItem('order-eat-access-token');
     if (!accessToken) {
       setUser(null);
+      localStorage.removeItem(STORAGE_KEY);
       return;
     }
     fetchMe().then(me => {

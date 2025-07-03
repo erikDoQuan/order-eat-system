@@ -27,7 +27,7 @@ export class DishOptionController {
 
   @Post()
   @ApiOperation({ summary: 'Tạo mới tùy chọn món ăn' })
-  @ApiResponse({ status: 201, description: 'Tùy chọn món ăn đã được tạo thành công.' })
+  @ApiResponse({ status: 200, description: 'Tùy chọn món ăn đã được tạo thành công.' })
   create(@Body() dto: CreateDishOptionDto) {
     return this.service.create(dto);
   }

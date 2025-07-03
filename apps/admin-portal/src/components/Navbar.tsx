@@ -6,6 +6,7 @@ import { AuthContext } from '../context/AuthContext';
 import { CartIcon } from './CartIcon';
 import { CartPopup } from './CartPopup';
 import { useCart } from '../context/CartContext';
+import { getAllDishes } from '../services/dish.api';
 
 import '../css/Navbar.css';
 
@@ -18,6 +19,9 @@ export default function Navbar() {
   const userIconRef = useRef<HTMLDivElement>(null);
   const [showCartPopup, setShowCartPopup] = useState(false);
   const { fetchCart } = useCart();
+  const [orderItems, setOrderItems] = useState<any[]>([]);
+  const [cartLoading, setCartLoading] = useState(false);
+  const [dishes, setDishes] = useState<any[]>([]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -29,6 +33,10 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showMenu]);
 
+  useEffect(() => {
+    getAllDishes().then(d => setDishes(d || []));
+  }, []);
+
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('order-eat-access-token');
@@ -36,10 +44,13 @@ export default function Navbar() {
     navigate('/', { replace: true });
   };
 
-  const handleOpenCart = useCallback(async () => {
-    await fetchCart();
+  const handleOpenCart = () => {
+    if (user?.id) {
+      setCartLoading(true);
+      fetchCart().finally(() => setCartLoading(false));
+    }
     setShowCartPopup(true);
-  }, [fetchCart]);
+  };
 
   return (
     <nav
@@ -158,7 +169,25 @@ export default function Navbar() {
           <div className="ml-auto flex items-center gap-2 rounded-full border-2 border-white bg-white px-4 py-2 transition hover:shadow-lg" style={{ cursor: 'pointer', position: 'relative' }} onClick={handleOpenCart}>
             <CartIcon />
             <span className="text-sm font-bold text-[#a01f10]">Giỏ hàng</span>
-            {showCartPopup && <CartPopup onClose={() => setShowCartPopup(false)} />}
+            {showCartPopup && (
+              <>
+                <div
+                  style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100vw',
+                    height: '100vh',
+                    background: 'rgba(0,0,0,0.1)',
+                    zIndex: 99,
+                  }}
+                  onClick={() => setShowCartPopup(false)}
+                />
+                <CartPopup
+                  onClose={() => setShowCartPopup(false)}
+                />
+              </>
+            )}
           </div>
         </div>
       </div>

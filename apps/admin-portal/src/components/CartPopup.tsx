@@ -3,18 +3,15 @@ import { AuthContext } from '../context/AuthContext';
 import { getOrderItemsByUserId } from '../services/user.api';
 import { getAllDishes } from '../services/dish.api';
 import type { Dish } from '../types/dish.type';
-import { FaTimes } from 'react-icons/fa';
-import { useCart } from '../context/CartContext';
-import axios from 'axios';
 import { Trash2 } from 'lucide-react';
+import { useCart } from '../context/CartContext';
 
 export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { user } = useContext(AuthContext);
+  const { removeFromCart } = useCart();
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { removeFromCart } = useCart();
 
   useEffect(() => {
     getAllDishes().then(setDishes).catch(() => setDishes([]));
@@ -26,9 +23,11 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       getOrderItemsByUserId(user.id)
         .then(items => {
           setOrderItems(items);
-          setError(null);
         })
-        .catch(() => setError('Không lấy được dữ liệu giỏ hàng'))
+        .catch((e) => {
+          // Không hiển thị lỗi ra UI, chỉ log
+          console.error('Không lấy được dữ liệu giỏ hàng', e);
+        })
         .finally(() => setLoading(false));
     }
   }, [user?.id]);
@@ -68,17 +67,15 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   };
 
   return (
-    <div style={{ position: 'absolute', top: 50, right: 0, width: 420, background: '#fff', borderRadius: 16, boxShadow: '0 4px 32px #0003', zIndex: 100, padding: 32 }}>
+    <div style={{ position: 'absolute', top: 50, right: 0, width: 420, background: '#fff', borderRadius: 16, boxShadow: '0 4px 32px #0003', zIndex: 100, padding: 32, display: 'flex', flexDirection: 'column', maxHeight: 600 }}>
       <div style={{ fontWeight: 800, fontSize: 22, marginBottom: 18 }}>Giỏ hàng</div>
       {loading ? (
         <div style={{ color: '#888', textAlign: 'center', padding: 32 }}>Đang tải...</div>
-      ) : error ? (
-        <div style={{ color: 'red', textAlign: 'center', padding: 32 }}>{error}</div>
       ) : orderItems.length === 0 ? (
         <div style={{ color: '#888', textAlign: 'center', padding: 32 }}>Chưa có món nào trong giỏ hàng</div>
       ) : (
         <>
-          <div style={{ maxHeight: 420, overflowY: 'auto', marginBottom: 12 }}>
+          <div style={{ flex: 1, maxHeight: 320, overflowY: 'auto', marginBottom: 12 }}>
             {orderItems.map((item, idx) => {
               const dish = getDish(item.dishId);
               return (
@@ -126,10 +123,30 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           <div style={{ fontWeight: 600, fontSize: 17, color: '#C92A15', textAlign: 'right', margin: '8px 0 12px' }}>
             Tổng tiền: {totalAmount.toLocaleString('vi-VN')}₫
           </div>
-          <button style={{ width: '100%', background: '#17823c', color: 'white', border: 'none', borderRadius: 8, padding: '12px 0', fontWeight: 700, fontSize: 17, marginTop: 0, cursor: 'pointer' }}>Thanh toán</button>
+          <button style={{ width: '100%', background: '#17823c', color: 'white', border: 'none', borderRadius: 8, padding: '12px 0', fontWeight: 700, fontSize: 17, marginTop: 12, cursor: 'pointer' }}>Thanh toán</button>
         </>
       )}
-      <button onClick={onClose} style={{ position: 'absolute', top: 8, right: 12, background: 'none', border: 'none', fontSize: 22, color: '#888', cursor: 'pointer' }}>×</button>
+      <button
+        type="button"
+        onClick={e => {
+          e.preventDefault();
+          e.stopPropagation();
+          onClose();
+        }}
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 12,
+          background: 'none',
+          border: 'none',
+          fontSize: 22,
+          color: '#888',
+          cursor: 'pointer',
+        }}
+        aria-label="Đóng giỏ hàng"
+      >
+        &times;
+      </button>
     </div>
   );
 }; 

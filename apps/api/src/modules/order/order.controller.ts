@@ -7,8 +7,11 @@ import {
   Param,
   Delete,
   Query,
+  Req,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
+import { Request } from 'express';
 
 import { Response } from '~/common/decorators/response.decorator';
 import { OrderService } from './order.service';
@@ -63,12 +66,10 @@ export class OrderController {
   }
 
   @Delete(':id')
-  @ApiOperation({
-    summary: 'Xoá đơn hàng theo ID',
-    description: 'Xoá một đơn hàng khỏi hệ thống dựa vào ID.',
-  })
+  @ApiOperation({ summary: 'Xoá đơn hàng theo ID', description: 'Xoá một đơn hàng khỏi hệ thống dựa vào ID.' })
   @Response({ message: 'Xoá đơn hàng thành công' })
-  remove(@Param('id') id: string) {
-    return this.orderService.delete(id);
+  async remove(@Param('id') id: string) {
+    await this.orderService.deleteHard(id);
+    return { statusCode: 200, message: 'Xoá đơn hàng thành công', data: { id } };
   }
 }

@@ -20,6 +20,10 @@ export const getAllUsers = async (): Promise<User[]> => {
   return res.data.data;
 };
 
+export const deleteUser = async (id: string) => {
+  // implementation
+};
+
 export async function register(
   email: string,
   password: string,
@@ -53,6 +57,11 @@ export async function register(
   }
 }
 
+export async function deleteOrder(id: string) {
+  if (!id || typeof id !== 'string') throw new Error('Order id is required and must be a string');
+  return axios.delete(`/api/v1/orders/${id}`);
+}
+
 export const createUser = async (data: Partial<User> & { password: string }) => {
   const res = await axios.post('/api/v1/admin/users', data);
   return res.data;
@@ -60,11 +69,6 @@ export const createUser = async (data: Partial<User> & { password: string }) => 
 
 export const updateUser = async (id: string, data: Partial<User>) => {
   const res = await axios.patch(`/api/v1/admin/users/${id}`, data);
-  return res.data;
-};
-
-export const deleteUser = async (id: string) => {
-  const res = await axios.delete(`/api/v1/admin/users/${id}`);
   return res.data;
 };
 
@@ -104,3 +108,11 @@ export async function getOrderItemsByUserId(userId: string) {
   console.log('[DEBUG] allItems:', allItems);
   return allItems;
 }
+
+export const updateOrderItemQuantity = (
+  orderItemId: string,
+  quantity: number,
+) =>
+  axios
+    .patch(`/api/v1/order-items/${orderItemId}`, { quantity })
+    .then(res => res.data);
