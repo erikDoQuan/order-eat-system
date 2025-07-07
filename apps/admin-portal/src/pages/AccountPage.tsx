@@ -35,6 +35,8 @@ export default function AccountPage() {
   });
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [dishes, setDishes] = useState<Dish[]>([]);
+  const [searchValue, setSearchValue] = useState('');
+  const [searchResult, setSearchResult] = useState<any[]|null>(null);
 
   // Luôn đồng bộ form với user mỗi khi user thay đổi
   useEffect(() => {
@@ -139,6 +141,27 @@ export default function AccountPage() {
     return dish ? dish.name : dishId;
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const value = searchValue.trim();
+    if (!value) {
+      setSearchResult(null);
+      return;
+    }
+    const filtered = recentOrders.filter(order => {
+      if (order.status !== 'completed') return false;
+      const phone = order.phoneNumber || order.phone_number || '';
+      const orderNum = String(order.order_number || order.orderNumber || '');
+      const id = String(order.id || '');
+      return (
+        phone.includes(value) ||
+        orderNum.includes(value) ||
+        id.includes(value)
+      );
+    });
+    setSearchResult(filtered);
+  };
+
   return (
     <>
       <div className="account-container">
@@ -158,7 +181,93 @@ export default function AccountPage() {
           </ul>
         </div>
         <div className="account-main">
-          <h1 className="account-main-title">Thông tin chung</h1>
+          {tab === 'info' && <h1 className="account-main-title">Thông tin chung</h1>}
+          {tab === 'password' && <h1 className="account-main-title">Đổi mật khẩu</h1>}
+          {tab === 'history' && (
+            <>
+              <div className="account-orders-box">
+                <h1 className="account-main-title">Tra cứu đơn hàng</h1>
+                <form onSubmit={handleSearch} style={{marginBottom: 0}}>
+                  <div style={{fontWeight: 600, fontSize: 18, marginBottom: 10}}>Nhập số điện thoại hoặc mã đơn hàng</div>
+                  <input
+                    type="text"
+                    value={searchValue}
+                    onChange={e => setSearchValue(e.target.value)}
+                    placeholder="Nhập số điện thoại hoặc mã đơn hàng"
+                    style={{width: '100%', padding: '16px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 17, background: '#fafafa', marginBottom: 18}}
+                  />
+                  <button type="submit" style={{
+                    background: '#C92A15',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: 22,
+                    border: 'none',
+                    borderRadius: 10,
+                    padding: '13px 48px',
+                    cursor: 'pointer',
+                    marginTop: 0,
+                    maxWidth: 320,
+                    width: '100%',
+                    boxShadow: '0 2px 8px #C92A1533',
+                    letterSpacing: 0.1,
+                    transition: 'background 0.2s',
+                  }}>
+                    Tra Cứu
+                  </button>
+                </form>
+              </div>
+              <div className="account-orders-box" style={{marginTop: 32}}>
+                <h2 className="account-main-title" style={{fontSize: 28, marginBottom: 18}}>Lịch sử đơn hàng</h2>
+                <div className="account-recent-orders">
+                  {(searchResult !== null ? searchResult : recentOrders.filter(order => order.status === 'completed')).length === 0 && (
+                    <div className="text-gray-500">Bạn chưa có đơn hàng hoàn thành nào</div>
+                  )}
+                  <table className="table-recent-orders" style={{width:'100%',marginTop:8}}>
+                    <thead>
+                      <tr>
+                        <th>Mã</th>
+                        <th>Sản Phẩm</th>
+                        <th>Ngày mua</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(searchResult !== null ? searchResult : recentOrders.filter(order => order.status === 'completed')).map(order => {
+                        const items = (order.orderItems?.items || []);
+                        const dishNames = items.map((item: any) => getDishName(item.dishId)).join(', ');
+                        const orderNumber = order.order_number || order.orderNumber || '-';
+                        const orderLink = `/orders/${orderNumber}`;
+                        const date = new Date(order.createdAt);
+                        const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                        let statusText = '';
+                        if (order.status === 'cancelled') statusText = 'Đã hủy';
+                        else if (order.status === 'completed') statusText = 'Hoàn thành';
+                        else if (order.status === 'confirmed') statusText = 'Đã xác nhận';
+                        else if (order.status === 'pending') statusText = 'Chờ xác nhận';
+                        else statusText = order.status;
+                        return (
+                          <tr key={order.id}>
+                            <td>
+                              <a href={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>{orderNumber}</a>
+                            </td>
+                            <td style={{whiteSpace:'pre-line'}}>{dishNames}</td>
+                            <td>{dateStr}</td>
+                            <td>{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
+                            <td className={
+                              order.status === 'cancelled' ? 'order-status-cancelled' :
+                              order.status === 'completed' ? 'order-status-completed' :
+                              order.status === 'confirmed' ? 'order-status-confirmed' : ''
+                            }>{statusText}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
           {tab === 'info' && (
             <>
               <div className="account-info-box">
@@ -353,16 +462,13 @@ export default function AccountPage() {
             </>
           )}
           {tab === 'password' && (
-            <>
-              <div className="account-info-header">
-                <span className="account-info-title">ĐỔI MẬT KHẨU</span>
-              </div>
+            <div className="account-info-box">
               <form className="account-info-content" onSubmit={handleChangePassword} style={{
                 width: '100%',
-                background: '#fff',
-                borderRadius: 12,
-                boxShadow: '0 2px 8px #0001',
-                padding: '18px 0 18px 0',
+                background: 'none',
+                borderRadius: 0,
+                boxShadow: 'none',
+                padding: 0,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'flex-start',
@@ -390,8 +496,8 @@ export default function AccountPage() {
                   show: showPw.confirm,
                   toggle: () => setShowPw(s => ({ ...s, confirm: !s.confirm })),
                 }].map((item, idx) => (
-                  <div key={item.name} style={{ display: 'flex', alignItems: 'center', width: '100%', marginBottom: idx === 2 ? 18 : 14 }}>
-                    <label style={{ fontWeight: 700, color: '#222', minWidth: 130, maxWidth: 130, marginRight: 0, fontSize: 16, letterSpacing: 0.1, textAlign: 'left', whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                  <div key={item.name} style={{ display: 'flex', alignItems: 'center', width: '100%', marginBottom: idx === 2 ? 18 : 14, maxWidth: 800 }}>
+                    <label style={{ fontWeight: 700, color: '#222', minWidth: 140, maxWidth: 140, fontSize: 17, textAlign: 'left' }}>
                       {item.label}
                     </label>
                     <div style={{ position: 'relative', flex: 1, minWidth: 0, marginLeft: 12 }}>
@@ -402,9 +508,10 @@ export default function AccountPage() {
                         required
                         style={{
                           width: '100%',
+                          maxWidth: 720,
                           boxSizing: 'border-box',
                           padding: '12px 40px 12px 16px',
-                          borderRadius: 10,
+                          borderRadius: 8,
                           border: '1.5px solid #e0e0e0',
                           fontSize: 16,
                           background: '#fafafa',
@@ -420,85 +527,31 @@ export default function AccountPage() {
                     </div>
                   </div>
                 ))}
-                <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                  <div style={{ minWidth: 130, marginRight: 12 }}></div>
-                  <button
-                    type="submit"
-                    disabled={pwSaving}
-                    style={{
-                      background: '#C92A15',
-                      color: 'white',
-                      width: '100%',
-                      border: 'none',
-                      borderRadius: 10,
-                      padding: '13px 0',
-                      fontWeight: 700,
-                      fontSize: 18,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 10,
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 8px #C92A1533',
-                      letterSpacing: 0.1,
-                    }}
-                  >
-                    Đổi mật khẩu
-                  </button>
-                </div>
+                <button
+                  type="submit"
+                  disabled={pwSaving}
+                  style={{
+                    background: '#C92A15',
+                    color: 'white',
+                    minWidth: 180,
+                    maxWidth: 320,
+                    width: '100%',
+                    border: 'none',
+                    borderRadius: 14,
+                    padding: '14px 0',
+                    fontWeight: 700,
+                    fontSize: 20,
+                    display: 'block',
+                    margin: '24px 0 0 152px',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px #C92A1533',
+                    letterSpacing: 0.1,
+                    transition: 'background 0.2s',
+                  }}
+                >
+                  Đổi mật khẩu
+                </button>
               </form>
-            </>
-          )}
-          {tab === 'history' && (
-            <div className="account-orders-box">
-              <span className="account-orders-title">LỊCH SỬ MUA HÀNG</span>
-              <div className="account-recent-orders">
-                {recentOrders.filter(order => order.status === 'completed').length === 0 && (
-                  <div className="text-gray-500">Bạn chưa có đơn hàng hoàn thành nào</div>
-                )}
-                <table className="table-recent-orders" style={{width:'100%',marginTop:8}}>
-                  <thead>
-                    <tr>
-                      <th>Mã</th>
-                      <th>Sản Phẩm</th>
-                      <th>Ngày mua</th>
-                      <th>Tổng tiền</th>
-                      <th>Trạng thái</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentOrders.filter(order => order.status === 'completed').map(order => {
-                      const items = (order.orderItems?.items || []);
-                      const dishNames = items.map((item: any) => getDishName(item.dishId)).join(', ');
-                      const orderNumber = order.order_number || order.orderNumber || '-';
-                      const orderLink = `/orders/${orderNumber}`;
-                      const date = new Date(order.createdAt);
-                      const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                      let statusText = '';
-                      if (order.status === 'cancelled') statusText = 'Đã hủy';
-                      else if (order.status === 'completed') statusText = 'Hoàn thành';
-                      else if (order.status === 'confirmed') statusText = 'Đã xác nhận';
-                      else if (order.status === 'pending') statusText = 'Chờ xác nhận';
-                      else statusText = order.status;
-                      return (
-                        <tr key={order.id}>
-                          <td>
-                            <a href={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>{orderNumber}</a>
-                          </td>
-                          <td style={{whiteSpace:'pre-line'}}>{dishNames}</td>
-                          <td>{dateStr}</td>
-                          <td>{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
-                          <td className={
-                            order.status === 'cancelled' ? 'order-status-cancelled' :
-                            order.status === 'completed' ? 'order-status-completed' :
-                            order.status === 'confirmed' ? 'order-status-confirmed' : ''
-                          }>{statusText}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
             </div>
           )}
         </div>
