@@ -6,7 +6,7 @@ const adminMenu = [
   { label: 'Quản lý danh mục', path: '/admin/category' },
   { label: 'Quản lý món ăn', path: '/admin/dishes' },
   { label: 'Quản lý người dùng', path: '/admin/customers' },
-  { label: 'Quản lý đơn hàng', path: '/admin/reports' },
+  { label: 'Quản lý đơn hàng', path: '/admin/orders' },
   { label: 'Cài đặt', path: '/admin/settings' },
 ];
 

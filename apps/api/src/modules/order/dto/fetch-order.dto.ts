@@ -32,6 +32,7 @@ export class FetchOrdersResponseDto {
   id: string;
   userId: string;
   status: OrderStatus;
+  type: 'pickup' | 'delivery';
   totalAmount: number;
   createdAt: Date;
 }

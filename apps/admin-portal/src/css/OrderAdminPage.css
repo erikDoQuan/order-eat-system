@@ -1,0 +1,28 @@
+.order-admin-table-wrapper {
+  overflow-x: auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 24px;
+}
+.order-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+.order-admin-table th, .order-admin-table td {
+  border: 1px solid #e5e7eb;
+  padding: 8px 12px;
+  text-align: left;
+}
+.order-admin-table th {
+  background: #f8fafc;
+  font-weight: 700;
+  color: #C92A15;
+}
+.order-admin-table tr:nth-child(even) {
+  background: #f6fff8;
+}
+.order-admin-table tr:hover {
+  background: #e6f4ed;
+} 

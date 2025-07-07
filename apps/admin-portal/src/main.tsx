@@ -16,6 +16,11 @@ import CheckoutPage from './pages/CheckoutPage';
 import AuthProvider from './context/AuthProvider';
 import { AuthContext } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import OrderTypePage from './pages/OrderTypePage';
+import OrderInfoPage from './pages/OrderInfoPage';
+import PaymentInfoPage from './pages/payment-info';
+import OrderSuccessPage from './pages/OrderSuccessPage';
+import OrderAdminPage from './admin/OrderAdminPage';
 
 import './globals.scss';
 
@@ -119,10 +124,15 @@ function AppWithCartProvider() {
         <Route path="/admin/dishes" element={<AdminRoute><AdminDishPage /></AdminRoute>} />
         <Route path="/admin/dishes/add" element={<AdminRoute><AdminDishPage showAddForm={true} /></AdminRoute>} />
         <Route path="/admin/customers" element={<AdminRoute><AdminUserPage /></AdminRoute>} />
+        <Route path="/admin/orders" element={<AdminRoute><OrderAdminPage /></AdminRoute>} />
         {/* Các route không dùng layout */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/order-type" element={<OrderTypePage />} />
+        <Route path="/order-info" element={<OrderInfoPage />} />
+        <Route path="/payment-info" element={<PaymentInfoPage />} />
+        <Route path="/order-success" element={<OrderSuccessPage />} />
       </Routes>
     </CartProvider>
   );

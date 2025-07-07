@@ -6,3 +6,8 @@ export const orderStatusEnumValues = [
   'completed',
   'cancelled',
 ] as const;
+
+export const orderTypeEnumValues = [
+  'pickup',
+  'delivery',
+] as const;

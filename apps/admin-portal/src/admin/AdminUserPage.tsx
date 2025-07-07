@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { LogOut, User as UserIcon } from 'lucide-react';
+import { LogOut, User as UserIcon, Edit, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '../components/AdminSidebar';
 import { AuthContext } from '../context/AuthContext';
@@ -177,7 +177,7 @@ const AdminUserPage: React.FC = () => {
             <table className="table-admin-user">
               <thead>
                 <tr className="bg-gray-100 text-gray-700">
-                  <th className="py-2 px-3 border-b">ID</th>
+                  <th className="py-2 px-3 border-b">STT</th>
                   <th className="py-2 px-3 border-b">Email</th>
                   <th className="py-2 px-3 border-b">Tên</th>
                   <th className="py-2 px-3 border-b">SĐT</th>
@@ -188,9 +188,9 @@ const AdminUserPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {users.filter(u => (u.name || `${u.firstName || ''} ${u.lastName || ''}` || '').toLowerCase().includes(search.toLowerCase()) || (u.email || '').toLowerCase().includes(search.toLowerCase())).map(u => (
+                {users.filter(u => (u.name || `${u.firstName || ''} ${u.lastName || ''}` || '').toLowerCase().includes(search.toLowerCase()) || (u.email || '').toLowerCase().includes(search.toLowerCase())).map((u, idx) => (
                   <tr key={u.id} className="hover:bg-gray-50 transition">
-                    <td className="py-2 px-3 border-b text-xs text-gray-500">{u.id}</td>
+                    <td className="py-2 px-3 border-b text-xs text-gray-500">{idx + 1}</td>
                     <td className="py-2 px-3 border-b font-medium">{u.email}</td>
                     <td className="py-2 px-3 border-b">{u.name || [u.firstName, u.lastName].filter(Boolean).join(' ')}</td>
                     <td className="py-2 px-3 border-b">{u.phoneNumber || '-'}</td>
@@ -200,8 +200,23 @@ const AdminUserPage: React.FC = () => {
                       <span className={`badge-status ${u.isActive ? 'active' : 'inactive'}`}>{u.isActive ? 'Đang hoạt động' : 'Đã tắt'}</span>
                     </td>
                     <td className="py-2 px-3 border-b">
-                      <button onClick={() => handleEdit(u)} className="btn-admin btn-edit">Sửa</button>
-                      <button onClick={() => handleDelete(u.id)} disabled={saving} className="btn-admin btn-delete">Xóa</button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEdit(u)}
+                          title="Sửa"
+                          className="p-2 rounded hover:bg-blue-100 text-blue-600"
+                        >
+                          <Edit size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(u.id)}
+                          disabled={saving}
+                          title="Xóa"
+                          className="p-2 rounded hover:bg-red-100 text-red-600 disabled:opacity-50"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

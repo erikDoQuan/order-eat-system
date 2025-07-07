@@ -1,3 +1,9 @@
+
+ALTER TYPE "public"."order_type" ADD VALUE IF NOT EXISTS 'pickup';
+ALTER TYPE "public"."order_type" ADD VALUE IF NOT EXISTS 'delivery';
+-- Tạo enum cho rating
+CREATE TYPE "public"."review_rating" AS ENUM('good', 'average', 'bad');
+
 CREATE TABLE "reviews" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"is_active" boolean DEFAULT true NOT NULL,
@@ -7,7 +13,7 @@ CREATE TABLE "reviews" (
 	"updated_by" uuid,
 	"user_id" uuid,
 	"dish_id" uuid,
-	"rating" smallint NOT NULL,
+	"rating" "review_rating" NOT NULL,
 	"comment" text
 );
 --> statement-breakpoint

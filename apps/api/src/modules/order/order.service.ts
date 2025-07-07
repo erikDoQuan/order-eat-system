@@ -26,25 +26,50 @@ export class OrderService {
   }
 
   async create(dto: CreateOrderDto) {
+    // Validate type và deliveryAddress
+    if (dto.type === 'delivery' && !dto.deliveryAddress) {
+      throw new Error('Địa chỉ giao hàng là bắt buộc khi chọn hình thức giao hàng (delivery)');
+    }
     // Đảm bảo mỗi item có id
     if (dto.orderItems && dto.orderItems.items) {
       dto.orderItems.items = dto.orderItems.items.map(item => ({
         ...item,
         id: item.id || uuidv4(),
       }));
-      // Tính tổng tiền
+      // Tính tổng tiền giống frontend
       let total = 0;
       for (const item of dto.orderItems.items) {
         const dish = await this.dishRepository.findOne(item.dishId);
-        const price = dish?.basePrice ? parseFloat(dish.basePrice as any) : 0;
+        let price = dish?.basePrice ? parseFloat(dish.basePrice as any) : 0;
+        // Tính thêm giá size
+        if (item.size) {
+          if (item.size === 'medium') price += 90000;
+          if (item.size === 'large') price += 190000;
+        }
+        // Tính thêm giá topping (nếu base là id topping)
+        if (item.base && !['dày', 'mỏng'].includes(item.base)) {
+          const topping = await this.dishRepository.findOne(item.base);
+          if (topping) price += topping.basePrice ? parseFloat(topping.basePrice as any) : 0;
+        }
         total += price * (item.quantity || 1);
       }
-      dto.totalAmount = total.toString();
+      dto.totalAmount = total;
+      console.log('Tổng tiền lưu vào DB:', dto.totalAmount);
     }
-    return this.orderRepository.create(dto);
+    // Chỉ truyền các trường hợp lệ vào DB
+    const { note, ...rest } = dto;
+    return this.orderRepository.create({
+      ...rest,
+      orderItems: dto.orderItems, // đã có note trong từng item
+      note: note, // nếu muốn lưu note tổng
+    });
   }
 
   async update(id: string, dto: UpdateOrderDto) {
+    // Validate type và deliveryAddress
+    if (dto.type === 'delivery' && !dto.deliveryAddress) {
+      throw new Error('Địa chỉ giao hàng là bắt buộc khi chọn hình thức giao hàng (delivery)');
+    }
     // Lấy order hiện tại
     const order = await this.orderRepository.findOne(id);
     if (!order) throw new NotFoundException('Đơn hàng không tồn tại');
@@ -88,6 +113,9 @@ export class OrderService {
     // Cập nhật các trường khác nếu có
     if (dto.status && ['pending','confirmed','preparing','delivering','completed','cancelled'].includes(dto.status)) {
       order.status = dto.status as any;
+    }
+    if (dto.type && ['pickup', 'delivery'].includes(dto.type)) {
+      order.type = dto.type as any;
     }
     if (dto.isActive !== undefined) order.isActive = dto.isActive;
 

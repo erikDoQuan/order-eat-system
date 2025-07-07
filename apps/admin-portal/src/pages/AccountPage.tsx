@@ -4,6 +4,9 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { AuthContext } from '../context/AuthContext';
 import { updateUser } from '../services/user.api';
 import { fetchMe } from '../services/me.api';
+import { getOrdersByUserId } from '../services/order.api';
+import { getAllDishes } from '../services/dish.api';
+import { Dish } from '../types/dish.type';
 
 import '../css/AccountPage.css';
 
@@ -18,7 +21,7 @@ export default function AccountPage() {
     email: user?.email || '',
   });
   const [saving, setSaving] = useState(false);
-  const [tab, setTab] = useState<'info'|'password'>('info');
+  const [tab, setTab] = useState<'info'|'password'|'history'>('info');
   const [pwForm, setPwForm] = useState({
     oldPassword: '',
     newPassword: '',
@@ -30,6 +33,8 @@ export default function AccountPage() {
     new: false,
     confirm: false,
   });
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [dishes, setDishes] = useState<Dish[]>([]);
 
   // Luôn đồng bộ form với user mỗi khi user thay đổi
   useEffect(() => {
@@ -39,6 +44,19 @@ export default function AccountPage() {
       email: user?.email || '',
     });
   }, [user]);
+
+  useEffect(() => {
+    getAllDishes().then(setDishes);
+  }, []);
+
+  useEffect(() => {
+    if (user?.id) {
+      getOrdersByUserId(user.id).then(orders => {
+        const sorted = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setRecentOrders(sorted.slice(0, 3));
+      });
+    }
+  }, [user?.id]);
 
   const handleEdit = () => {
     setEditing(true);
@@ -116,6 +134,11 @@ export default function AccountPage() {
     setPwSaving(false);
   };
 
+  const getDishName = (dishId: string) => {
+    const dish = dishes.find(d => d.id === dishId);
+    return dish ? dish.name : dishId;
+  };
+
   return (
     <>
       <div className="account-container">
@@ -129,16 +152,16 @@ export default function AccountPage() {
           <ul className="account-menu">
             <li className={tab==='info' ? 'active' : ''} onClick={()=>setTab('info')}>Thông tin khách hàng</li>
             <li>Số địa chỉ</li>
-            <li>Lịch sử mua hàng</li>
+            <li className={tab==='history' ? 'active' : ''} onClick={()=>setTab('history')}>Lịch sử mua hàng</li>
             <li className={tab==='password' ? 'active' : ''} onClick={()=>setTab('password')}>Đổi mật khẩu</li>
             <li>Voucher của tôi</li>
           </ul>
         </div>
         <div className="account-main">
           <h1 className="account-main-title">Thông tin chung</h1>
-          <div className="account-info-box">
-            {tab === 'info' && (
-              <>
+          {tab === 'info' && (
+            <>
+              <div className="account-info-box">
                 <div className="account-info-header">
                   <span className="account-info-title">THÔNG TIN TÀI KHOẢN</span>
                   {!editing && (
@@ -278,119 +301,206 @@ export default function AccountPage() {
                     </div>
                   </form>
                 )}
-              </>
-            )}
-            {tab === 'password' && (
-              <>
-                <div className="account-info-header">
-                  <span className="account-info-title">ĐỔI MẬT KHẨU</span>
-                </div>
-                <form className="account-info-content" onSubmit={handleChangePassword} style={{
-                  width: '100%',
-                  background: '#fff',
-                  borderRadius: 12,
-                  boxShadow: '0 2px 8px #0001',
-                  padding: '18px 0 18px 0',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  gap: 0,
-                }}>
-                  {[{
-                    label: <>Mật khẩu cũ</>,
-                    value: pwForm.oldPassword,
-                    onChange: (e:any) => setPwForm(f => ({ ...f, oldPassword: e.target.value })),
-                    name: 'oldPassword',
-                    show: showPw.old,
-                    toggle: () => setShowPw(s => ({ ...s, old: !s.old })),
-                  }, {
-                    label: <>Mật khẩu mới</>,
-                    value: pwForm.newPassword,
-                    onChange: (e:any) => setPwForm(f => ({ ...f, newPassword: e.target.value })),
-                    name: 'newPassword',
-                    show: showPw.new,
-                    toggle: () => setShowPw(s => ({ ...s, new: !s.new })),
-                  }, {
-                    label: <>Xác nhận mật khẩu</>,
-                    value: pwForm.confirmPassword,
-                    onChange: (e:any) => setPwForm(f => ({ ...f, confirmPassword: e.target.value })),
-                    name: 'confirmPassword',
-                    show: showPw.confirm,
-                    toggle: () => setShowPw(s => ({ ...s, confirm: !s.confirm })),
-                  }].map((item, idx) => (
-                    <div key={item.name} style={{ display: 'flex', alignItems: 'center', width: '100%', marginBottom: idx === 2 ? 18 : 14 }}>
-                      <label style={{ fontWeight: 700, color: '#222', minWidth: 130, maxWidth: 130, marginRight: 0, fontSize: 16, letterSpacing: 0.1, textAlign: 'left', whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                        {item.label}
-                      </label>
-                      <div style={{ position: 'relative', flex: 1, minWidth: 0, marginLeft: 12 }}>
-                        <input
-                          type={item.show ? 'password' : 'text'}
-                          value={item.value}
-                          onChange={item.onChange}
-                          required
-                          style={{
-                            width: '100%',
-                            boxSizing: 'border-box',
-                            padding: '12px 40px 12px 16px',
-                            borderRadius: 10,
-                            border: '1.5px solid #e0e0e0',
-                            fontSize: 16,
-                            background: '#fafafa',
-                            outline: 'none',
-                            transition: 'border 0.2s',
-                          }}
-                          onFocus={e => (e.target.style.border = '1.5px solid #17823c')}
-                          onBlur={e => (e.target.style.border = '1.5px solid #e0e0e0')}
-                        />
-                        <span onClick={item.toggle} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#888' }}>
-                          {item.show ? <FaEye size={20} /> : <FaEyeSlash size={20} />}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                  <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                    <div style={{ minWidth: 130, marginRight: 12 }}></div>
-                    <button
-                      type="submit"
-                      disabled={pwSaving}
-                      style={{
-                        background: '#C92A15',
-                        color: 'white',
-                        width: '100%',
-                        border: 'none',
-                        borderRadius: 10,
-                        padding: '13px 0',
-                        fontWeight: 700,
-                        fontSize: 18,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 10,
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 8px #C92A1533',
-                        letterSpacing: 0.1,
-                      }}
-                    >
-                      Đổi mật khẩu
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
-          </div>
-          <div className="account-orders-box">
-            <span className="account-orders-title">ĐƠN HÀNG GẦN ĐÂY NHẤT</span>
-            <div className="account-orders-table">
-              <div className="account-orders-header">
-                <span>Mã</span>
-                <span>Sản Phẩm</span>
-                <span>Ngày mua</span>
-                <span>Tổng tiền</span>
-                <span>Trạng thái</span>
               </div>
-              {/* Dữ liệu đơn hàng sẽ render ở đây */}
+              <div className="account-orders-box">
+                <span className="account-orders-title">ĐƠN HÀNG GẦN ĐÂY NHẤT</span>
+                <div className="account-recent-orders">
+                  {recentOrders.length === 0 && <div className="text-gray-500">Bạn chưa có đơn hàng nào</div>}
+                  <table className="table-recent-orders" style={{width:'100%',marginTop:8}}>
+                    <thead>
+                      <tr>
+                        <th>Mã</th>
+                        <th>Sản Phẩm</th>
+                        <th>Ngày mua</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentOrders.slice(0, 3).map(order => {
+                        const items = (order.orderItems?.items || []);
+                        const dishNames = items.map((item: any) => getDishName(item.dishId)).join(', ');
+                        const orderNumber = order.order_number || order.orderNumber || '-';
+                        const orderLink = `/orders/${orderNumber}`;
+                        const date = new Date(order.createdAt);
+                        const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                        let statusText = '';
+                        if (order.status === 'cancelled') statusText = 'Đã hủy';
+                        else if (order.status === 'completed') statusText = 'Hoàn thành';
+                        else if (order.status === 'confirmed') statusText = 'Đã xác nhận';
+                        else if (order.status === 'pending') statusText = 'Chờ xác nhận';
+                        else statusText = order.status;
+                        return (
+                          <tr key={order.id}>
+                            <td>
+                              <a href={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>{orderNumber}</a>
+                            </td>
+                            <td style={{whiteSpace:'pre-line'}}>{dishNames}</td>
+                            <td>{dateStr}</td>
+                            <td>{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
+                            <td className={
+                              order.status === 'cancelled' ? 'order-status-cancelled' :
+                              order.status === 'completed' ? 'order-status-completed' :
+                              order.status === 'confirmed' ? 'order-status-confirmed' : ''
+                            }>{statusText}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+          {tab === 'password' && (
+            <>
+              <div className="account-info-header">
+                <span className="account-info-title">ĐỔI MẬT KHẨU</span>
+              </div>
+              <form className="account-info-content" onSubmit={handleChangePassword} style={{
+                width: '100%',
+                background: '#fff',
+                borderRadius: 12,
+                boxShadow: '0 2px 8px #0001',
+                padding: '18px 0 18px 0',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                gap: 0,
+              }}>
+                {[{
+                  label: <>Mật khẩu cũ</>,
+                  value: pwForm.oldPassword,
+                  onChange: (e:any) => setPwForm(f => ({ ...f, oldPassword: e.target.value })),
+                  name: 'oldPassword',
+                  show: showPw.old,
+                  toggle: () => setShowPw(s => ({ ...s, old: !s.old })),
+                }, {
+                  label: <>Mật khẩu mới</>,
+                  value: pwForm.newPassword,
+                  onChange: (e:any) => setPwForm(f => ({ ...f, newPassword: e.target.value })),
+                  name: 'newPassword',
+                  show: showPw.new,
+                  toggle: () => setShowPw(s => ({ ...s, new: !s.new })),
+                }, {
+                  label: <>Xác nhận mật khẩu</>,
+                  value: pwForm.confirmPassword,
+                  onChange: (e:any) => setPwForm(f => ({ ...f, confirmPassword: e.target.value })),
+                  name: 'confirmPassword',
+                  show: showPw.confirm,
+                  toggle: () => setShowPw(s => ({ ...s, confirm: !s.confirm })),
+                }].map((item, idx) => (
+                  <div key={item.name} style={{ display: 'flex', alignItems: 'center', width: '100%', marginBottom: idx === 2 ? 18 : 14 }}>
+                    <label style={{ fontWeight: 700, color: '#222', minWidth: 130, maxWidth: 130, marginRight: 0, fontSize: 16, letterSpacing: 0.1, textAlign: 'left', whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                      {item.label}
+                    </label>
+                    <div style={{ position: 'relative', flex: 1, minWidth: 0, marginLeft: 12 }}>
+                      <input
+                        type={item.show ? 'password' : 'text'}
+                        value={item.value}
+                        onChange={item.onChange}
+                        required
+                        style={{
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          padding: '12px 40px 12px 16px',
+                          borderRadius: 10,
+                          border: '1.5px solid #e0e0e0',
+                          fontSize: 16,
+                          background: '#fafafa',
+                          outline: 'none',
+                          transition: 'border 0.2s',
+                        }}
+                        onFocus={e => (e.target.style.border = '1.5px solid #17823c')}
+                        onBlur={e => (e.target.style.border = '1.5px solid #e0e0e0')}
+                      />
+                      <span onClick={item.toggle} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#888' }}>
+                        {item.show ? <FaEye size={20} /> : <FaEyeSlash size={20} />}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                  <div style={{ minWidth: 130, marginRight: 12 }}></div>
+                  <button
+                    type="submit"
+                    disabled={pwSaving}
+                    style={{
+                      background: '#C92A15',
+                      color: 'white',
+                      width: '100%',
+                      border: 'none',
+                      borderRadius: 10,
+                      padding: '13px 0',
+                      fontWeight: 700,
+                      fontSize: 18,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 10,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px #C92A1533',
+                      letterSpacing: 0.1,
+                    }}
+                  >
+                    Đổi mật khẩu
+                  </button>
+                </div>
+              </form>
+            </>
+          )}
+          {tab === 'history' && (
+            <div className="account-orders-box">
+              <span className="account-orders-title">LỊCH SỬ MUA HÀNG</span>
+              <div className="account-recent-orders">
+                {recentOrders.filter(order => order.status === 'completed').length === 0 && (
+                  <div className="text-gray-500">Bạn chưa có đơn hàng hoàn thành nào</div>
+                )}
+                <table className="table-recent-orders" style={{width:'100%',marginTop:8}}>
+                  <thead>
+                    <tr>
+                      <th>Mã</th>
+                      <th>Sản Phẩm</th>
+                      <th>Ngày mua</th>
+                      <th>Tổng tiền</th>
+                      <th>Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentOrders.filter(order => order.status === 'completed').map(order => {
+                      const items = (order.orderItems?.items || []);
+                      const dishNames = items.map((item: any) => getDishName(item.dishId)).join(', ');
+                      const orderNumber = order.order_number || order.orderNumber || '-';
+                      const orderLink = `/orders/${orderNumber}`;
+                      const date = new Date(order.createdAt);
+                      const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                      let statusText = '';
+                      if (order.status === 'cancelled') statusText = 'Đã hủy';
+                      else if (order.status === 'completed') statusText = 'Hoàn thành';
+                      else if (order.status === 'confirmed') statusText = 'Đã xác nhận';
+                      else if (order.status === 'pending') statusText = 'Chờ xác nhận';
+                      else statusText = order.status;
+                      return (
+                        <tr key={order.id}>
+                          <td>
+                            <a href={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>{orderNumber}</a>
+                          </td>
+                          <td style={{whiteSpace:'pre-line'}}>{dishNames}</td>
+                          <td>{dateStr}</td>
+                          <td>{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
+                          <td className={
+                            order.status === 'cancelled' ? 'order-status-cancelled' :
+                            order.status === 'completed' ? 'order-status-completed' :
+                            order.status === 'confirmed' ? 'order-status-confirmed' : ''
+                          }>{statusText}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </>

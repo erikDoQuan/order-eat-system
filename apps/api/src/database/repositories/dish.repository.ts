@@ -91,7 +91,7 @@ export class DishRepository {
   async delete(id: string): Promise<DishWithoutPrice | null> {
     const [deleted] = await this.drizzle.db
       .update(dishes)
-      .set({ isActive: false })
+      .set({ isActive: false } as DishUpdate)
       .where(eq(dishes.id, id))
       .returning();
     return deleted ? this.findOne(deleted.id) : null;

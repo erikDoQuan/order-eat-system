@@ -225,7 +225,7 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
             <table className="table-admin-dish">
               <thead>
                 <tr className="bg-gray-100 text-gray-700">
-                  <th className="py-2 px-3 border-b">ID</th>
+                  <th className="py-2 px-3 border-b">STT</th>
                   <th className="py-2 px-3 border-b">Tên món</th>
                   <th className="py-2 px-3 border-b">Giá</th>
                   <th className="py-2 px-3 border-b">Trạng thái</th>
@@ -236,9 +236,9 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
                 </tr>
               </thead>
               <tbody>
-                {dishes.filter(dish => dish.name.toLowerCase().includes(search.toLowerCase())).map(dish => (
+                {dishes.filter(dish => dish.name.toLowerCase().includes(search.toLowerCase())).map((dish, idx) => (
                   <tr key={dish.id} className="hover:bg-gray-50 transition">
-                    <td className="py-2 px-3 border-b text-xs text-gray-500">{dish.id}</td>
+                    <td className="py-2 px-3 border-b text-xs text-gray-500">{idx + 1}</td>
                     <td className="py-2 px-3 border-b font-medium">{dish.name}</td>
                     <td className="py-2 px-3 border-b">{dish.basePrice !== undefined && !isNaN(Number(dish.basePrice)) ? Number(dish.basePrice).toLocaleString('vi-VN') : dish.basePrice}</td>
                     <td className="py-2 px-3 border-b flex justify-center items-center">

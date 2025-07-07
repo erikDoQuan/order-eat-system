@@ -175,7 +175,7 @@ const AdminCategoryPage: React.FC = () => {
             <table className="table-admin-category">
               <thead>
                 <tr className="bg-gray-100 text-gray-700">
-                  <th className="py-2 px-3 border-b">ID</th>
+                  <th className="py-2 px-3 border-b">STT</th>
                   <th className="py-2 px-3 border-b">Tên danh mục</th>
                   <th className="py-2 px-3 border-b">Kích hoạt</th>
                   <th className="py-2 px-3 border-b">Người tạo</th>
@@ -183,9 +183,9 @@ const AdminCategoryPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {categories.filter(cat => cat.status !== 'inactive' && cat.name.toLowerCase().includes(search.toLowerCase())).map(cat => (
+                {categories.filter(cat => cat.status !== 'inactive' && cat.name.toLowerCase().includes(search.toLowerCase())).map((cat, idx) => (
                   <tr key={cat.id} className="hover:bg-gray-50 transition">
-                    <td className="py-2 px-3 border-b text-xs text-gray-500">{cat.id}</td>
+                    <td className="py-2 px-3 border-b text-xs text-gray-500">{idx + 1}</td>
                     <td className="py-2 px-3 border-b font-medium">{cat.name}</td>
                     <td className="py-2 px-3 border-b">
                       <span className={`badge-status ${cat.isActive ? 'active' : 'inactive'}`}>{cat.isActive ? 'Đang hoạt động' : 'Đã tắt'}</span>

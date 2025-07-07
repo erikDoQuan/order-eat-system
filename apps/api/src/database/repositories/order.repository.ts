@@ -76,18 +76,6 @@ export class OrderRepository {
   }
 
   async create(data: CreateOrderDto): Promise<Order> {
-    // Kiểm tra đã có order pending cho user chưa
-    const existing = await this.drizzle.db.query.orders.findFirst({
-      where: and(
-        eq(orders.userId, data.userId),
-        eq(orders.status, 'pending'),
-        eq(orders.isActive, true)
-      ),
-      orderBy: desc(orders.createdAt),
-    });
-    if (existing) {
-      return existing;
-    }
     const [created] = await this.drizzle.db
       .insert(orders)
       .values(data as OrderInsert)

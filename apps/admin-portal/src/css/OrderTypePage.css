@@ -1,0 +1,81 @@
+.order-type-container {
+  max-width: 1000px;
+  margin: 32px auto;
+  padding: 32px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.order-type-title {
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+.order-type-desc {
+  margin-bottom: 24px;
+  font-size: 16px;
+}
+.order-type-options {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 24px;
+}
+.order-type-option {
+  flex: 1;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  padding: 24px;
+  cursor: pointer;
+  background: #fff;
+  transition: box-shadow 0.2s, border-color 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.order-type-option.active {
+  border-color: #16a34a;
+  background: #f6fff8;
+  box-shadow: 0 1px 4px rgba(22,163,74,0.06);
+}
+.order-type-option-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.order-type-option-title {
+  font-size: 18px;
+  color: #166534;
+}
+.order-type-option-desc {
+  margin-top: 12px;
+  font-size: 15px;
+}
+.order-type-btn-group {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  align-items: center;
+  margin-top: 8px;
+}
+.order-type-btn {
+  height: 40px;
+  min-width: 140px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+}
+.order-type-btn-continue {
+  background: #6c8b7e;
+  color: #fff;
+  padding: 8px 18px;
+  font-size: 15px;
+  font-weight: 500;
+}
+.order-type-btn-pay {
+  background: #16a34a;
+  color: #fff;
+  padding: 8px 24px;
+} 

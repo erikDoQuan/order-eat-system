@@ -129,3 +129,49 @@
   text-align: left;
   padding-left: 8px;
 }
+.table-recent-orders {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px #0001;
+}
+.table-recent-orders thead tr {
+  background: #f5f5f5;
+}
+.table-recent-orders th, .table-recent-orders td {
+  padding: 16px 18px;
+  text-align: left;
+  font-size: 18px;
+  vertical-align: middle;
+}
+.table-recent-orders th {
+  font-weight: 600;
+  color: #444;
+}
+.table-recent-orders tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+.table-recent-orders tbody tr:nth-child(odd) {
+  background: #fff;
+}
+.table-recent-orders a {
+  color: #1787e0;
+  text-decoration: underline;
+  font-weight: 500;
+}
+.table-recent-orders td {
+  font-size: 17px;
+  word-break: break-word;
+}
+.table-recent-orders td:last-child {
+  font-weight: 500;
+}
+.table-recent-orders .order-status-cancelled {
+  color: red;
+}
+.table-recent-orders .order-status-completed, .table-recent-orders .order-status-confirmed {
+  color: #17823c;
+}

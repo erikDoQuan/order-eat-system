@@ -1,6 +1,6 @@
 import { IsOptional, IsUUID, IsNumber, IsEnum, IsObject } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { orderStatusEnumValues } from '../constants/order-status.constant';
+import { orderStatusEnumValues, orderTypeEnumValues } from '../constants/order-status.constant';
 
 export class CreateOrderDto {
   @ApiProperty({
@@ -28,7 +28,7 @@ export class CreateOrderDto {
     example: 289000,
   })
   @IsNumber()
-  totalAmount: string;
+  totalAmount: number;
 
   @ApiProperty({
     description: 'Trạng thái đơn hàng',
@@ -48,4 +48,30 @@ export class CreateOrderDto {
   @IsOptional()
   @IsUUID()
   createdBy?: string;
+
+  @ApiProperty({
+    description: 'Hình thức nhận hàng',
+    enum: orderTypeEnumValues,
+    example: 'delivery',
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(orderTypeEnumValues)
+  type?: string;
+
+  @ApiProperty({
+    description: 'Địa chỉ giao hàng (bắt buộc nếu type = delivery)',
+    example: '123 Đường ABC, Quận 1, TP.HCM',
+    required: false,
+  })
+  @IsOptional()
+  deliveryAddress?: string;
+
+  @ApiProperty({
+    description: 'Ghi chú đơn hàng',
+    example: 'Không lấy hành',
+    required: false,
+  })
+  @IsOptional()
+  note?: string;
 }

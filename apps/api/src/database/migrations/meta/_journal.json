@@ -36,6 +36,27 @@
       "when": 1751011947930,
       "tag": "0004_add_dish_options_table",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1751788016624,
+      "tag": "0005_acoustic_mister_sinister",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1751852417898,
+      "tag": "0006_overjoyed_hercules",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1751855891987,
+      "tag": "0007_windy_gamora",
+      "breakpoints": true
     }
   ]
 }

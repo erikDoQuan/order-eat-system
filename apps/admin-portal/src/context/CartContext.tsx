@@ -31,6 +31,7 @@ interface CartContextProps {
   fetchCartPublic: () => Promise<void>;
   orderItems: any[];
   setOrderItems: React.Dispatch<React.SetStateAction<any[]>>;
+  dishes: Dish[];
 }
 
 const CartContext = createContext<CartContextProps>({
@@ -44,6 +45,7 @@ const CartContext = createContext<CartContextProps>({
   fetchCartPublic: async () => {},
   orderItems: [],
   setOrderItems: () => {},
+  dishes: [],
 });
 
 export const useCart = () => useContext(CartContext);
@@ -168,7 +170,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => { fetchCart(); }, [userId]);
 
   return (
-    <CartContext.Provider value={{ cart, orders, addToCart, removeFromCart, fetchCart, clearCart, removeItemFromOrder, fetchCartPublic, orderItems, setOrderItems }}>
+    <CartContext.Provider value={{ cart, orders, addToCart, removeFromCart, fetchCart, clearCart, removeItemFromOrder, fetchCartPublic, orderItems, setOrderItems, dishes }}>
       {children}
     </CartContext.Provider>
   );
