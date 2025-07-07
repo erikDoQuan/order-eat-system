@@ -1,0 +1,20 @@
+{
+    "login": "Login",
+    "register": "Register",
+    "account": "Account",
+    "logout": "Logout",
+    "cart": "Cart",
+    "pizza": "Pizza",
+    "seafood_pizza": "Seafood Pizza",
+    "traditional_pizza": "Traditional Pizza",
+    "vegetarian_pizza": "Vegetarian Pizza",
+    "combo_pizza": "Combo Pizza",
+    "spaghetti": "Spaghetti",
+    "baked_macaroni": "Baked Macaroni",
+    "chicken": "Chicken",
+    "bbq_chicken": "BBQ Chicken",
+    "korean_chicken": "Korean Chicken",
+    "appetizer": "Appetizer",
+    "salad": "Salad",
+    "drink": "Drink"
+}

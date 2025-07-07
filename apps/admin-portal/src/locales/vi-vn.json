@@ -1,0 +1,20 @@
+{
+    "login": "Đăng nhập",
+    "register": "Tạo tài khoản",
+    "account": "Tài khoản",
+    "logout": "Đăng xuất",
+    "cart": "Giỏ hàng",
+    "pizza": "Pizza",
+    "seafood_pizza": "Pizza Hải Sản",
+    "traditional_pizza": "Pizza Truyền thống",
+    "vegetarian_pizza": "Pizza chay",
+    "combo_pizza": "Pizza thập cẩm",
+    "spaghetti": "Mỳ Ý",
+    "baked_macaroni": "Nui Bỏ Lò",
+    "chicken": "Gà",
+    "bbq_chicken": "Gà BBQ",
+    "korean_chicken": "Gà Hàn Quốc",
+    "appetizer": "Khai vị",
+    "salad": "Salad",
+    "drink": "Thức uống"
+}

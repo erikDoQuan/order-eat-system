@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import '../css/HomePage.css';
 
@@ -23,6 +24,7 @@ export default function HomePage() {
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [cartLoading, setCartLoading] = useState(false);
   const { user } = useContext(AuthContext);
+  const { t } = useTranslation();
 
   useEffect(() => {
     getAllDishes().then(d => setDishes(d || []));
@@ -73,10 +75,10 @@ export default function HomePage() {
           <img src="/banner.png" alt="Banner" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-black/30" />
           <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
-            <h2 className="text-3xl font-extrabold text-white drop-shadow-lg sm:text-4xl md:text-5xl">Ưu đãi lên đến 50%</h2>
-            <p className="mt-2 text-base text-white sm:text-lg">Pizza Hải Sản – Chỉ còn từ 199k</p>
+            <h2 className="text-3xl font-extrabold text-white drop-shadow-lg sm:text-4xl md:text-5xl">{t('big_discount')}</h2>
+            <p className="mt-2 text-base text-white sm:text-lg">{t('seafood_pizza_promo')}</p>
             <button className="mt-4 rounded-full bg-[#e62a10] px-6 py-3 text-lg font-semibold text-white transition hover:bg-red-600">
-              Mua ngay
+              {t('buy_now')}
             </button>
           </div>
         </div>
@@ -84,28 +86,28 @@ export default function HomePage() {
       {pizzaDishes.length > 0 && (
         <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
           <div className="mb-6 flex items-center gap-4">
-            <h2 className="flex-shrink-0 text-3xl font-extrabold text-black drop-shadow-lg">Pizza</h2>
+            <h2 className="flex-shrink-0 text-3xl font-extrabold text-black drop-shadow-lg">{t('pizza')}</h2>
             <div className="ml-4 flex flex-1 flex-wrap justify-end gap-2">
               <button
                 className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
                   ${filterPizzaType === 'Tất cả' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
                 onClick={() => setFilterPizzaType('Tất cả')}
-              >Tất cả</button>
+              >{t('all')}</button>
               <button
                 className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
                   ${filterPizzaType === 'Pizza Hải Sản' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
                 onClick={() => setFilterPizzaType('Pizza Hải Sản')}
-              >Pizza Hải Sản</button>
+              >{t('seafood_pizza')}</button>
               <button
                 className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
                   ${filterPizzaType === 'Pizza Truyền Thống' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
                 onClick={() => setFilterPizzaType('Pizza Truyền Thống')}
-              >Truyền Thống</button>
+              >{t('traditional_pizza')}</button>
               <button
                 className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
                   ${filterPizzaType === 'Pizza Thập Cẩm' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
                 onClick={() => setFilterPizzaType('Pizza Thập Cẩm')}
-              >Thập Cẩm</button>
+              >{t('combo_pizza')}</button>
             </div>
           </div>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
@@ -120,7 +122,7 @@ export default function HomePage() {
                 style={{ textDecoration: 'none' }}
                 onClick={() => setVisiblePizzaCount(prev => prev + 3)}
               >
-                Xem thêm
+                {t('view_more')}
                 <em className="ri-add-line" />
               </a>
             </div>
@@ -129,7 +131,7 @@ export default function HomePage() {
       )}
       {chickenDishes.length > 0 && (
         <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
-          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">Gà</h2>
+          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('chicken')}</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
             {chickenDishes.slice(0, visibleChickenCount).map(dish => (
               <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
@@ -142,7 +144,7 @@ export default function HomePage() {
                 style={{ textDecoration: 'none' }}
                 onClick={() => setVisibleChickenCount(prev => prev + 3)}
               >
-                Xem thêm
+                {t('view_more')}
                 <em className="ri-add-line" />
               </a>
             </div>
@@ -151,7 +153,7 @@ export default function HomePage() {
       )}
       {spaghettiDishes.length > 0 && (
         <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
-          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">Mỳ Ý</h2>
+          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('spaghetti')}</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
             {spaghettiDishes.map(dish => (
               <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />

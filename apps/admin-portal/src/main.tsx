@@ -21,6 +21,8 @@ import OrderInfoPage from './pages/OrderInfoPage';
 import PaymentInfoPage from './pages/payment-info';
 import OrderSuccessPage from './pages/OrderSuccessPage';
 import OrderAdminPage from './admin/OrderAdminPage';
+import { LanguageProvider } from './context/LanguageContext';
+import './i18n';
 
 import './globals.scss';
 
@@ -152,9 +154,11 @@ const root = window.__REACT_ROOT__;
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <AppWithCartProvider />
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <AppWithCartProvider />
+        </AuthProvider>
+      </LanguageProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

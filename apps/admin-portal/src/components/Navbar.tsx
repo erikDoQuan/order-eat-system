@@ -1,12 +1,14 @@
 import { useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { LogOut, ShoppingCart, User as UserIcon } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import { AuthContext } from '../context/AuthContext';
 import { CartIcon } from './CartIcon';
 import { CartPopup } from './CartPopup';
 import { useCart } from '../context/CartContext';
 import { getAllDishes } from '../services/dish.api';
+import LanguageSwitcher from './LanguageSwitcher';
 
 import '../css/Navbar.css';
 
@@ -22,6 +24,7 @@ export default function Navbar() {
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [cartLoading, setCartLoading] = useState(false);
   const [dishes, setDishes] = useState<any[]>([]);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -51,6 +54,33 @@ export default function Navbar() {
     }
     setShowCartPopup(true);
   };
+
+  // Menu phải nằm trong function component để dùng được t
+  const navItems = [
+    {
+      label: t('pizza'),
+      path: '/',
+      dropdown: [
+        { label: t('seafood_pizza'), path: '/dishes' },
+        { label: t('traditional_pizza'), path: '/dishes/new' },
+        { label: t('vegetarian_pizza'), path: '/dishes/new' },
+        { label: t('combo_pizza'), path: '/dishes/new' },
+      ],
+    },
+    { label: t('spaghetti'), path: '/categories' },
+    { label: t('baked_macaroni'), path: '/orders' },
+    {
+      label: t('chicken'),
+      path: '/Gà',
+      dropdown: [
+        { label: t('bbq_chicken'), path: '/dishes' },
+        { label: t('korean_chicken'), path: '/dishes/new' },
+      ],
+    },
+    { label: t('appetizer'), path: '/orders' },
+    { label: t('salad'), path: '/orders' },
+    { label: t('drink'), path: '/orders' },
+  ];
 
   return (
     <nav
@@ -90,11 +120,11 @@ export default function Navbar() {
                       }}
                     >
                       <UserIcon size={18} className="text-gray-500" />
-                      Tài khoản
+                      {t('account')}
                     </button>
                     <button className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100" onClick={handleLogout}>
                       <LogOut size={18} className="text-red-400" />
-                      Đăng xuất
+                      {t('logout')}
                     </button>
                   </div>
                 )}
@@ -103,6 +133,8 @@ export default function Navbar() {
                 {user.firstName || ''} {user.lastName || ''}
                 {!(user.firstName || user.lastName) && user.email}
               </span>
+              <span style={{ margin: '0 8px', color: '#ccc', fontWeight: 600 }}>|</span>
+              <LanguageSwitcher />
             </div>
           ) : (
             !isAuthPage && (
@@ -115,15 +147,17 @@ export default function Navbar() {
                   <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: '50%', border: '2px solid #C92A15', background: '#e6f4ed', color: '#C92A15', marginRight: 8 }}>
                     <UserIcon size={24} />
                   </span>
-                  Đăng nhập
+                  {t('login')}
                 </NavLink>
                 <NavLink
                   to="/register"
                   className="rounded-xl bg-transparent py-2 text-base font-semibold transition hover:bg-[#e6f4ed]"
                   style={{ fontWeight: 500 }}
                 >
-                  Tạo tài khoản
+                  {t('register')}
                 </NavLink>
+                <span style={{ margin: '0 8px', color: '#ccc', fontWeight: 600 }}>|</span>
+                <LanguageSwitcher />
               </div>
             )
           )}
@@ -181,7 +215,7 @@ export default function Navbar() {
           {/* Giỏ hàng nằm phía cuối bên phải (ĐÃ SỬA: thêm border-radius đẹp) */}
           <div className="ml-auto flex items-center gap-2 rounded-full border-2 border-white bg-white px-4 py-2 transition hover:shadow-lg" style={{ cursor: 'pointer', position: 'relative' }} onClick={handleOpenCart}>
             <CartIcon />
-            <span className="text-sm font-bold text-[#a01f10]">Giỏ hàng</span>
+            <span className="text-sm font-bold text-[#a01f10]">{t('cart')}</span>
             {showCartPopup && (
               <>
                 <div
@@ -207,30 +241,3 @@ export default function Navbar() {
     </nav>
   );
 }
-
-// Menu
-const navItems = [
-  {
-    label: 'Pizza',
-    path: '/',
-    dropdown: [
-      { label: 'Pizza Hải Sản', path: '/dishes' },
-      { label: 'Pizza Truyền thống', path: '/dishes/new' },
-      { label: 'Pizza chay', path: '/dishes/new' },
-      { label: 'Pizza thập cẩm', path: '/dishes/new' },
-    ],
-  },
-  { label: 'Mỳ Ý', path: '/categories' },
-  { label: 'Nui Bỏ Lò', path: '/orders' },
-  {
-    label: 'Gà',
-    path: '/Gà',
-    dropdown: [
-      { label: 'Gà BBQ', path: '/dishes' },
-      { label: 'Gà Hàn Quốc', path: '/dishes/new' },
-    ],
-  },
-  { label: 'Khai vị', path: '/orders' },
-  { label: 'Salad', path: '/orders' },
-  { label: 'Thức uống', path: '/orders' },
-];
