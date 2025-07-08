@@ -70,3 +70,22 @@
     font-size: 3rem;
   }
 }
+.banner-16-9 {
+  width: 90vw;
+  max-width: 900px;
+  margin: 0 auto;
+  height: 40vw;
+  min-height: 220px;
+  max-height: 400px;
+  position: relative;
+  overflow: hidden;
+  background: #18332b;
+}
+
+.banner-16-9 img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  inset: 0;
+}

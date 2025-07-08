@@ -3,7 +3,7 @@ import { and, count, desc, eq, ilike, inArray, sql, SQL } from 'drizzle-orm';
 
 import { removeDiacritics } from '~/common/utils/diacritics.utils';
 import { DrizzleService } from '~/database/drizzle/drizzle.service';
-import { Dish, dishes, DishUpdate, DishWithoutPrice } from '~/database/schema/dishes';
+import { dishes } from '~/database/schema/dishes';
 import { CreateDishDto } from '~/modules/dish/dto/create-dish.dto';
 import { FetchDishesResponseDto } from '~/modules/dish/dto/fetch-dish-response.dto';
 import { FetchDishesDto } from '~/modules/dish/dto/fetch-dish.dto';
@@ -60,38 +60,38 @@ export class DishRepository {
     };
   }
 
-  async findOne(id: string): Promise<Dish | null> {
+  async findOne(id: string): Promise<any | null> {
     return this.drizzle.db.query.dishes.findFirst({
       where: eq(dishes.id, id),
     });
   }
 
-  async findAll(): Promise<Dish[]> {
+  async findAll(): Promise<any[]> {
     return this.drizzle.db.query.dishes.findMany({
       where: eq(dishes['isActive'], true),
       orderBy: desc(dishes.createdAt),
     });
   }
 
-  async create(data: CreateDishDto): Promise<DishWithoutPrice> {
+  async create(data: CreateDishDto): Promise<any> {
     const [dish] = await this.drizzle.db.insert(dishes).values(data).returning();
     return this.findOne(dish.id);
   }
 
-  async update(id: string, data: UpdateDishDto): Promise<DishWithoutPrice | null> {
+  async update(id: string, data: UpdateDishDto): Promise<any | null> {
     const [updated] = await this.drizzle.db
       .update(dishes)
-      .set(data as DishUpdate)
+      .set(data as any)
       .where(eq(dishes.id, id))
       .returning();
 
     return updated ? this.findOne(updated.id) : null;
   }
 
-  async delete(id: string): Promise<DishWithoutPrice | null> {
+  async delete(id: string): Promise<any | null> {
     const [deleted] = await this.drizzle.db
       .update(dishes)
-      .set({ isActive: false } as DishUpdate)
+      .set({ isActive: false } as any)
       .where(eq(dishes.id, id))
       .returning();
     return deleted ? this.findOne(deleted.id) : null;

@@ -23,6 +23,7 @@ import OrderSuccessPage from './pages/OrderSuccessPage';
 import OrderAdminPage from './admin/OrderAdminPage';
 import { LanguageProvider } from './context/LanguageContext';
 import './i18n';
+import DeliveryOrderPage from './pages/DeliveryOrderPage';
 
 import './globals.scss';
 
@@ -133,6 +134,7 @@ function AppWithCartProvider() {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/order-type" element={<OrderTypePage />} />
         <Route path="/order-info" element={<OrderInfoPage />} />
+        <Route path="/delivery-order" element={<DeliveryOrderPage />} />
         <Route path="/payment-info" element={<PaymentInfoPage />} />
         <Route path="/order-success" element={<OrderSuccessPage />} />
       </Routes>

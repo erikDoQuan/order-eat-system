@@ -7,8 +7,6 @@ export class CreateDishOptionDto {
   dishId: string;
 
   @ApiProperty({ description: 'Tên tùy chọn món ăn (VD: Đế viền phô mai)' })
-  @IsString()
-  @IsNotEmpty()
   name: string;
 
   @ApiPropertyOptional({

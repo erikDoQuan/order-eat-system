@@ -22,6 +22,51 @@ const stores = [
   },
 ];
 
+// Hàm lấy 2 ngày: hôm nay và ngày mai
+function getValidDates() {
+  const today = new Date();
+  const tomorrow = new Date();
+  tomorrow.setDate(today.getDate() + 1);
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const format = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return [format(today), format(tomorrow)];
+}
+// Hàm lấy giờ hợp lệ
+function getValidTimes(selectedDate: string) {
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+  const minHour = 9;
+  const maxHour = 22;
+  let startHour = minHour;
+  let startMinute = 0;
+  if (selectedDate === todayStr) {
+    if (now.getHours() < minHour) {
+      startHour = minHour;
+      startMinute = 0;
+    } else if (now.getHours() >= minHour && now.getHours() < maxHour) {
+      startHour = now.getHours();
+      startMinute = Math.ceil(now.getMinutes() / 15) * 15;
+      if (startMinute === 60) {
+        startHour += 1;
+        startMinute = 0;
+      }
+      if (startHour > maxHour) return [];
+    } else {
+      return [];
+    }
+  }
+  const times: string[] = [];
+  for (let h = startHour; h <= maxHour; h++) {
+    for (let m = (h === startHour ? startMinute : 0); m < 60; m += 15) {
+      if (h === maxHour && m > 0) break; // chỉ cho 22:00
+      const hh = h.toString().padStart(2, '0');
+      const mm = m.toString().padStart(2, '0');
+      times.push(`${hh}:${mm}`);
+    }
+  }
+  return times;
+}
+
 const OrderInfoPage: React.FC = () => {
   const query = useQuery();
   const orderType = query.get('orderType');
@@ -93,46 +138,22 @@ const OrderInfoPage: React.FC = () => {
                   <select
                     value={form.time}
                     onChange={e => setForm(f => ({...f, time: e.target.value}))}
-                    style={{
-                      flex:1,
-                      background:'#fafafa',
-                      border:'2px solid #16a34a',
-                      borderRadius:8,
-                      padding:'12px 16px',
-                      fontSize:18,
-                      color:'#222',
-                    }}
+                    style={{flex:1, background:'#fafafa', border:'2px solid #16a34a', borderRadius:8, padding:'12px 16px', fontSize:18, color:'#222'}}
                   >
-                    {Array.from({length: 24*4}, (_, i) => {
-                      const h = Math.floor(i/4).toString().padStart(2, '0');
-                      const m = (i%4*15).toString().padStart(2, '0');
-                      return <option key={h+':'+m} value={h+':'+m}>{h+':'+m}</option>;
-                    })}
+                    <option value="">Chọn giờ</option>
+                    {getValidTimes(form.date).map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
                   </select>
                   <select
                     value={form.date}
                     onChange={e => setForm(f => ({...f, date: e.target.value}))}
-                    style={{
-                      flex:1,
-                      background:'#fafafa',
-                      border:'2px solid #16a34a',
-                      borderRadius:8,
-                      padding:'12px 16px',
-                      fontSize:18,
-                      color:'#222',
-                    }}
+                    style={{flex:1, background:'#fafafa', border:'2px solid #16a34a', borderRadius:8, padding:'12px 16px', fontSize:18, color:'#222'}}
                   >
-                    {(() => {
-                      const today = new Date();
-                      const tomorrow = new Date();
-                      tomorrow.setDate(today.getDate() + 1);
-                      const pad = (n: number) => n.toString().padStart(2, '0');
-                      const format = (d: Date) => `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
-                      return [today, tomorrow].map(d => {
-                        const value = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
-                        return <option key={value} value={value}>{format(d)}</option>;
-                      });
-                    })()}
+                    {getValidDates().map(d => {
+                      const [yyyy, MM, dd] = d.split('-');
+                      return <option key={d} value={d}>{`${dd}/${MM}/${yyyy}`}</option>;
+                    })}
                   </select>
                 </div>
               )}

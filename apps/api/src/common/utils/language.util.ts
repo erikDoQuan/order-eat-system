@@ -1,0 +1,1 @@
+// Đã xóa toàn bộ code liên quan đến DishTranslations và hàm đa ngôn ngữ cho dish 

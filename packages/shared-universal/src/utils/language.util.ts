@@ -1,7 +1,4 @@
-/*
- * @Author: <Tin Tran> (tindl88@gmail.com)
- * @Created: 2025-01-14 14:32:18
- */
+
 
 import type { Language } from '../interfaces/language.interface';
 import { LANGUAGES } from '../constants/language.constant';

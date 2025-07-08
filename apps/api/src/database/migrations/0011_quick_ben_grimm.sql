@@ -1,0 +1,1 @@
+ALTER TABLE "dishes" ALTER COLUMN "name" SET DATA TYPE varchar(255) USING name::text;

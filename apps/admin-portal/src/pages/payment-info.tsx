@@ -34,7 +34,7 @@ const PaymentInfoPage: React.FC = () => {
     if (item.size) {
       price += sizeOptions.find((s) => s.value === item.size)?.price || 0;
     }
-    // Nếu có topping (base là id topping)
+    
     if (item.base && !['dày', 'mỏng'].includes(item.base)) {
       const topping = (dishes || []).find((d: any) => d.id === item.base);
       if (topping) price += Number(topping.basePrice) || 0;
@@ -52,6 +52,49 @@ const PaymentInfoPage: React.FC = () => {
   };
 
   const { user } = useContext(AuthContext);
+
+  // Thêm hàm lấy danh sách giờ hợp lệ
+  function getValidTimes(selectedDate: string) {
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    const minHour = 9;
+    const maxHour = 22;
+    let startHour = minHour;
+    if (selectedDate === todayStr) {
+      if (now.getHours() < minHour) {
+        startHour = minHour;
+      } else if (now.getHours() >= minHour && now.getHours() < maxHour) {
+        startHour = now.getMinutes() > 0 ? now.getHours() + 1 : now.getHours();
+        if (startHour > maxHour) return [];
+      } else {
+        return [];
+      }
+    }
+    const times: string[] = [];
+    for (let h = startHour; h <= maxHour; h++) {
+      const hh = h.toString().padStart(2, '0');
+      times.push(`${hh}:00`);
+    }
+    return times;
+  }
+
+  // Hàm lấy 2 ngày: hôm nay và ngày mai
+  function getValidDates() {
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const format = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    return [format(today), format(tomorrow)];
+  }
+
+  // Giả sử có biến form lưu state ngày/giờ
+  const [form, setForm] = React.useState({
+    timeType: 'now',
+    time: '',
+    date: new Date().toISOString().slice(0, 10),
+    // ... các trường khác
+  });
 
   return (
     <div className="payment-info-root">
@@ -192,6 +235,15 @@ const PaymentInfoPage: React.FC = () => {
               deliveryAddress: store.address,
               note, // tổng hợp từ order_items
             };
+            // Thêm pickupTime nếu là pickup và user chọn thời gian
+            if (orderType === 'pickup') {
+              if (form.timeType === 'custom' && form.date && form.time) {
+                // Ghép ngày và giờ thành pickupTime định dạng yyyy-MM-dd HH:mm
+                const [yyyy, MM, dd] = form.date.split('-');
+                orderData.pickupTime = `${yyyy}-${MM}-${dd} ${form.time}`;
+              }
+              // Nếu là now thì không truyền pickupTime, backend sẽ tự động set
+            }
             console.log('typeof total:', typeof total, total);
             console.log('typeof orderData.totalAmount:', typeof orderData.totalAmount, orderData.totalAmount);
             console.log('orderData gửi lên:', orderData);
@@ -215,6 +267,21 @@ const PaymentInfoPage: React.FC = () => {
           <ArrowRight size={20} style={{marginLeft: 6}} />
         </button>
       </div>
+      {form.timeType === 'custom' && (
+        <div style={{display:'flex', gap:12, marginTop:16}}>
+          <select value={form.time} onChange={e => setForm(f => ({...f, time: e.target.value}))} style={{flex:1}}>
+            <option value="">Chọn giờ</option>
+            {getValidTimes(form.date).map(t => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+          <select value={form.date} onChange={e => setForm(f => ({...f, date: e.target.value}))} style={{flex:1}}>
+            {getValidDates().map(d => (
+              <option key={d} value={d}>{d.split('-').reverse().join('/')}</option>
+            ))}
+          </select>
+        </div>
+      )}
     </div>
   );
 };

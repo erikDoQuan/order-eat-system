@@ -71,16 +71,9 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white py-8">
       <div className="mb-10 w-full">
-        <div className="relative h-[300px] w-full overflow-hidden md:h-[400px]">
-          <img src="/banner.png" alt="Banner" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="banner-16-9 relative w-full overflow-hidden">
+          <img src="/banner.png" alt="Banner" className="absolute inset-0 w-full h-full object-cover" />
           <div className="absolute inset-0 bg-black/30" />
-          <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
-            <h2 className="text-3xl font-extrabold text-white drop-shadow-lg sm:text-4xl md:text-5xl">{t('big_discount')}</h2>
-            <p className="mt-2 text-base text-white sm:text-lg">{t('seafood_pizza_promo')}</p>
-            <button className="mt-4 rounded-full bg-[#e62a10] px-6 py-3 text-lg font-semibold text-white transition hover:bg-red-600">
-              {t('buy_now')}
-            </button>
-          </div>
         </div>
       </div>
       {pizzaDishes.length > 0 && (

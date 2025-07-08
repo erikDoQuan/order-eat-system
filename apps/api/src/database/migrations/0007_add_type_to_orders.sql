@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "type" "order_type" DEFAULT 'delivery'; 

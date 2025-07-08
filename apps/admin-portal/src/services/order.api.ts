@@ -20,7 +20,9 @@ export async function getAllOrders() {
   return res.data?.data?.data || [];
 }
 
-export async function getOrdersByUserId(userId: string) {
-  const res = await axios.get('/api/v1/orders', { params: { userId } });
+export async function getOrdersByUserId(userId: string, status?: string[]) {
+  const params: any = { userId };
+  if (status) params.status = status;
+  const res = await axios.get('/api/v1/orders', { params });
   return res.data?.data?.data || [];
 } 

@@ -1,5 +1,5 @@
 import { InferSelectModel, relations } from 'drizzle-orm';
-import { boolean, decimal, pgTable, text, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, decimal, pgTable, text, uuid, varchar, json } from 'drizzle-orm/pg-core';
 
 import { baseColumns } from './_base';
 import { dishes } from './dishes';
@@ -10,7 +10,7 @@ export const dishOptions = pgTable('dish_options', {
   dishId: uuid('dish_id')
     .references(() => dishes.id, { onDelete: 'cascade' })
     .notNull(),
-  name: varchar('name', { length: 100 }).notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
   price: decimal('price', { precision: 10, scale: 2 }).default('0.00'),
   description: text('description'),
   isRequired: boolean('is_required').default(false),

@@ -13,7 +13,10 @@ export default function RegisterPage() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [address, setAddress] = useState('');
+  const [houseNumber, setHouseNumber] = useState('');
+  const [street, setStreet] = useState('');
+  const [district, setDistrict] = useState('');
+  const [ward, setWard] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,21 +24,68 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const { setUser } = useContext(AuthContext);
 
-  const validatePassword = (pw: string) => {
-    // Ít nhất 8 ký tự, có chữ hoa, thường, số, ký tự đặc biệt
-    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/.test(pw);
+  // Dữ liệu quận/huyện và phường/xã cho Khánh Hòa
+  const province = 'Khánh Hòa';
+  const districtData: Record<string, string[]> = {
+    'Khánh Hòa': ['TP Nha Trang', 'TP Cam Ranh', 'Huyện Diên Khánh', 'Huyện Cam Lâm'],
   };
+  const wardData: Record<string, string[]> = {
+    'TP Nha Trang': ['Phường Vĩnh Hòa', 'Phường Vĩnh Hải', 'Phường Phước Hải', 'Phường Xương Huân', 'Phường Vạn Thắng', 'Phường Phước Tân', 'Phường Lộc Thọ', 'Phường Tân Lập', 'Phường Phước Hòa', 'Phường Vĩnh Nguyên'],
+    'TP Cam Ranh': ['Phường Cam Lợi', 'Phường Cam Thuận'],
+    'Huyện Diên Khánh': ['Xã Diên An', 'Xã Diên Toàn'],
+    'Huyện Cam Lâm': ['Xã Cam Hải Đông', 'Xã Cam Hải Tây'],
+  };
+  const allWardsInKhanhHoa = Object.values(wardData).reduce((acc, arr) => acc.concat(arr), []);
 
+  // Validate email theo chuẩn mạnh
   const validateEmail = (email: string) => {
-    return /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email);
+    return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
+  };
+  // Validate phone theo chuẩn Việt Nam
+  const validatePhone = (phone: string) => {
+    return /^(0|\+84)[3|5|7|8|9][0-9]{8}$/.test(phone);
+  };
+  // Validate password mạnh
+  const validatePassword = (pw: string) => {
+    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(pw);
   };
 
-  const validatePhone = (phone: string) => {
-    return /^0\d{9,10}$/.test(phone);
-  };
+  // Validate địa chỉ
+  const validateHouseNumber = (v: string) => v.trim().length > 0 && /^[\w\d\s/-]+$/.test(v);
+  const validateStreet = (v: string) => v.trim().length > 0 && /^[\w\d\s/-]+$/.test(v);
+  const validateDistrict = (v: string) => (districtData[province] || []).includes(v);
+  const validateWard = (v: string) => Object.values(wardData).flat().includes(v);
+
+  const [addressErrors, setAddressErrors] = useState({
+    houseNumber: '',
+    street: '',
+    district: '',
+    ward: '',
+  });
+
+  // Validate realtime cho các trường
+  const [emailError, setEmailError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    let errors = { houseNumber: '', street: '', district: '', ward: '' };
+    if (!validateHouseNumber(houseNumber)) {
+      errors.houseNumber = 'Số nhà không hợp lệ';
+    }
+    if (!validateStreet(street)) {
+      errors.street = 'Tên đường không hợp lệ';
+    }
+    if (!validateDistrict(district)) {
+      errors.district = 'Vui lòng chọn Quận/Huyện hợp lệ';
+    }
+    if (!validateWard(ward)) {
+      errors.ward = 'Vui lòng chọn Phường/Xã hợp lệ';
+    }
+    setAddressErrors(errors);
+    if (Object.values(errors).some(Boolean)) return;
     if (!validateEmail(email)) {
       setMessage('Email không hợp lệ');
       return;
@@ -54,6 +104,8 @@ export default function RegisterPage() {
     }
     setLoading(true);
     setMessage('');
+    // Ghép địa chỉ
+    const address = `${houseNumber}, ${street}, ${ward}, ${district}, ${province}`;
     const res = await register(email, password, firstName, lastName, phoneNumber, address);
     if (res.message?.toLowerCase().includes('phone') || res.message?.toLowerCase().includes('số điện thoại')) {
       setMessage('Số điện thoại này đã tồn tại');
@@ -81,102 +133,131 @@ export default function RegisterPage() {
     }
   };
 
+  // Validate realtime cho email
+  const handleEmailChange = (v: string) => {
+    setEmail(v);
+    if (!v || v.trim() === '') setEmailError('');
+    else if (!validateEmail(v)) setEmailError('Email không hợp lệ');
+    else setEmailError('');
+  };
+  // Validate realtime cho phone
+  const handlePhoneChange = (v: string) => {
+    setPhoneNumber(v);
+    if (!v || v.trim() === '') setPhoneError('');
+    else if (/[^0-9+]/.test(v)) setPhoneError('Chỉ được nhập số hoặc dấu + ở đầu');
+    else if (v.length < 10) setPhoneError('');
+    else if (!validatePhone(v)) setPhoneError('Số điện thoại không hợp lệ');
+    else setPhoneError('');
+  };
+  // Validate realtime cho password
+  const handlePasswordChange = (v: string) => {
+    setPassword(v);
+    if (!v || v.trim() === '') setPasswordError('');
+    else if (!validatePassword(v)) setPasswordError('Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt');
+    else setPasswordError('');
+    // Đồng thời check lại xác nhận mật khẩu
+    if (!confirmPassword || confirmPassword.trim() === '') setConfirmPasswordError('');
+    else if (v !== confirmPassword) setConfirmPasswordError('Mật khẩu xác nhận không khớp');
+    else setConfirmPasswordError('');
+  };
+  // Validate realtime cho confirm password
+  const handleConfirmPasswordChange = (v: string) => {
+    setConfirmPassword(v);
+    if (!v || v.trim() === '') setConfirmPasswordError('');
+    else if (password !== v) setConfirmPasswordError('Mật khẩu xác nhận không khớp');
+    else setConfirmPasswordError('');
+  };
+  // Validate realtime cho địa chỉ
+  const handleHouseNumberChange = (v: string) => {
+    setHouseNumber(v);
+    setAddressErrors(errors => ({...errors, houseNumber: (!v || v.trim() === '') ? '' : (!validateHouseNumber(v) ? 'Số nhà không hợp lệ' : '')}));
+  };
+  const handleStreetChange = (v: string) => {
+    setStreet(v);
+    setAddressErrors(errors => ({...errors, street: (!v || v.trim() === '') ? '' : (!validateStreet(v) ? 'Tên đường không hợp lệ' : '')}));
+  };
+  const handleDistrictChange = (v: string) => {
+    setDistrict(v);
+    setWard('');
+    setAddressErrors(errors => ({...errors, district: (!v || v.trim() === '') ? '' : (!validateDistrict(v) ? 'Vui lòng chọn Quận/Huyện hợp lệ' : '')}));
+  };
+  const handleWardChange = (v: string) => {
+    setWard(v);
+    setAddressErrors(errors => ({...errors, ward: (!v || v.trim() === '') ? '' : (!validateWard(v) ? 'Vui lòng chọn Phường/Xã hợp lệ' : '')}));
+  };
+
   return (
     <>
       <Navbar />
-      <div className="register-container">
-        <div className="register-box">
-          <h2 className="register-title">Tạo tài khoản</h2>
-          <form className="register-form space-y-5" onSubmit={handleSubmit} autoComplete="off">
-            <div className="flex gap-4">
-              <div className="w-1/2">
-                <label>Họ</label>
-                <input
-                  type="text"
-                  placeholder="Nguyễn"
-                  name="lastName"
-                  autoComplete="off"
-                  required
-                  value={lastName}
-                  onChange={e => setLastName(e.target.value)}
-                />
+      <div className="register-container" style={{background:'#f6fff8', minHeight:'100vh', paddingTop:40}}>
+        <div className="register-box" style={{maxWidth:440, margin:'0 auto', background:'#fff', borderRadius:16, boxShadow:'0 2px 8px rgba(0,0,0,0.08)', padding:'32px 32px 24px 32px'}}>
+          <h2 className="register-title" style={{textAlign:'center', fontWeight:700, fontSize:28, marginBottom:24}}>Tạo tài khoản</h2>
+          <form className="register-form" onSubmit={handleSubmit} autoComplete="off">
+            <div style={{display:'flex', gap:12, marginBottom:16}}>
+              <div style={{flex:1}}>
+                <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Họ</label>
+                <input type="text" placeholder="Nguyễn" name="lastName" autoComplete="off" required value={lastName} onChange={e => setLastName(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',marginBottom:0,background:'#fafafa'}} />
               </div>
-              <div className="w-1/2">
-                <label>Tên</label>
-                <input
-                  type="text"
-                  placeholder="Văn A"
-                  name="firstName"
-                  autoComplete="off"
-                  required
-                  value={firstName}
-                  onChange={e => setFirstName(e.target.value)}
-                />
+              <div style={{flex:1}}>
+                <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Tên</label>
+                <input type="text" placeholder="Văn A" name="firstName" autoComplete="off" required value={firstName} onChange={e => setFirstName(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',marginBottom:0,background:'#fafafa'}} />
               </div>
             </div>
-            <div>
-              <label>Email</label>
-              <input
-                type="email"
-                placeholder="example@gmail.com"
-                name="email"
-                autoComplete="off"
-                required
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-              />
+            <div style={{marginBottom:16}}>
+              <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Email</label>
+              <input type="email" placeholder="example@gmail.com" name="email" autoComplete="off" required value={email} onChange={e => handleEmailChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} />
+              {emailError && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{emailError}</div>}
             </div>
-            <div>
-              <label>Số điện thoại</label>
-              <input
-                type="text"
-                placeholder="0123456789"
-                name="phoneNumber"
-                autoComplete="off"
-                value={phoneNumber}
-                onChange={e => setPhoneNumber(e.target.value)}
-              />
+            <div style={{marginBottom:16}}>
+              <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Số điện thoại</label>
+              <input type="text" placeholder="0123456789" name="phoneNumber" autoComplete="off" value={phoneNumber} onChange={e => handlePhoneChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} />
+              {phoneError && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{phoneError}</div>}
             </div>
-            <div>
-              <label>Địa chỉ</label>
-              <input
-                type="text"
-                placeholder="123 Đường ABC, Quận 1"
-                name="address"
-                autoComplete="off"
-                value={address}
-                onChange={e => setAddress(e.target.value)}
-              />
+            <div style={{marginBottom:16}}>
+              <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Số nhà</label>
+              <input type="text" placeholder="12A" name="houseNumber" autoComplete="off" value={houseNumber} onChange={e => handleHouseNumberChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} />
+              {addressErrors.houseNumber && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{addressErrors.houseNumber}</div>}
             </div>
-            <div>
-              <label>Mật khẩu</label>
-              <input
-                type="password"
-                placeholder="Nhập mật khẩu"
-                name="password"
-                autoComplete="new-password"
-                required
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-              />
+            <div style={{marginBottom:16}}>
+              <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Tên đường</label>
+              <input type="text" placeholder="Nguyễn Trãi" name="street" autoComplete="off" value={street} onChange={e => handleStreetChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} />
+              {addressErrors.street && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{addressErrors.street}</div>}
             </div>
-            <div>
-              <label>Xác nhận mật khẩu</label>
-              <input
-                type="password"
-                placeholder="Nhập lại mật khẩu"
-                name="confirmPassword"
-                autoComplete="new-password"
-                required
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-              />
+            <div style={{marginBottom:16}}>
+              <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Quận/Huyện</label>
+              <select value={district} onChange={e => handleDistrictChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}}>
+                <option value="">Chọn Quận/Huyện</option>
+                {(districtData[province] || []).map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+              {addressErrors.district && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{addressErrors.district}</div>}
             </div>
-            <button type="submit" className="register-btn" disabled={loading}>
+            <div style={{marginBottom:16}}>
+              <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Phường/Xã</label>
+              <select value={ward} onChange={e => handleWardChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}}>
+                <option value="">Chọn Phường/Xã</option>
+                {(wardData[district] || []).map(w => <option key={w} value={w}>{w}</option>)}
+              </select>
+              {addressErrors.ward && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{addressErrors.ward}</div>}
+            </div>
+            <div style={{marginBottom:16}}>
+              <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Tỉnh/Thành</label>
+              <input type="text" value={province} disabled style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#f3f4f6'}} />
+            </div>
+            <div style={{marginBottom:16}}>
+              <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Mật khẩu</label>
+              <input type="password" placeholder="Nhập mật khẩu" name="password" autoComplete="new-password" required value={password} onChange={e => handlePasswordChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} />
+              {passwordError && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{passwordError}</div>}
+            </div>
+            <div style={{marginBottom:24}}>
+              <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Xác nhận mật khẩu</label>
+              <input type="password" placeholder="Nhập lại mật khẩu" name="confirmPassword" autoComplete="new-password" required value={confirmPassword} onChange={e => handleConfirmPasswordChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} />
+              {confirmPasswordError && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{confirmPasswordError}</div>}
+            </div>
+            <button type="submit" className="register-btn" disabled={loading} style={{width:'100%',background:'#c92a15',color:'#fff',border:'none',borderRadius:8,padding:14,fontWeight:700,fontSize:18,boxShadow:'0 1px 4px rgba(201,42,21,0.08)',cursor:'pointer'}}>
               {loading ? 'Đang đăng ký...' : 'Đăng ký'}
             </button>
           </form>
-          {message && <div className={`register-message ${message.includes('thành công') ? 'success' : 'error'}`}>{message}</div>}
+          {message && <div className={`register-message ${message.includes('thành công') ? 'success' : 'error'}`} style={{marginTop:18, textAlign:'center', fontWeight:600, color: message.includes('thành công') ? '#166534' : '#dc2626'}}>{message}</div>}
         </div>
       </div>
     </>

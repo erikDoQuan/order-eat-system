@@ -56,12 +56,34 @@ export class OrderService {
       dto.totalAmount = total;
       console.log('Tổng tiền lưu vào DB:', dto.totalAmount);
     }
+    // Xử lý pickupTime cho đơn pickup
+    let pickupTime: string | undefined = dto.pickupTime;
+    if (dto.type === 'pickup') {
+      if (!pickupTime) {
+        // Nếu không truyền pickupTime, mặc định +15 phút từ thời điểm tạo (giờ Việt Nam)
+        const now = new Date();
+        // Lấy thời gian UTC+7
+        const vnOffset = 7 * 60; // phút
+        const localNow = new Date(now.getTime() + (vnOffset - now.getTimezoneOffset()) * 60000);
+        const pickupDate = new Date(localNow.getTime() + 15 * 60000);
+        // Định dạng yyyy-MM-dd HH:mm
+        const yyyy = pickupDate.getFullYear();
+        const MM = String(pickupDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(pickupDate.getDate()).padStart(2, '0');
+        const hh = String(pickupDate.getHours()).padStart(2, '0');
+        const mm = String(pickupDate.getMinutes()).padStart(2, '0');
+        pickupTime = `${yyyy}-${MM}-${dd} ${hh}:${mm}`;
+      }
+    } else {
+      pickupTime = undefined;
+    }
     // Chỉ truyền các trường hợp lệ vào DB
     const { note, ...rest } = dto;
     return this.orderRepository.create({
       ...rest,
       orderItems: dto.orderItems, // đã có note trong từng item
       note: note, // nếu muốn lưu note tổng
+      pickupTime,
     });
   }
 

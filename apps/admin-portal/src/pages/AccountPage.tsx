@@ -1,5 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 
 import { AuthContext } from '../context/AuthContext';
 import { updateUser } from '../services/user.api';
@@ -37,6 +38,7 @@ export default function AccountPage() {
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [searchValue, setSearchValue] = useState('');
   const [searchResult, setSearchResult] = useState<any[]|null>(null);
+  const { t } = useTranslation();
 
   // Luôn đồng bộ form với user mỗi khi user thay đổi
   useEffect(() => {
@@ -53,9 +55,10 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (user?.id) {
+      // Lấy tất cả đơn hàng cho tab lịch sử
       getOrdersByUserId(user.id).then(orders => {
         const sorted = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setRecentOrders(sorted.slice(0, 3));
+        setRecentOrders(sorted);
       });
     }
   }, [user?.id]);
@@ -167,33 +170,33 @@ export default function AccountPage() {
       <div className="account-container">
         <div className="account-sidebar">
           <div className="account-title">
-            Tài khoản của
+            {t('account_of')}
             <div className="account-username">
               {user?.firstName || ''} {user?.lastName || ''}
             </div>
           </div>
           <ul className="account-menu">
-            <li className={tab==='info' ? 'active' : ''} onClick={()=>setTab('info')}>Thông tin khách hàng</li>
-            <li>Số địa chỉ</li>
-            <li className={tab==='history' ? 'active' : ''} onClick={()=>setTab('history')}>Lịch sử mua hàng</li>
-            <li className={tab==='password' ? 'active' : ''} onClick={()=>setTab('password')}>Đổi mật khẩu</li>
-            <li>Voucher của tôi</li>
+            <li className={tab==='info' ? 'active' : ''} onClick={()=>setTab('info')}>{t('customer_info')}</li>
+            <li>{t('address_count')}</li>
+            <li className={tab==='history' ? 'active' : ''} onClick={()=>setTab('history')}>{t('purchase_history')}</li>
+            <li className={tab==='password' ? 'active' : ''} onClick={()=>setTab('password')}>{t('change_password')}</li>
+            <li>{t('my_voucher')}</li>
           </ul>
         </div>
         <div className="account-main">
-          {tab === 'info' && <h1 className="account-main-title">Thông tin chung</h1>}
-          {tab === 'password' && <h1 className="account-main-title">Đổi mật khẩu</h1>}
+          {tab === 'info' && <h1 className="account-main-title">{t('general_info')}</h1>}
+          {tab === 'password' && <h1 className="account-main-title">{t('change_password_title')}</h1>}
           {tab === 'history' && (
             <>
               <div className="account-orders-box">
-                <h1 className="account-main-title">Tra cứu đơn hàng</h1>
+                <h1 className="account-main-title">{t('order_lookup')}</h1>
                 <form onSubmit={handleSearch} style={{marginBottom: 0}}>
-                  <div style={{fontWeight: 600, fontSize: 18, marginBottom: 10}}>Nhập số điện thoại hoặc mã đơn hàng</div>
+                  <div style={{fontWeight: 600, fontSize: 18, marginBottom: 10}}>{t('enter_phone_or_order')}</div>
                   <input
                     type="text"
                     value={searchValue}
                     onChange={e => setSearchValue(e.target.value)}
-                    placeholder="Nhập số điện thoại hoặc mã đơn hàng"
+                    placeholder={t('enter_phone_or_order')}
                     style={{width: '100%', padding: '16px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 17, background: '#fafafa', marginBottom: 18}}
                   />
                   <button type="submit" style={{
@@ -212,12 +215,12 @@ export default function AccountPage() {
                     letterSpacing: 0.1,
                     transition: 'background 0.2s',
                   }}>
-                    Tra Cứu
+                    {t('search')}
                   </button>
                 </form>
               </div>
               <div className="account-orders-box" style={{marginTop: 32}}>
-                <h2 className="account-main-title" style={{fontSize: 28, marginBottom: 18}}>Lịch sử đơn hàng</h2>
+                <h2 className="account-main-title" style={{fontSize: 28, marginBottom: 18}}>{t('order_history')}</h2>
                 <div className="account-recent-orders">
                   {(searchResult !== null ? searchResult : recentOrders.filter(order => order.status === 'completed')).length === 0 && (
                     <div className="text-gray-500">Bạn chưa có đơn hàng hoàn thành nào</div>
@@ -225,11 +228,11 @@ export default function AccountPage() {
                   <table className="table-recent-orders" style={{width:'100%',marginTop:8}}>
                     <thead>
                       <tr>
-                        <th>Mã</th>
-                        <th>Sản Phẩm</th>
-                        <th>Ngày mua</th>
-                        <th>Tổng tiền</th>
-                        <th>Trạng thái</th>
+                        <th>{t('order_code')}</th>
+                        <th>{t('product')}</th>
+                        <th>{t('order_date')}</th>
+                        <th>{t('total_amount')}</th>
+                        <th>{t('status')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -241,10 +244,10 @@ export default function AccountPage() {
                         const date = new Date(order.createdAt);
                         const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
                         let statusText = '';
-                        if (order.status === 'cancelled') statusText = 'Đã hủy';
-                        else if (order.status === 'completed') statusText = 'Hoàn thành';
-                        else if (order.status === 'confirmed') statusText = 'Đã xác nhận';
-                        else if (order.status === 'pending') statusText = 'Chờ xác nhận';
+                        if (order.status === 'cancelled') statusText = t('order_cancelled');
+                        else if (order.status === 'completed') statusText = t('order_completed');
+                        else if (order.status === 'confirmed') statusText = t('order_confirmed');
+                        else if (order.status === 'pending') statusText = t('order_pending');
                         else statusText = order.status;
                         return (
                           <tr key={order.id}>
@@ -272,25 +275,25 @@ export default function AccountPage() {
             <>
               <div className="account-info-box">
                 <div className="account-info-header">
-                  <span className="account-info-title">THÔNG TIN TÀI KHOẢN</span>
+                  <span className="account-info-title">{t('account_info')}</span>
                   {!editing && (
                     <button className="account-edit-btn" onClick={handleEdit}>
-                      <span style={{ color: '#1976d2', fontSize: 15, marginRight: 4 }}>✎</span> Chỉnh sửa
+                      <span style={{ color: '#1976d2', fontSize: 15, marginRight: 4 }}>✎</span> {t('edit')}
                     </button>
                   )}
                 </div>
                 {!editing ? (
                   <div className="account-info-content">
                     <div>
-                      <b>Họ và tên</b>
+                      <b>{t('full_name')}</b>
                       <span>{form.name}</span>
                     </div>
                     <div>
-                      <b>Số điện thoại</b>
+                      <b>{t('phone_number')}</b>
                       <span>{form.phone ? form.phone : <span className="text-gray-400">-</span>}</span>
                     </div>
                     <div>
-                      <b>Email</b>
+                      <b>{t('email')}</b>
                       <span>{form.email}</span>
                     </div>
                   </div>
@@ -308,7 +311,7 @@ export default function AccountPage() {
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', width: '100%', marginBottom: 14 }}>
                       <label style={{ fontWeight: 700, color: '#222', minWidth: 130, maxWidth: 130, marginRight: 0, fontSize: 16, letterSpacing: 0.1, textAlign: 'left', whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                        Họ và tên <span style={{ color: 'red' }}>*</span>
+                        {t('full_name')} <span style={{ color: 'red' }}>*</span>
                       </label>
                       <input
                         type="text"
@@ -334,7 +337,7 @@ export default function AccountPage() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', width: '100%', marginBottom: 14 }}>
                       <label style={{ fontWeight: 700, color: '#222', minWidth: 130, maxWidth: 130, marginRight: 0, fontSize: 16, letterSpacing: 0.1, textAlign: 'left', whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                        Số điện thoại
+                        {t('phone_number')}
                       </label>
                       <input
                         type="text"
@@ -359,7 +362,7 @@ export default function AccountPage() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', width: '100%', marginBottom: 18 }}>
                       <label style={{ fontWeight: 700, color: '#222', minWidth: 130, maxWidth: 130, marginRight: 0, fontSize: 16, letterSpacing: 0.1, textAlign: 'left', whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                        E-mail
+                        {t('email')}
                       </label>
                       <input
                         type="email"
@@ -405,24 +408,24 @@ export default function AccountPage() {
                           letterSpacing: 0.1,
                         }}
                       >
-                        <span style={{ fontSize: 20, marginRight: 6 }}>✎</span> Cập nhật
+                        <span style={{ fontSize: 20, marginRight: 6 }}>✎</span> {t('update')}
                       </button>
                     </div>
                   </form>
                 )}
               </div>
               <div className="account-orders-box">
-                <span className="account-orders-title">ĐƠN HÀNG GẦN ĐÂY NHẤT</span>
+                <span className="account-orders-title">{t('recent_orders')}</span>
                 <div className="account-recent-orders">
-                  {recentOrders.length === 0 && <div className="text-gray-500">Bạn chưa có đơn hàng nào</div>}
+                  {recentOrders.length === 0 && <div className="text-gray-500">{t('no_orders')}</div>}
                   <table className="table-recent-orders" style={{width:'100%',marginTop:8}}>
                     <thead>
                       <tr>
-                        <th>Mã</th>
-                        <th>Sản Phẩm</th>
-                        <th>Ngày mua</th>
-                        <th>Tổng tiền</th>
-                        <th>Trạng thái</th>
+                        <th>{t('order_code')}</th>
+                        <th>{t('product')}</th>
+                        <th>{t('order_date')}</th>
+                        <th>{t('total_amount')}</th>
+                        <th>{t('status')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -434,10 +437,10 @@ export default function AccountPage() {
                         const date = new Date(order.createdAt);
                         const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
                         let statusText = '';
-                        if (order.status === 'cancelled') statusText = 'Đã hủy';
-                        else if (order.status === 'completed') statusText = 'Hoàn thành';
-                        else if (order.status === 'confirmed') statusText = 'Đã xác nhận';
-                        else if (order.status === 'pending') statusText = 'Chờ xác nhận';
+                        if (order.status === 'cancelled') statusText = t('order_cancelled');
+                        else if (order.status === 'completed') statusText = t('order_completed');
+                        else if (order.status === 'confirmed') statusText = t('order_confirmed');
+                        else if (order.status === 'pending') statusText = t('order_pending');
                         else statusText = order.status;
                         return (
                           <tr key={order.id}>
@@ -475,21 +478,21 @@ export default function AccountPage() {
                 gap: 0,
               }}>
                 {[{
-                  label: <>Mật khẩu cũ</>,
+                  label: t('old_password'),
                   value: pwForm.oldPassword,
                   onChange: (e:any) => setPwForm(f => ({ ...f, oldPassword: e.target.value })),
                   name: 'oldPassword',
                   show: showPw.old,
                   toggle: () => setShowPw(s => ({ ...s, old: !s.old })),
                 }, {
-                  label: <>Mật khẩu mới</>,
+                  label: t('new_password'),
                   value: pwForm.newPassword,
                   onChange: (e:any) => setPwForm(f => ({ ...f, newPassword: e.target.value })),
                   name: 'newPassword',
                   show: showPw.new,
                   toggle: () => setShowPw(s => ({ ...s, new: !s.new })),
                 }, {
-                  label: <>Xác nhận mật khẩu</>,
+                  label: t('confirm_password'),
                   value: pwForm.confirmPassword,
                   onChange: (e:any) => setPwForm(f => ({ ...f, confirmPassword: e.target.value })),
                   name: 'confirmPassword',
@@ -549,7 +552,7 @@ export default function AccountPage() {
                     transition: 'background 0.2s',
                   }}
                 >
-                  Đổi mật khẩu
+                  {t('change_password')}
                 </button>
               </form>
             </div>

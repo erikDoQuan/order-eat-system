@@ -76,6 +76,7 @@ export class OrderRepository {
   }
 
   async create(data: CreateOrderDto): Promise<Order> {
+    // Luôn tạo đơn hàng mới, không kiểm tra đơn pending cũ
     const [created] = await this.drizzle.db
       .insert(orders)
       .values(data as OrderInsert)

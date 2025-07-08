@@ -1,0 +1,1 @@
+ALTER TABLE "dishes" ALTER COLUMN "description" SET DATA TYPE text;

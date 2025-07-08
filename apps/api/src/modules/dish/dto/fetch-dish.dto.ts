@@ -1,6 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsArray, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
-import { DishWithoutPrice } from '~/database/schema/dishes';
 
 export class FetchDishesDto {
   @ApiPropertyOptional({ description: 'Tìm kiếm theo tên món ăn' })

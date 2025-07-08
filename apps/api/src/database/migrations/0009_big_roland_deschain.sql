@@ -1,0 +1,1 @@
+-- Đã xóa mọi lệnh đổi kiểu cột name sang json trong bảng dishes

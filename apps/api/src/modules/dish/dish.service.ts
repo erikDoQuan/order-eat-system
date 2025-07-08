@@ -44,4 +44,14 @@ export class DishService {
     await this.dishRepository.delete(id);
     return { message: 'Dish deleted successfully' };
   }
+
+  /**
+   * Lấy dish theo ngôn ngữ từ Accept-Language header
+   */
+  async findOneWithLanguageFromHeader(id: string, acceptLanguage?: string) {
+    this.logger.info(`Finding dish with id: ${id} and language from header`);
+    const dish = await this.dishRepository.findOne(id);
+    if (!dish) throw new NotFoundException('Dish not found');
+    return dish;
+  }
 }

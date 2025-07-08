@@ -24,7 +24,7 @@ export class CreateOrderDto {
   orderItems: any;
 
   @ApiProperty({
-    description: 'Tổng số tiền của đơn hàng',
+    description: 'Tổng tiền',
     example: 289000,
   })
   @IsNumber()
@@ -74,4 +74,12 @@ export class CreateOrderDto {
   })
   @IsOptional()
   note?: string;
+
+  @ApiProperty({
+    description: 'Thời gian nhận hàng (pickup)',
+    example: '2024-06-01 18:30',
+    required: false,
+  })
+  @IsOptional()
+  pickupTime?: string;
 }

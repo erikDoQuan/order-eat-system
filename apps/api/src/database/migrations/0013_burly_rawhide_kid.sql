@@ -1,0 +1,1 @@
+ALTER TABLE "dish_options" ALTER COLUMN "name" SET DATA TYPE varchar(255);

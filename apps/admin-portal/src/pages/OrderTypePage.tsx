@@ -12,7 +12,11 @@ const OrderTypePage: React.FC = () => {
   };
 
   const handlePay = () => {
-    navigate(`/order-info?orderType=${selectedType}`);
+    if (selectedType === 'delivery') {
+      navigate('/delivery-order');
+    } else {
+      navigate(`/order-info?orderType=${selectedType}`);
+    }
   };
 
   return (

@@ -164,6 +164,7 @@ export default function OrderAdminPage() {
                   <th className="py-2 px-3 border-b">Tổng tiền</th>
                   <th className="py-2 px-3 border-b">Trạng thái</th>
                   <th className="py-2 px-3 border-b">Loại</th>
+                  <th className="py-2 px-3 border-b">Pickup Time</th>
                   <th className="py-2 px-3 border-b">Địa chỉ</th>
                   <th className="py-2 px-3 border-b">Ghi chú</th>
                   <th className="py-2 px-3 border-b">Hành động</th>
@@ -184,6 +185,7 @@ export default function OrderAdminPage() {
                       <td className="py-2 px-3 border-b">{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
                       <td className="py-2 px-3 border-b">{order.status}</td>
                       <td className="py-2 px-3 border-b">{order.type}</td>
+                      <td className="py-2 px-3 border-b">{order.pickupTime || ''}</td>
                       <td className="py-2 px-3 border-b">{order.deliveryAddress}</td>
                       <td className="py-2 px-3 border-b">{order.note}</td>
                       <td className="py-2 px-3 border-b">
@@ -209,6 +211,7 @@ export default function OrderAdminPage() {
                             <td className="py-2 px-3 border-b" rowSpan={maxItems}>{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
                             <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.status}</td>
                             <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.type}</td>
+                            <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.pickupTime || ''}</td>
                             <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.deliveryAddress}</td>
                             <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.note}</td>
                             <td className="py-2 px-3 border-b" rowSpan={maxItems}>

@@ -57,6 +57,62 @@
       "when": 1751855891987,
       "tag": "0007_windy_gamora",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1751939967715,
+      "tag": "0008_sweet_young_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1751943177829,
+      "tag": "0009_big_roland_deschain",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1751956850213,
+      "tag": "0010_brave_hellion",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1751957089357,
+      "tag": "0011_quick_ben_grimm",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1751957160225,
+      "tag": "0012_deep_swarm",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1751957564869,
+      "tag": "0013_burly_rawhide_kid",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1751958437958,
+      "tag": "0014_pretty_mimic",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1751962037470,
+      "tag": "0015_confused_falcon",
+      "breakpoints": true
     }
   ]
 }
