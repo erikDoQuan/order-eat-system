@@ -84,5 +84,6 @@
     "add_to_cart_failed": "Failed to add to cart",
     "view_more": "View More",
     "note": "Note",
-    "note_placeholder": "Enter your note here"
+    "note_placeholder": "Enter your note here",
+    "all": "All"
 }
