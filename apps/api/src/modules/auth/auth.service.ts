@@ -126,104 +126,38 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto) {
+    // DEBUG: Log toàn bộ email trong database để kiểm tra
+    console.log('DEBUG: getAllEmails', await this.userRepository.getAllEmails());
     const { email, password, firstName, lastName, phoneNumber, address } = registerDto;
 
     // Normalize email trước khi kiểm tra
     const normalizedEmail = email.trim().toLowerCase();
-    
 
-    // Kiểm tra email đã tồn tại chưa (chỉ user active)
-    const existingUser = await this.userRepository.findByEmail(normalizedEmail);
-    
+    // Kiểm tra email đã tồn tại chưa (bao gồm cả active và inactive)
+    const existingUser = await this.userRepository.findByEmailWithInactive(normalizedEmail);
     if (existingUser) {
-      if (!existingUser.isEmailVerified) {
-        // Nếu user đã tồn tại nhưng chưa xác thực, gửi lại email xác thực
-        try {
-          await this.verificationService.sendVerificationEmail(existingUser.id);
-          return {
-            success: true,
-            message: 'Email này đã đăng ký nhưng chưa xác thực. Đã gửi lại email xác thực, vui lòng kiểm tra email.',
-            user: {
-              id: existingUser.id,
-              email: existingUser.email,
-              firstName: existingUser.firstName,
-              lastName: existingUser.lastName,
-              isEmailVerified: existingUser.isEmailVerified,
-            },
-          };
-        } catch (error) {
-          return {
-            success: true,
-            message: 'Email này đã đăng ký nhưng chưa xác thực. Tuy nhiên, có lỗi khi gửi lại email xác thực. Vui lòng liên hệ admin.',
-            user: {
-              id: existingUser.id,
-              email: existingUser.email,
-              firstName: existingUser.firstName,
-              lastName: existingUser.lastName,
-              isEmailVerified: existingUser.isEmailVerified,
-            },
-          };
-        }
-      }
       throw new BadRequestException('Email này đã tồn tại');
     }
 
     // Hash password trước khi tạo user
     const hashedPassword = await hashPassword(password);
 
-    // Kiểm tra xem có user inactive với email này không
-    const inactiveUser = await this.userRepository.findInactiveByEmail(normalizedEmail);
-    
-    let newUser;
-    if (inactiveUser) {
-      // Update user cũ thành active
-      newUser = await this.userRepository.update(inactiveUser.id, {
-        email: normalizedEmail,
-        password: hashedPassword,
-        firstName,
-        lastName,
-        phoneNumber,
-        address,
-        role: USER_ROLE.USER,
-        isActive: true,
-        isEmailVerified: false,
-      });
-    } else {
-      // Tạo user mới
-      newUser = await this.userRepository.create({
-        email: normalizedEmail,
-        password: hashedPassword,
-        firstName,
-        lastName,
-        phoneNumber,
-        address,
-        role: USER_ROLE.USER,
-        isActive: true,
-        isEmailVerified: false, // Email chưa được xác thực
-      });
-    }
-
-    // Gửi email xác thực
-    try {
-      await this.verificationService.sendVerificationEmail(newUser.id);
-    } catch (error) {
-      // Vẫn tạo user nhưng thông báo lỗi gửi email
-      return {
-        success: true,
-        message: 'Đăng ký thành công! Tuy nhiên, có lỗi khi gửi email xác thực. Vui lòng liên hệ admin để được hỗ trợ.',
-        user: {
-          id: newUser.id,
-          email: newUser.email,
-          firstName: newUser.firstName,
-          lastName: newUser.lastName,
-          isEmailVerified: newUser.isEmailVerified,
-        },
-      };
-    }
-
+    // Tạo user mới
+    const newUser = await this.userRepository.create({
+      email: normalizedEmail,
+      password: hashedPassword,
+      firstName,
+      lastName,
+      phoneNumber,
+      address,
+      role: USER_ROLE.USER,
+      isActive: true,
+      isEmailVerified: false,
+    });
+    await this.verificationService.sendVerificationEmail(newUser.id);
     return {
       success: true,
-      message: 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.',
+      message: 'Đăng ký thành công! Đã gửi email xác thực, vui lòng kiểm tra email.',
       user: {
         id: newUser.id,
         email: newUser.email,

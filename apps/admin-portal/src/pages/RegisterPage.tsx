@@ -13,10 +13,7 @@ export default function RegisterPage() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [houseNumber, setHouseNumber] = useState('');
-  const [street, setStreet] = useState('');
-  const [district, setDistrict] = useState('');
-  const [ward, setWard] = useState('');
+  const [address, setAddress] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -89,21 +86,6 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    let errors = { houseNumber: '', street: '', district: '', ward: '' };
-    if (!validateHouseNumber(houseNumber)) {
-      errors.houseNumber = 'Số nhà không hợp lệ';
-    }
-    if (!validateStreet(street)) {
-      errors.street = 'Tên đường không hợp lệ';
-    }
-    if (!validateDistrict(district)) {
-      errors.district = 'Vui lòng chọn Quận/Huyện hợp lệ';
-    }
-    if (!validateWard(ward)) {
-      errors.ward = 'Vui lòng chọn Phường/Xã hợp lệ';
-    }
-    setAddressErrors(errors);
-    if (Object.values(errors).some(Boolean)) return;
     if (!validateEmail(email)) {
       setMessage('Email không hợp lệ');
       return;
@@ -120,16 +102,19 @@ export default function RegisterPage() {
       setMessage('Mật khẩu xác nhận không khớp');
       return;
     }
+    if (!address.trim()) {
+      setMessage('Vui lòng nhập địa chỉ');
+      return;
+    }
     setLoading(true);
     setMessage('');
-    const address = `${houseNumber}, ${street}, ${ward}, ${district}, ${province}`;
     const res = await register(email, password, firstName, lastName, phoneNumber, address);
     if (res.message?.toLowerCase().includes('phone') || res.message?.toLowerCase().includes('số điện thoại')) {
       setMessage('Số điện thoại này đã tồn tại');
       setLoading(false);
       return;
     }
-    if (res.message?.toLowerCase().includes('email')) {
+    if (res.success === false && res.message?.toLowerCase().includes('đã tồn tại')) {
       setMessage('Email này đã tồn tại');
       setLoading(false);
       return;
@@ -137,6 +122,7 @@ export default function RegisterPage() {
     setMessage(res.message);
     setLoading(false);
     if (res.success) {
+      setMessage('Đăng ký thành công! Hãy kiểm tra email của bạn và click link xác thực trong mail. Bạn sẽ được chuyển đến trang đăng nhập.');
       setTimeout(() => {
         navigate('/login', { replace: true });
       }, 3000);
@@ -172,23 +158,6 @@ export default function RegisterPage() {
     else if (password !== v) setConfirmPasswordError('Mật khẩu xác nhận không khớp');
     else setConfirmPasswordError('');
   };
-  const handleHouseNumberChange = (v: string) => {
-    setHouseNumber(v);
-    setAddressErrors(errors => ({...errors, houseNumber: (!v || v.trim() === '') ? '' : (!validateHouseNumber(v) ? 'Số nhà không hợp lệ' : '')}));
-  };
-  const handleStreetChange = (v: string) => {
-    setStreet(v);
-    setAddressErrors(errors => ({...errors, street: (!v || v.trim() === '') ? '' : (!validateStreet(v) ? 'Tên đường không hợp lệ' : '')}));
-  };
-  const handleDistrictChange = (v: string) => {
-    setDistrict(v);
-    setWard('');
-    setAddressErrors(errors => ({...errors, district: (!v || v.trim() === '') ? '' : (!validateDistrict(v) ? 'Vui lòng chọn Quận/Huyện hợp lệ' : '')}));
-  };
-  const handleWardChange = (v: string) => {
-    setWard(v);
-    setAddressErrors(errors => ({...errors, ward: (!v || v.trim() === '') ? '' : (!validateWard(v) ? 'Vui lòng chọn Phường/Xã hợp lệ' : '')}));
-  };
 
   return (
     <>
@@ -196,86 +165,74 @@ export default function RegisterPage() {
       <div className="register-container" style={{background:'#f6fff8', minHeight:'100vh', paddingTop:40}}>
         <div className="register-box" style={{maxWidth:440, margin:'0 auto', background:'#fff', borderRadius:16, boxShadow:'0 2px 8px rgba(0,0,0,0.08)', padding:'32px 32px 24px 32px'}}>
           <h2 className="register-title" style={{textAlign:'center', fontWeight:700, fontSize:28, marginBottom:24}}>Tạo tài khoản</h2>
-          <form className="register-form" onSubmit={handleSubmit} autoComplete="off">
-            <div style={{display:'flex', gap:12, marginBottom:16}}>
-              <div style={{flex:1}}>
-                <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Họ</label>
-                <input type="text" placeholder="Nguyễn" name="lastName" autoComplete="off" required value={lastName} onChange={e => setLastName(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',marginBottom:0,background:'#fafafa'}} />
+          {message.includes('thành công') ? (
+            <div style={{
+              padding: '32px 16px',
+              borderRadius: 12,
+              background: '#f8fafc',
+              textAlign: 'center',
+              color: '#166534',
+              fontWeight: 600,
+              fontSize: 18,
+              boxShadow: '0 2px 8px rgba(22,101,52,0.08)',
+              border: '1.5px solid #b45309',
+            }}>
+              <div style={{fontSize: 40, marginBottom: 12}}>🎉</div>
+              Đăng ký thành công!<br />Vui lòng kiểm tra email và xác thực, cảm ơn bạn.
+            </div>
+          ) : (
+            <form className="register-form" onSubmit={handleSubmit} autoComplete="off">
+              <div style={{display:'flex', gap:12, marginBottom:16}}>
+                <div style={{flex:1}}>
+                  <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Họ</label>
+                  <input type="text" placeholder="Nguyễn" name="lastName" autoComplete="off" required value={lastName} onChange={e => setLastName(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',marginBottom:0,background:'#fafafa'}} />
+                </div>
+                <div style={{flex:1}}>
+                  <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Tên</label>
+                  <input type="text" placeholder="Văn A" name="firstName" autoComplete="off" required value={firstName} onChange={e => setFirstName(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',marginBottom:0,background:'#fafafa'}} />
+                </div>
               </div>
-              <div style={{flex:1}}>
-                <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Tên</label>
-                <input type="text" placeholder="Văn A" name="firstName" autoComplete="off" required value={firstName} onChange={e => setFirstName(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',marginBottom:0,background:'#fafafa'}} />
+              <div style={{marginBottom:16}}>
+                <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Email</label>
+                <input type="email" placeholder="example@gmail.com" name="email" autoComplete="off" required value={email} onChange={e => handleEmailChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} />
+                {emailError && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{emailError}</div>}
               </div>
-            </div>
-            <div style={{marginBottom:16}}>
-              <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Email</label>
-              <input type="email" placeholder="example@gmail.com" name="email" autoComplete="off" required value={email} onChange={e => handleEmailChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} />
-              {emailError && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{emailError}</div>}
-            </div>
-            <div style={{marginBottom:16}}>
-              <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Số điện thoại</label>
-              <input type="text" placeholder="0123456789" name="phoneNumber" autoComplete="off" value={phoneNumber} onChange={e => handlePhoneChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} />
-              {phoneError && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{phoneError}</div>}
-            </div>
-            <div style={{marginBottom:16}}>
-              <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Số nhà</label>
-              <input type="text" placeholder="12A" name="houseNumber" autoComplete="off" value={houseNumber} onChange={e => handleHouseNumberChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} />
-              {addressErrors.houseNumber && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{addressErrors.houseNumber}</div>}
-            </div>
-            <div style={{marginBottom:16}}>
-              <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Tên đường</label>
-              <input 
-                type="text" 
-                placeholder="Nguyễn Trãi" 
-                name="street" 
-                autoComplete="off" 
-                value={street} 
-                onChange={e => handleStreetChange(e.target.value)}
-                list="street-suggestions"
-                style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} 
-              />
-              <datalist id="street-suggestions">
-                {commonStreets.map((streetName, idx) => (
-                  <option key={streetName + idx} value={streetName} />
-                ))}
-              </datalist>
-              {addressErrors.street && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{addressErrors.street}</div>}
-            </div>
-            <div style={{marginBottom:16}}>
-              <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Quận/Huyện</label>
-              <select value={district} onChange={e => handleDistrictChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}}>
-                <option value="">Chọn Quận/Huyện</option>
-                {(districtData[province] || []).map(d => <option key={d} value={d}>{d}</option>)}
-              </select>
-              {addressErrors.district && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{addressErrors.district}</div>}
-            </div>
-            <div style={{marginBottom:16}}>
-              <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Phường/Xã</label>
-              <select value={ward} onChange={e => handleWardChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}}>
-                <option value="">Chọn Phường/Xã</option>
-                {(wardData[district] || []).map(w => <option key={w} value={w}>{w}</option>)}
-              </select>
-              {addressErrors.ward && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{addressErrors.ward}</div>}
-            </div>
-            <div style={{marginBottom:16}}>
-              <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Tỉnh/Thành</label>
-              <input type="text" value={province} disabled style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#f3f4f6'}} />
-            </div>
-            <div style={{marginBottom:16}}>
-              <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Mật khẩu</label>
-              <input type="password" placeholder="Nhập mật khẩu" name="password" autoComplete="new-password" required value={password} onChange={e => handlePasswordChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} />
-              {passwordError && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{passwordError}</div>}
-            </div>
-            <div style={{marginBottom:24}}>
-              <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Xác nhận mật khẩu</label>
-              <input type="password" placeholder="Nhập lại mật khẩu" name="confirmPassword" autoComplete="new-password" required value={confirmPassword} onChange={e => handleConfirmPasswordChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} />
-              {confirmPasswordError && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{confirmPasswordError}</div>}
-            </div>
-            <button type="submit" className="register-btn" disabled={loading} style={{width:'100%',background:'#c92a15',color:'#fff',border:'none',borderRadius:8,padding:14,fontWeight:700,fontSize:18,boxShadow:'0 1px 4px rgba(201,42,21,0.08)',cursor:'pointer'}}>
-              {loading ? 'Đang đăng ký...' : 'Đăng ký'}
-            </button>
-          </form>
-          {message && <div className={`register-message ${message.includes('thành công') ? 'success' : 'error'}`} style={{marginTop:18, textAlign:'center', fontWeight:600, color: message.includes('thành công') ? '#166534' : '#dc2626'}}>{message}</div>}
+              <div style={{marginBottom:16}}>
+                <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Số điện thoại</label>
+                <input type="text" placeholder="0123456789" name="phoneNumber" autoComplete="off" value={phoneNumber} onChange={e => handlePhoneChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} />
+                {phoneError && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{phoneError}</div>}
+              </div>
+              <div className="form-group" style={{ marginBottom: 16 }}>
+                <label htmlFor="address" style={{ fontWeight: 500 }}>Địa chỉ <span style={{ color: 'red' }}>*</span></label>
+                <input
+                  id="address"
+                  type="text"
+                  value={address}
+                  onChange={e => setAddress(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #ccc', fontSize: 16, marginTop: 4 }}
+                  placeholder="Nhập địa chỉ của bạn"
+                  required
+                />
+              </div>
+              <div style={{marginBottom:16}}>
+                <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Mật khẩu</label>
+                <input type="password" placeholder="Nhập mật khẩu" name="password" autoComplete="new-password" required value={password} onChange={e => handlePasswordChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} />
+                {passwordError && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{passwordError}</div>}
+              </div>
+              <div style={{marginBottom:24}}>
+                <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Xác nhận mật khẩu</label>
+                <input type="password" placeholder="Nhập lại mật khẩu" name="confirmPassword" autoComplete="new-password" required value={confirmPassword} onChange={e => handleConfirmPasswordChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} />
+                {confirmPasswordError && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{confirmPasswordError}</div>}
+              </div>
+              <button type="submit" className="register-btn" disabled={loading} style={{width:'100%',background:'#c92a15',color:'#fff',border:'none',borderRadius:8,padding:14,fontWeight:700,fontSize:18,boxShadow:'0 1px 4px rgba(201,42,21,0.08)',cursor:'pointer'}}>
+                {loading ? 'Đang đăng ký...' : 'Đăng ký'}
+              </button>
+            </form>
+          )}
+          {/* Thông báo lỗi hoặc thành công */}
+          {message && !message.includes('thành công') && (
+            <div className={`register-message error`} style={{marginTop:18, textAlign:'center', fontWeight:600, color:'#dc2626'}}>{message}</div>
+          )}
         </div>
       </div>
     </>

@@ -37,12 +37,13 @@ export async function register(
   address: string,
 ): Promise<{ success: boolean; message: string }> {
   try {
-    
+    // Normalize email trước khi gửi lên backend
+    const normalizedEmail = email.trim().toLowerCase();
     const res = await fetch('http://localhost:3001/api/v1/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email,
+        email: normalizedEmail,
         password,
         firstName,
         lastName,

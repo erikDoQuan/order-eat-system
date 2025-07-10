@@ -59,10 +59,20 @@ export class AuthController {
   }
 
   @Get('verify-email')
-  @ApiOperation({ summary: 'Verify email with token' })
+  @ApiOperation({ summary: 'Verify email with token and redirect to frontend' })
   @ApiOkResponse({ description: 'Email verified successfully' })
-  async verifyEmail(@Query('token') token: string) {
-    return this.verificationService.verifyEmail(token);
+  async verifyEmail(
+    @Query('token') token: string,
+    @Query('redirect') redirect: string,
+    @Res() res: ExpressResponse,
+  ) {
+    await this.verificationService.verifyEmail(token);
+    // Đảm bảo URL an toàn, tránh open redirect
+    const safeRedirect =
+      redirect && redirect.startsWith('http://localhost:3001')
+        ? redirect
+        : 'http://localhost:3001/login?verified=1';
+    return res.redirect(safeRedirect);
   }
 
   @Post('resend-verification')

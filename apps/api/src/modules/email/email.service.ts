@@ -19,43 +19,40 @@ export class EmailService {
   }
 
   async sendVerificationEmail(email: string, token: string, userName: string): Promise<void> {
-    const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${token}`;
-    
+    const verificationLink = `http://localhost:3001/api/v1/auth/verify-email?token=${token}&redirect=http://localhost:3001/login`;
     const mailOptions = {
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       to: email,
-      subject: 'Xác nhận địa chỉ Email của bạn - Bếp Của Mẹ',
+      subject: 'Verify your email - Bếp Của Mẹ',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: #16a34a; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-            <h1 style="margin: 0;">Bếp Của Mẹ</h1>
+          <div style="background: #b45309; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <h1 style="margin: 0;">Welcome to Bếp Của Mẹ!</h1>
           </div>
-          <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
-            <h2 style="color: #333; margin-bottom: 20px;">Xin chào ${userName}!</h2>
-            <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-              Cảm ơn bạn đã đăng ký tài khoản tại Bếp Của Mẹ. Để hoàn tất quá trình đăng ký, 
-              vui lòng xác nhận email của bạn bằng cách nhấn vào nút bên dưới:
+          <div style="background: #fff; padding: 30px; border-radius: 0 0 8px 8px;">
+            <h2 style="color: #b45309; margin-bottom: 20px;">Thank you for registering!</h2>
+            <p style="color: #444; line-height: 1.6; margin-bottom: 20px;">
+              Please verify your email by clicking the button below:
             </p>
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${verificationLink}" 
-                 style="background: #16a34a; color: white; padding: 15px 30px; text-decoration: none; 
+              <a href="${verificationLink}"
+                 style="background: #b45309; color: white; padding: 15px 30px; text-decoration: none;
                         border-radius: 6px; font-weight: bold; display: inline-block;">
-                Xác nhận Email
+                Verify Email
               </a>
             </div>
-            <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-              Hoặc bạn có thể copy và paste link sau vào trình duyệt:
+            <p style="color: #444; line-height: 1.6; margin-bottom: 20px;">
+              If the button doesn't work, you can copy and paste this link into your browser:
             </p>
             <p style="background: #f0f0f0; padding: 10px; border-radius: 4px; word-break: break-all;">
-              <a href="${verificationLink}" style="color: #16a34a;">${verificationLink}</a>
+              <a href="${verificationLink}" style="color: #b45309;">${verificationLink}</a>
             </p>
             <p style="color: #999; font-size: 14px; margin-top: 30px;">
-              Link này sẽ hết hạn sau 1 giờ. Nếu bạn không thực hiện yêu cầu này, 
-              vui lòng bỏ qua email này.
+              This link will expire in 24 hours.
             </p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
             <p style="color: #999; font-size: 12px; text-align: center;">
-              Email này được gửi tự động, vui lòng không trả lời email này.
+              This is an automated email, please do not reply.
             </p>
           </div>
         </div>

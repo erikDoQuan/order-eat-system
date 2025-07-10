@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpStatus, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpStatus, Param, Patch, Post, Query, UseGuards, NotFoundException } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
 import { ApiDocumentResponse } from '~/common/decorators/api-document-response.decorator';
@@ -38,7 +38,11 @@ export class AdminUsersController {
   @ApiOperation({ summary: 'Get a user by email' })
   @Response({ message: 'Get a user by email successfully' })
   async findByEmail(@Param('email') email: string): Promise<UserWithoutPassword> {
-    return this.usersService.findByEmail(email);
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
   }
 
   @Post()

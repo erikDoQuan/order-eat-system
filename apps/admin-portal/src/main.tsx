@@ -25,6 +25,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import './i18n';
 import DeliveryOrderPage from './pages/DeliveryOrderPage';
 import OrderDetailPage from './pages/OrderDetailPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 
 import './globals.scss';
 
@@ -140,6 +141,8 @@ function AppWithCartProvider() {
         <Route path="/delivery-order" element={<DeliveryOrderPage />} />
         <Route path="/payment-info" element={<PaymentInfoPage />} />
         <Route path="/order-success" element={<OrderSuccessPage />} />
+        {/* Route xác thực email */}
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
       </Routes>
     </CartProvider>
   );
