@@ -131,11 +131,9 @@ export class AuthService {
     // Normalize email trước khi kiểm tra
     const normalizedEmail = email.trim().toLowerCase();
     
-    console.log('Checking email:', { original: email, normalized: normalizedEmail });
 
     // Kiểm tra email đã tồn tại chưa (chỉ user active)
     const existingUser = await this.userRepository.findByEmail(normalizedEmail);
-    console.log('Existing user check result:', existingUser ? 'Found' : 'Not found');
     
     if (existingUser) {
       if (!existingUser.isEmailVerified) {
@@ -179,7 +177,6 @@ export class AuthService {
     let newUser;
     if (inactiveUser) {
       // Update user cũ thành active
-      console.log('Found inactive user, updating...');
       newUser = await this.userRepository.update(inactiveUser.id, {
         email: normalizedEmail,
         password: hashedPassword,
@@ -193,7 +190,6 @@ export class AuthService {
       });
     } else {
       // Tạo user mới
-      console.log('Creating new user...');
       newUser = await this.userRepository.create({
         email: normalizedEmail,
         password: hashedPassword,
@@ -210,9 +206,7 @@ export class AuthService {
     // Gửi email xác thực
     try {
       await this.verificationService.sendVerificationEmail(newUser.id);
-      console.log('Verification email sent successfully to:', newUser.email);
     } catch (error) {
-      console.error('Failed to send verification email:', error);
       // Vẫn tạo user nhưng thông báo lỗi gửi email
       return {
         success: true,

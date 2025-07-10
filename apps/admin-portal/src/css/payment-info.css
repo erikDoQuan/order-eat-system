@@ -1,5 +1,5 @@
 .payment-info-root {
-  background: #f6fff8;
+  background: var(--background-secondary);
   min-height: 100vh;
 }
 .payment-info-container {
@@ -28,15 +28,15 @@
   font-weight: 700;
   font-size: 22px;
   margin-bottom: 12px;
-  color: #C92A15;
+  color: var(--primary-color);
 }
 .payment-info-text {
-  color: #444;
+  color: var(--text-color);
   font-size: 15px;
   margin-top: 8px;
 }
 .payment-info-highlight {
-  color: #d32f2f;
+  color: var(--primary-color);
   font-weight: 600;
 }
 .payment-info-label {
@@ -81,12 +81,12 @@
 .payment-info-input input {
   flex: 1;
   border-radius: 8px;
-  border: 1.5px solid #16a34a;
+  border: 1.5px solid #b45309;
   padding: 8px 12px;
   font-size: 16px;
 }
 .payment-info-input button {
-  background: #16a34a;
+  background: #b45309;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -107,7 +107,7 @@
   justify-content: space-between;
   padding: 22px 0;
   margin-bottom: 22px;
-  background: #f8fafc;
+  background: var(--secondary-color);
   border-radius: 18px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.07);
   transition: box-shadow 0.2s;

@@ -15,9 +15,6 @@ export default defineConfig(({ mode }: UserConfig) => {
   // Merge base and mode-specific environments, with mode-specific taking precedence
   const env = { ...baseEnv, ...modeEnv };
 
-  console.log(`Building for mode: ${mode}`);
-  console.log('VITE_API_BASE_URL', env.VITE_API_BASE_URL);
-
   return {
     base: '/',
     envDir,

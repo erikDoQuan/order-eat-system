@@ -1,6 +1,6 @@
 .order-success-root {
   min-height: 100vh;
-  background: #f6fff8;
+  background: var(--background-secondary);
 }
 .order-success-outer {
   min-height: calc(100vh - 80px);
@@ -30,7 +30,7 @@
   justify-content: center;
 }
 .order-success-title {
-  color: #16a34a;
+  color: var(--primary-color);
   font-weight: 900;
   font-size: 36px;
   margin-bottom: 12px;
@@ -63,11 +63,11 @@
   align-items: center;
   gap: 8px;
   font-weight: 600;
-  color: #16a34a;
+  color: var(--primary-color);
   font-size: 16px;
 }
 .order-success-thank {
-  color: #16a34a;
+  color: var(--text-color);
   font-weight: 700;
   font-size: 16px;
   margin-bottom: 8px;
@@ -122,4 +122,8 @@
   background: #e6faed;
   color: #128a3a;
   border-color: #128a3a;
+}
+.order-success-error {
+  color: #d32f2f;
+  font-weight: 600;
 } 

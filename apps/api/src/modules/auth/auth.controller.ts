@@ -31,7 +31,6 @@ export class AuthController {
     const ua = req.headers['user-agent'] || '';
 
     const resp = await this.authService.signIn(signInDto, ip, ua);
-    console.log('[LOGIN] User logged in:', resp.user?.email || resp.user?.id, 'Role:', resp.user?.role);
     const appEnv = this.configService.get('app').appEnv;
 
     response.cookie('refreshToken', resp.refreshToken, {

@@ -31,7 +31,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     const accessToken = localStorage.getItem('order-eat-access-token');
-    console.log('[AuthProvider] accessToken (useEffect):', accessToken);
   }, []);
 
   useEffect(() => {
@@ -94,7 +93,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }, []);
 
   useEffect(() => {
-    console.log('[AuthProvider] user context:', user);
   }, [user]);
 
   if (loading) return null;

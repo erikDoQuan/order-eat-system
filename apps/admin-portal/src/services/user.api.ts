@@ -37,7 +37,6 @@ export async function register(
   address: string,
 ): Promise<{ success: boolean; message: string }> {
   try {
-    console.log('Sending registration request:', { email, firstName, lastName, phoneNumber, address });
     
     const res = await fetch('http://localhost:3001/api/v1/auth/register', {
       method: 'POST',
@@ -52,10 +51,8 @@ export async function register(
       }),
     });
     
-    console.log('Registration response status:', res.status);
     
     const data = await res.json().catch(() => null);
-    console.log('Registration response data:', data);
     
     if (res.ok) {
       return { success: true, message: data?.message || 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.' };
@@ -85,13 +82,10 @@ export const updateUser = async (id: string, data: Partial<User>) => {
 // Lấy tất cả order_items của user
 export async function getOrderItemsByUserId(userId: string) {
   const url = `/api/v1/orders?userId=${userId}`;
-  console.log('[DEBUG] Gọi API:', url);
   const res = await fetch(url);
-  console.log('[DEBUG] Status:', res.status);
   let data;
   try {
     data = await res.json();
-    console.log('[DEBUG] Response data:', data);
   } catch (e) {
     console.error('[DEBUG] Lỗi parse JSON:', e);
     throw new Error('Không lấy được order_items');
@@ -115,7 +109,6 @@ export async function getOrderItemsByUserId(userId: string) {
       allItems = allItems.concat(orderItems.items.map(item => ({ ...item, orderId: order.id })));
     }
   }
-  console.log('[DEBUG] allItems:', allItems);
   return allItems;
 }
 

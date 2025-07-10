@@ -53,7 +53,7 @@ const OrderSuccessPage: React.FC = () => {
           <div className="order-success-right">
             <div className="order-success-successbox">
               {error ? (
-                <span style={{ color: 'red' }}>{error}</span>
+                <span className="order-success-error">{error}</span>
               ) : (
                 'BẠN ĐÃ ĐẶT HÀNG THÀNH CÔNG!'
               )}

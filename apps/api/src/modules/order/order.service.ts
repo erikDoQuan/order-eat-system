@@ -125,7 +125,6 @@ export class OrderService {
         total += 25000;
       }
       dto.totalAmount = total;
-      console.log('Tổng tiền lưu vào DB:', dto.totalAmount);
     }
     // Xử lý pickupTime cho đơn pickup
     let pickupTime: string | undefined = dto.pickupTime;
@@ -160,10 +159,9 @@ export class OrderService {
     });
     // Lấy lại order từ DB để chắc chắn có trường orderNumber
     const orderFull = await this.orderRepository.findOne(order.id);
-    console.log('ORDER CREATED:', orderFull);
     return {
       ...orderFull,
-      order_number: orderFull?.orderNumber || orderFull?.order_number || orderFull?.id,
+      order_number: orderFull?.orderNumber || orderFull?.id,
     };
   }
 
@@ -221,8 +219,22 @@ export class OrderService {
     }
     if (dto.isActive !== undefined) order.isActive = dto.isActive;
 
+    // Đảm bảo deliveryAddress đúng cấu trúc nếu type là delivery
+    if (order.type === 'delivery') {
+      const deliveryAddress = (dto.deliveryAddress ?? order.deliveryAddress) as { address: string; phone: string; name?: string };
+      if (deliveryAddress && deliveryAddress.address && deliveryAddress.phone) {
+        order.deliveryAddress = deliveryAddress;
+      } else {
+        throw new Error('Thiếu thông tin địa chỉ giao hàng (address, phone)');
+      }
+    }
+
     // Lưu lại order
-    return this.orderRepository.update(id, order);
+    const updatedOrder = await this.orderRepository.update(id, order as UpdateOrderDto);
+    return {
+      ...updatedOrder,
+      order_number: updatedOrder?.orderNumber || updatedOrder?.id,
+    };
   }
 
   async delete(id: string, currentUserId: string) {

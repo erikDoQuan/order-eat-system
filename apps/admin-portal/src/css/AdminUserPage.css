@@ -85,4 +85,21 @@
   background: none;
   border: none;
   cursor: pointer;
+}
+:root {}
+
+.admin-user-title, .admin-user-table th, .admin-user-table td {
+  color: var(--text-color);
+}
+.admin-user-title {
+  color: var(--primary-color);
+}
+.admin-user-root, .admin-user-container {
+  background: var(--background-secondary);
+}
+.admin-user-table tr:nth-child(even) {
+  background: var(--secondary-color);
+}
+.admin-user-table tr:nth-child(odd) {
+  background: #fff;
 } 

@@ -23,12 +23,7 @@ async function hashExistingPasswords() {
       !u.password.startsWith('$2b$') &&
       !u.password.startsWith('$2y$')
     );
-    console.log(`Found ${usersToHash.length} users with unhashed passwords:`);
-    for (const user of usersToHash) {
-      console.log(`- ${user.email}: ${user.password}`);
-    }
     if (usersToHash.length === 0) {
-      console.log('All passwords are already hashed!');
       await pool.end();
       return;
     }
@@ -36,9 +31,7 @@ async function hashExistingPasswords() {
     for (const user of usersToHash) {
       const hashedPassword = await hashPassword(user.password);
       await db.update(users).set({ password: hashedPassword }).where(eq(users.id, user.id));
-      console.log(`✓ Hashed password for ${user.email}`);
     }
-    console.log('✅ All passwords have been hashed successfully!');
   } catch (error) {
     console.error('❌ Error hashing passwords:', error);
   } finally {

@@ -10,6 +10,8 @@ import { useCart } from '../context/CartContext';
 import { getAllDishes } from '../services/dish.api';
 import LanguageSwitcher from './LanguageSwitcher';
 import { FaBell } from 'react-icons/fa';
+import { NotificationPopup } from './NotificationPopup';
+import { getOrdersByUserId } from '../services/order.api';
 
 import '../css/Navbar.css';
 
@@ -26,6 +28,76 @@ export default function Navbar() {
   const [cartLoading, setCartLoading] = useState(false);
   const [dishes, setDishes] = useState<any[]>([]);
   const { t } = useTranslation();
+  const [showNotificationPopup, setShowNotificationPopup] = useState(false);
+  const [notification, setNotification] = useState<any>(null);
+  const [notificationLoading, setNotificationLoading] = useState(false);
+  const [hasOrderNotification, setHasOrderNotification] = useState(false);
+  const [notificationHover, setNotificationHover] = useState(false);
+  const ordersCache = useRef<{ data: any[]; timestamp: number } | null>(null);
+  const dishesCache = useRef<{ data: any[]; timestamp: number } | null>(null);
+  const CACHE_DURATION = 2 * 60 * 1000; // 2 phút
+
+  // Fetch latest order and dishes for notification
+  const fetchLatestOrderNotification = async (force = false) => {
+    if (!user?.id) return;
+    const now = Date.now();
+    setNotificationLoading(true);
+    try {
+      let orders: any[] = [];
+      let dishes: any[] = [];
+      // Kiểm tra cache orders
+      if (!force && ordersCache.current && now - ordersCache.current.timestamp < CACHE_DURATION) {
+        orders = ordersCache.current.data;
+      } else {
+        orders = await getOrdersByUserId(user.id);
+        ordersCache.current = { data: orders, timestamp: now };
+      }
+      // Kiểm tra cache dishes
+      if (!force && dishesCache.current && now - dishesCache.current.timestamp < CACHE_DURATION) {
+        dishes = dishesCache.current.data;
+      } else {
+        dishes = await getAllDishes();
+        dishesCache.current = { data: dishes, timestamp: now };
+      }
+      // Lọc ra các đơn đã xác nhận hoặc hoàn thành
+      const validOrders = orders.filter((o: any) => o.status === 'confirmed' || o.status === 'completed');
+      setHasOrderNotification(validOrders.length > 0);
+      if (!validOrders.length) {
+        setNotification(null);
+        setNotificationLoading(false);
+        return;
+      }
+      // Lấy đơn mới nhất trong validOrders
+      const latestOrder = validOrders.sort((a, b) => {
+        if (a.createdAt && b.createdAt) return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        if (a.orderNumber && b.orderNumber) return b.orderNumber - a.orderNumber;
+        return 0;
+      })[0];
+      // Map orderItems to product names
+      let items = latestOrder.orderItems;
+      if (typeof items === 'string') {
+        try { items = JSON.parse(items); } catch { items = null; }
+      }
+      const products = (items?.items || []).map((item: any) => {
+        const dish = dishes.find((d: any) => d.id === item.dishId);
+        return {
+          name: dish ? dish.name : item.dishId,
+          quantity: item.quantity || 1,
+        };
+      });
+      setNotification({
+        orderId: latestOrder.orderNumber || latestOrder.id,
+        products,
+        date: latestOrder.createdAt || new Date().toISOString(),
+        total: Number(latestOrder.totalAmount) || 0,
+        status: latestOrder.status === 'completed' ? 'Hoàn thành' : 'Đã xác nhận',
+      });
+    } catch (e) {
+      setNotification(null);
+      setHasOrderNotification(false);
+    }
+    setNotificationLoading(false);
+  };
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -40,6 +112,13 @@ export default function Navbar() {
   useEffect(() => {
     getAllDishes().then(d => setDishes(d || []));
   }, []);
+
+  // Tự động refetch sau 2 phút nếu popup vẫn mở
+  useEffect(() => {
+    if (!showNotificationPopup) return;
+    const interval = setInterval(() => fetchLatestOrderNotification(true), CACHE_DURATION);
+    return () => clearInterval(interval);
+  }, [showNotificationPopup]);
 
   const handleLogout = () => {
     setUser(null);
@@ -214,29 +293,63 @@ export default function Navbar() {
           </ul>
 
           {/* Giỏ hàng nằm phía cuối bên phải (ĐÃ SỬA: thêm border-radius đẹp) */}
-          <div className="ml-auto flex items-center gap-2 rounded-full border-2 border-white bg-white px-4 py-2 transition hover:shadow-lg" style={{ cursor: 'pointer', position: 'relative' }} onClick={handleOpenCart}>
-            <FaBell size={22} style={{ marginRight: 18, cursor: 'pointer', color: '#C92A15' }} />
-            <CartIcon />
-            <span className="text-sm font-bold text-[#a01f10]">{t('cart')}</span>
-            {showCartPopup && (
-              <>
+          <div
+            className="ml-auto flex items-center gap-2 rounded-full border-2 border-white bg-white px-4 py-2 transition hover:shadow-lg"
+            style={{ cursor: 'pointer', position: 'relative' }}
+          >
+            <div
+              onMouseEnter={() => {
+                setShowNotificationPopup(true);
+                if (!notification && !notificationLoading) fetchLatestOrderNotification();
+              }}
+              onMouseLeave={() => setShowNotificationPopup(false)}
+              style={{ display: 'inline-block', position: 'relative' }}
+            >
+              <FaBell size={22} style={{ marginRight: 18, cursor: 'pointer', color: '#C92A15', position: 'relative' }} />
+              {hasOrderNotification && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-2px',
+                  right: '14px',
+                  width: 16,
+                  height: 16,
+                  background: '#dc2626',
+                  borderRadius: '50%',
+                  border: '2.5px solid #fff',
+                  boxShadow: '0 1px 4px #0002',
+                  zIndex: 110,
+                  display: 'block',
+                }}></span>
+              )}
+              {showNotificationPopup && (
                 <div
-                  style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    width: '100vw',
-                    height: '100vh',
-                    background: 'rgba(0,0,0,0.1)',
-                    zIndex: 99,
-                  }}
-                  onClick={() => setShowCartPopup(false)}
-                />
-                <CartPopup
-                  onClose={() => setShowCartPopup(false)}
-                />
-              </>
-            )}
+                  style={{ position: 'absolute', top: 50, right: 0 }}
+                >
+                  {notificationLoading ? (
+                    <div style={{ width: 320, background: '#fff', borderRadius: 16, boxShadow: '0 4px 32px #0003', zIndex: 100, padding: 32, textAlign: 'center', color: '#b45309', fontWeight: 600 }}>Đang tải thông báo...</div>
+                  ) : notification ? (
+                    <NotificationPopup
+                      notification={notification}
+                      onClose={() => setShowNotificationPopup(false)}
+                      className="notification-popup"
+                    />
+                  ) : (
+                    <div style={{ width: 320, background: '#fff', borderRadius: 16, boxShadow: '0 4px 32px #0003', zIndex: 100, padding: 32, textAlign: 'center', color: '#b45309', fontWeight: 600 }}>Không có đơn hàng gần đây</div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div
+              onMouseEnter={() => setShowCartPopup(true)}
+              onMouseLeave={() => setShowCartPopup(false)}
+              style={{ display: 'inline-block', position: 'relative' }}
+            >
+              <CartIcon />
+              {showCartPopup && (
+                <CartPopup onClose={() => setShowCartPopup(false)} />
+              )}
+            </div>
+            <span className="text-sm font-bold text-[#a01f10]">{t('cart')}</span>
           </div>
         </div>
       </div>

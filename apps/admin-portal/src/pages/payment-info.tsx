@@ -12,7 +12,6 @@ const PaymentInfoPage: React.FC = () => {
   const location = useLocation();
   const state = location.state as any || {};
   const orderType = state?.orderType || 'pickup';
-  console.log('STATE:', state, 'orderType:', orderType);
   const store = state?.store || { name: 'Chưa chọn cửa hàng', address: '' };
   const customer = state?.customer || { name: '', phone: '' };
   const { user } = useContext(AuthContext);
@@ -137,7 +136,6 @@ const PaymentInfoPage: React.FC = () => {
     };
     try {
       const orderRes = await createOrder(payload);
-      console.log('ORDER RESPONSE:', orderRes); // debug
       navigate('/order-success', { state: { order: orderRes } });
     } catch (err) {
       alert('Có lỗi khi đặt hàng, vui lòng thử lại!');

@@ -43,7 +43,6 @@ export default defineConfig({
       // Copy the file
       fs.copyFileSync(path.join(srcDir, 'ck-editor.scss'), path.join(destDir, 'ck-editor.scss'));
 
-      console.log('Successfully copied SCSS files to dist');
     } catch (error) {
       console.error('Error copying SCSS files:', error);
     }

@@ -16,6 +16,5 @@ export const SCSS_FILES = {
 // Export a dummy function to avoid tree-shaking of CSS imports
 export const importStyles = () => {
   // This function does nothing but ensures the CSS imports are preserved
-  console.log('CK Editor SCSS path:', SCSS_FILES.ckEditor);
   return true;
 };

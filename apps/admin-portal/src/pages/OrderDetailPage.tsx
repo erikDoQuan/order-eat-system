@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { getOrderDetail } from '../services/order.api';
 import Navbar from '../components/Navbar';
 import { getOrderStatusText } from './orderStatus.utils';
+import './OrderDetailPage.css';
 
 export default function OrderDetailPage() {
   const { orderId } = useParams();
@@ -54,139 +55,101 @@ export default function OrderDetailPage() {
   return (
     <>
       <Navbar />
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: 24 }}>
-        <h1 style={{ fontSize: 32, fontWeight: 600, marginBottom: 12 }}>
-          Chi tiết đơn hàng # {orderNumber}
-        </h1>
-        <div style={{ background: '#eaf7ec', borderRadius: 8, padding: 12, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ color: '#17823c', fontWeight: 600, fontSize: 20 }}>
+      <div className="order-detail-root">
+        <h1 className="order-detail-title">
+        Chi tiết đơn hàng # {orderNumber}
+      </h1>
+        <div className="order-detail-status-row">
+          <span className="order-detail-status-text">
             {getOrderStatusText(status)}
-          </span>
-          <span style={{ color: '#222', fontSize: 15 }}>
-            Ngày đặt hàng: {new Date(createdAt).toLocaleString('vi-VN')}
-          </span>
+        </span>
+          <span className="order-detail-date">
+          Ngày đặt hàng: {new Date(createdAt).toLocaleString('vi-VN')}
+        </span>
+      </div>
+        <div className="order-detail-info-row">
+          <div className="order-detail-info-block">
+            <div className="order-detail-info-title">ĐỊA CHỈ NHẬN HÀNG</div>
+          <div><b>Địa chỉ</b><br />{typeof deliveryAddress === 'string' ? deliveryAddress : deliveryAddress?.address || '-'}</div>
+            <div className="order-detail-info-phone"><b>Điện thoại</b><br /><span>{phone}</span></div>
         </div>
-        <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
-          <div style={{ flex: 1, background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px #0001', padding: 18 }}>
-            <div style={{ color: '#17823c', fontWeight: 700, fontSize: 18, marginBottom: 8 }}>ĐỊA CHỈ NHẬN HÀNG</div>
-            <div><b>Địa chỉ</b><br />{typeof deliveryAddress === 'string' ? deliveryAddress : deliveryAddress?.address || '-'}</div>
-            <div style={{ marginTop: 8 }}><b>Điện thoại</b><br /><span style={{ color: '#1976d2', fontWeight: 500 }}>{phone}</span></div>
-          </div>
-          <div style={{ flex: 1, background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px #0001', padding: 18 }}>
-            <div style={{ color: '#17823c', fontWeight: 700, fontSize: 18, marginBottom: 8 }}>HÌNH THỨC ĐẶT HÀNG</div>
-            <div><b>Phương thức đặt hàng</b><br />{type === 'delivery' ? 'Giao hàng tận nơi' : 'Nhận hàng tại cửa hàng'}</div>
-            <div style={{ marginTop: 8 }}><b>Phí vận chuyển</b><br />{Number(shippingFee).toLocaleString('vi-VN')}đ</div>
-          </div>
-          <div style={{ flex: 1, background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px #0001', padding: 18 }}>
-            <div style={{ color: '#17823c', fontWeight: 700, fontSize: 18, marginBottom: 8 }}>HÌNH THỨC THANH TOÁN</div>
-            <div>{paymentMethod}</div>
-            <div style={{ color: '#17823c', marginTop: 8 }}>{order.paymentStatus}</div>
+          <div className="order-detail-info-block">
+            <div className="order-detail-info-title">HÌNH THỨC ĐẶT HÀNG</div>
+          <div><b>Phương thức đặt hàng</b><br />{type === 'delivery' ? 'Giao hàng tận nơi' : 'Nhận hàng tại cửa hàng'}</div>
+          <div style={{ marginTop: 8 }}><b>Phí vận chuyển</b><br />{Number(shippingFee).toLocaleString('vi-VN')}đ</div>
+        </div>
+          <div className="order-detail-info-block">
+            <div className="order-detail-info-title">HÌNH THỨC THANH TOÁN</div>
+          <div>{paymentMethod}</div>
+            <div className="order-detail-payment-status">{order.paymentStatus}</div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 32, marginTop: 32 }}>
-          <div style={{ flex: 2 }}>
-            <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px #0001', padding: 18 }}>
-              <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 24 }}>Sản phẩm</h2>
-              {items.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: 32, color: '#888' }}>
-                  Chưa có món nào trong đơn hàng
-                </div>
-              ) : (
-                <div style={{ marginBottom: 24 }}>
-                  {items.map((item: any, idx: number) => (
-                    <div
-                      key={idx}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 20,
-                        borderBottom: '1px solid #eee',
-                        padding: '20px 0',
-                        minHeight: 100,
-                      }}
-                    >
-                      {item.image && (
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          style={{
-                            width: 100,
-                            height: 100,
-                            objectFit: 'cover',
-                            borderRadius: 10,
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                          }}
-                        />
+        <div className="order-detail-product-row">
+          <div className="order-detail-product-list">
+            <div className="order-detail-product-list-inner">
+              <h2 className="order-detail-product-title">Sản phẩm</h2>
+            {items.length === 0 ? (
+                <div className="order-detail-empty">Chưa có món nào trong đơn hàng</div>
+            ) : (
+                <div className="order-detail-product-list-items">
+                {items.map((item: any, idx: number) => (
+                    <div key={idx} className="order-detail-product-item">
+                    {item.image && (
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                          className="order-detail-product-img"
+                      />
+                    )}
+                      <div className="order-detail-product-info">
+                        <div className="order-detail-product-name">{item.name || `Món: ${item.dishId}`}</div>
+                      {item.description && (
+                          <div className="order-detail-product-desc">{item.description}</div>
                       )}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>
-                          {item.name || `Món: ${item.dishId}`}
-                        </div>
-                        {item.description && (
-                          <div
-                            style={{
-                              color: '#666',
-                              fontSize: 14,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              maxWidth: 520,
-                              marginBottom: 2,
-                            }}
-                          >
-                            {item.description}
-                          </div>
-                        )}
-                        {item.size && <div style={{ fontSize: 14 }}>Size: {item.size}</div>}
-                        {item.base && (
-                          <div style={{ fontSize: 14 }}>
-                            Đế: {['dày', 'mỏng'].includes(item.base) ? item.base.charAt(0).toUpperCase() + item.base.slice(1) : (item.baseName || item.base)}
-                          </div>
-                        )}
-                        {item.note?.trim() && <div style={{ fontSize: 14 }}>Ghi chú: {item.note}</div>}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                        <div style={{ fontWeight: 600, fontSize: 16 }}>×{item.quantity}</div>
-                        <div style={{ minWidth: 110, textAlign: 'right', fontSize: 17, fontWeight: 600 }}>
-                          {(getItemPrice(item) * Number(item.quantity ?? 0)).toLocaleString('vi-VN')}₫
-                        </div>
-                      </div>
+                        {item.size && <div className="order-detail-product-size">Size: {item.size}</div>}
+                      {item.base && (
+                          <div className="order-detail-product-base">Đế: {['dày', 'mỏng'].includes(item.base) ? item.base.charAt(0).toUpperCase() + item.base.slice(1) : (item.baseName || item.base)}</div>
+                      )}
+                        {item.note?.trim() && <div className="order-detail-product-note">Ghi chú: {item.note}</div>}
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                      <div className="order-detail-product-qtyprice">
+                        <div className="order-detail-product-qty">×{item.quantity}</div>
+                        <div className="order-detail-product-price">{(getItemPrice(item) * Number(item.quantity ?? 0)).toLocaleString('vi-VN')}₫</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
-            <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 8px #0001', padding: 28, minWidth: 320, maxWidth: 360, width: '100%' }}>
-              <div style={{ borderLeft: '24px solid #19a34a', borderRadius: '8px 0 0 8px', background: '#fff', padding: '0 0 0 16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-                  <span>Tạm tính (x{items.reduce((sum, i) => sum + i.quantity, 0)})</span>
-                  <span style={{ fontWeight: 500 }}>{subtotal.toLocaleString('vi-VN')}đ</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-                  <span>Giảm giá</span>
-                  <span>0đ</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-                  <span>Phí giao hàng</span>
-                  <span>{Number(shippingFee).toLocaleString('vi-VN')}đ</span>
-                </div>
-                <hr style={{ margin: '18px 0' }} />
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700, fontSize: 20 }}>
-                  <span>Tổng tiền</span>
-                  <span style={{ color: 'red', fontWeight: 700, fontSize: 22 }}>{total.toLocaleString('vi-VN')}đ</span>
-                </div>
+        </div>
+          <div className="order-detail-summary-block">
+            <div className="order-detail-summary-inner">
+              <div className="order-detail-summary-row">
+                <span>Tạm tính (x{items.reduce((sum, i) => sum + i.quantity, 0)})</span>
+                <span className="order-detail-summary-subtotal">{subtotal.toLocaleString('vi-VN')}đ</span>
+              </div>
+              <div className="order-detail-summary-row">
+                <span>Giảm giá</span>
+                <span>0đ</span>
+              </div>
+              <div className="order-detail-summary-row">
+                <span>Phí giao hàng</span>
+                <span>{Number(shippingFee).toLocaleString('vi-VN')}đ</span>
+              </div>
+              <hr className="order-detail-summary-divider" />
+              <div className="order-detail-summary-totalrow">
+                <span>Tổng tiền</span>
+                <span className="order-detail-summary-total">{total.toLocaleString('vi-VN')}đ</span>
               </div>
             </div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 32, marginTop: 36, justifyContent: 'center' }}>
-          <button style={{ background: '#7a9680', color: '#fff', border: 'none', borderRadius: 12, padding: '16px 48px', fontSize: 20, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => window.history.back()}>
-            <span style={{ fontSize: 28 }}>&larr;</span> Quay lại
-          </button>
-        </div>
+        <div className="order-detail-btn-row">
+          <button className="order-detail-back-btn" onClick={() => window.history.back()}>
+            <span className="order-detail-back-arrow">&larr;</span> Quay lại
+        </button>
       </div>
+    </div>
     </>
   );
 } 

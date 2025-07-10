@@ -32,7 +32,6 @@
       origin: appConfig.corsOrigins,
       credentials: true,
     });
-    console.log('Allow origins:', appConfig.corsOrigins);
 
     const reflector = app.get(Reflector);
 
@@ -96,13 +95,6 @@
 
     await app.listen(appConfig.port, appConfig.host);
 
-    // Log server information
-    console.log(`==========================================================`);
-    console.log(`Http Server running on ${await app.getUrl()} Example System`);
-    console.log(`==========================================================`);
-    console.log(`Documentation: http://localhost:${appConfig.port}/api/v1/documentation`);
-    console.log(`==========================================================`);
-
     return app;
   }
 
@@ -124,7 +116,6 @@
     });
 
     process.on('SIGTERM', () => {
-      console.log('SIGTERM received, closing application...');
       gracefulShutdown(app);
     });
 
@@ -139,10 +130,8 @@
   }
 
   async function gracefulShutdown(app: NestExpressApplication) {
-    console.log('Attempting to shut down gracefully...');
     try {
       await app.close();
-      console.log('Server closed successfully');
       process.exit(0);
     } catch (error) {
       console.error('Error during shutdown:', error);

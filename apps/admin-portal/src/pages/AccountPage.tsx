@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaBell } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
@@ -43,6 +43,7 @@ export default function AccountPage() {
   const totalPages = Math.ceil(paginatedOrders.length / ORDERS_PER_PAGE);
   const displayedOrders = paginatedOrders.slice((currentPage - 1) * ORDERS_PER_PAGE, currentPage * ORDERS_PER_PAGE);
   const { t } = useTranslation();
+  const [showNewOrderNotification, setShowNewOrderNotification] = useState(false);
 
   useEffect(() => {
     setForm({
@@ -64,6 +65,22 @@ export default function AccountPage() {
       });
     }
   }, [user?.id]);
+
+  useEffect(() => {
+    let timeout: any;
+    const checkOrderNotification = async () => {
+      if (!user?.id) return;
+      const orders = await getOrdersByUserId(user.id);
+      // Lọc ra các đơn đã xác nhận hoặc hoàn thành
+      const validOrders = orders.filter((o: any) => o.status === 'confirmed' || o.status === 'completed');
+      if (validOrders.length > 0) {
+        setShowNewOrderNotification(true);
+        timeout = setTimeout(() => setShowNewOrderNotification(false), 5000);
+      }
+    };
+    checkOrderNotification();
+    return () => clearTimeout(timeout);
+  }, [user]);
 
   const handleEdit = () => {
     setEditing(true);
@@ -589,6 +606,29 @@ export default function AccountPage() {
           )}
         </div>
       </div>
+      {showNewOrderNotification && (
+        <div style={{
+          position: 'fixed',
+          top: 24,
+          right: 32,
+          background: '#fff',
+          color: '#16a34a',
+          border: '1.5px solid #16a34a',
+          borderRadius: 12,
+          boxShadow: '0 4px 24px #0002',
+          padding: '16px 28px 16px 20px',
+          fontWeight: 700,
+          fontSize: 18,
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          animation: 'fadeInOut 5s',
+        }}>
+          <FaBell size={22} style={{ color: '#16a34a', marginRight: 6 }} />
+          Bạn có 1 thông báo mới
+        </div>
+      )}
     </>
   );
 }

@@ -118,3 +118,24 @@
     font-size: 12px;
   }
 } 
+
+:root {}
+
+/* Màu chữ */
+.admin-category-title, .admin-category-table th, .admin-category-table td {
+  color: var(--text-color);
+}
+.admin-category-title {
+  color: var(--primary-color);
+}
+
+/* Màu nền */
+.admin-category-root, .admin-category-container {
+  background: var(--background-secondary);
+}
+.admin-category-table tr:nth-child(even) {
+  background: var(--secondary-color);
+}
+.admin-category-table tr:nth-child(odd) {
+  background: #fff;
+} 

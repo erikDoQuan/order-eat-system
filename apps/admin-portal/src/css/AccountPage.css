@@ -5,7 +5,7 @@
 }
 .account-sidebar {
   min-width: 270px;
-  background: #f5f5f5;
+  background: var(--secondary-color);
   border-radius: 12px;
   padding: 24px 0 0 0;
   box-shadow: 0 2px 8px #0001;
@@ -13,7 +13,7 @@
 .account-title {
   font-size: 16px;
   font-weight: 500;
-  color: #444;
+  color: var(--text-color);
   padding: 0 24px 16px 24px;
   border-bottom: 1px solid #e0e0e0;
   margin-bottom: 8px;
@@ -21,7 +21,7 @@
 .account-username {
   font-size: 20px;
   font-weight: bold;
-  color: #222;
+  color: var(--text-color);
   margin-top: 2px;
   text-transform: uppercase;
 }
@@ -43,8 +43,8 @@
 .account-menu li.active,
 .account-menu li:hover {
   background: #fff;
-  border-left: 3px solid #2ecc40;
-  color: #2ecc40;
+  border-left: 3px solid var(--primary-color);
+  color: var(--primary-color);
 }
 .account-main {
   flex: 1;
@@ -54,7 +54,7 @@
   font-weight: 600;
   margin-bottom: 24px;
 }
-.account-info-box {
+.account-info-box, .account-orders-box {
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 8px #0001;
@@ -67,16 +67,16 @@
   justify-content: space-between;
   margin-bottom: 16px;
 }
-.account-info-title {
+.account-info-title, .account-orders-title {
   font-size: 18px;
   font-weight: 600;
-  color: #178a3a;
+  color: var(--primary-color);
   letter-spacing: 1px;
 }
 .account-edit-btn {
   background: none;
   border: none;
-  color: #1976d2;
+  color: var(--primary-color);
   font-size: 15px;
   cursor: pointer;
   display: flex;
@@ -91,11 +91,11 @@
 }
 .account-info-content b {
   min-width: 120px;
-  color: #222;
+  color: var(--text-color);
   font-weight: 500;
 }
 .account-info-content span {
-  color: #222;
+  color: var(--text-color);
   margin-left: 12px;
 }
 .account-orders-box {
@@ -107,7 +107,7 @@
 .account-orders-title {
   font-size: 18px;
   font-weight: 600;
-  color: #178a3a;
+  color: var(--primary-color);
   letter-spacing: 1px;
   margin-bottom: 16px;
   display: block;
@@ -118,8 +118,8 @@
 .account-orders-header {
   display: flex;
   font-weight: 600;
-  color: #444;
-  background: #f5f5f5;
+  color: var(--text-color);
+  background: var(--secondary-color);
   border-radius: 8px;
   padding: 10px 0;
   margin-bottom: 8px;
@@ -139,7 +139,7 @@
   box-shadow: 0 2px 8px #0001;
 }
 .table-recent-orders thead tr {
-  background: #f5f5f5;
+  background: var(--secondary-color);
 }
 .table-recent-orders th, .table-recent-orders td {
   padding: 16px 18px;
@@ -149,22 +149,23 @@
 }
 .table-recent-orders th {
   font-weight: 600;
-  color: #444;
+  color: var(--text-color);
 }
 .table-recent-orders tbody tr:nth-child(even) {
-  background: #fafafa;
+  background: var(--background-secondary);
 }
 .table-recent-orders tbody tr:nth-child(odd) {
   background: #fff;
 }
 .table-recent-orders a {
-  color: #1787e0;
+  color: var(--primary-color);
   text-decoration: underline;
   font-weight: 500;
 }
 .table-recent-orders td {
   font-size: 17px;
   word-break: break-word;
+  color: var(--text-color);
 }
 .table-recent-orders td:last-child {
   font-weight: 500;
@@ -177,7 +178,7 @@
 }
 .order-status-pending,
 .order-status-delivering {
-  color: #17823c !important; /* xanh đậm */
+  color: var(--primary-color) !important; /* xanh đậm */
   font-weight: 600;
 }
 .order-status-cancelled {

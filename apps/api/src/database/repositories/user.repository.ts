@@ -61,7 +61,6 @@ export class UserRepository {
 
   async findByEmail(email: string): Promise<UserWithoutPassword | null> {
     const normalizedEmail = email.trim().toLowerCase();
-    console.log('Repository findByEmail:', { input: email, normalized: normalizedEmail });
     
     const result = await this.drizzle.db.query.users.findFirst({
       where: eq(users.email, normalizedEmail),
@@ -70,11 +69,8 @@ export class UserRepository {
       },
     });
     
-    console.log('Repository findByEmail result:', result ? 'Found user' : 'No user found');
-    
     // Chỉ trả về user đang active
     if (result && !result.isActive) {
-      console.log('User found but is inactive, returning null');
       return null;
     }
     
@@ -129,7 +125,6 @@ export class UserRepository {
   // Method để debug - kiểm tra tất cả email trong database
   async getAllEmails(): Promise<{ id: string; email: string }[]> {
     const allUsers = await this.drizzle.db.select({ id: users.id, email: users.email }).from(users);
-    console.log('All emails in database:', allUsers);
     return allUsers;
   }
 

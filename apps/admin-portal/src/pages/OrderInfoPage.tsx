@@ -116,14 +116,14 @@ const OrderInfoPage: React.FC = () => {
         <div style={{display: 'flex', gap: 32}}>
           {/* LEFT: Thông tin nhận hàng */}
           <div style={{flex: 1}}>
-            <div style={{fontWeight: 600, fontSize: 20, marginBottom: 16, color: '#166534', borderLeft: '4px solid #16a34a', paddingLeft: 8}}>Thông tin nhận hàng</div>
+            <div style={{fontWeight: 600, fontSize: 20, marginBottom: 16, color: '#b45309', borderLeft: '4px solid #b45309', paddingLeft: 8}}>Thông tin nhận hàng</div>
             <div style={{marginBottom: 16}}>
               <label style={{fontWeight: 500}}>Họ và tên: <span style={{color: 'red'}}>*</span></label>
               <input value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} style={{width: '100%', marginTop: 4, marginBottom: 12, padding: '10px 12px', borderRadius: 8, border: '1px solid #ccc', fontSize: 16}} />
               <label style={{fontWeight: 500}}>Số điện thoại: <span style={{color: 'red'}}>*</span></label>
               <input value={form.phone} onChange={e => setForm(f => ({...f, phone: e.target.value}))} style={{width: '100%', marginTop: 4, padding: '10px 12px', borderRadius: 8, border: '1px solid #ccc', fontSize: 16}} />
             </div>
-            <div style={{fontWeight: 600, fontSize: 20, margin: '32px 0 16px 0', color: '#166534', borderLeft: '4px solid #16a34a', paddingLeft: 8}}>Chọn thời gian nhận hàng</div>
+            <div style={{fontWeight: 600, fontSize: 20, margin: '32px 0 16px 0', color: '#b45309', borderLeft: '4px solid #b45309', paddingLeft: 8}}>Chọn thời gian nhận hàng</div>
             <div style={{marginBottom: 16}}>
               <label style={{display: 'flex', alignItems: 'center', marginBottom: 8}}>
                 <input type="radio" checked={form.timeType === 'now'} onChange={() => setForm(f => ({...f, timeType: 'now'}))} style={{marginRight: 8}} />
@@ -138,7 +138,7 @@ const OrderInfoPage: React.FC = () => {
                   <select
                     value={form.time}
                     onChange={e => setForm(f => ({...f, time: e.target.value}))}
-                    style={{flex:1, background:'#fafafa', border:'2px solid #16a34a', borderRadius:8, padding:'12px 16px', fontSize:18, color:'#222'}}
+                    style={{flex:1, background:'#fafafa', border:'2px solid #b45309', borderRadius:8, padding:'12px 16px', fontSize:18, color:'#222'}}
                   >
                     <option value="">Chọn giờ</option>
                     {getValidTimes(form.date).map(t => (
@@ -148,7 +148,7 @@ const OrderInfoPage: React.FC = () => {
                   <select
                     value={form.date}
                     onChange={e => setForm(f => ({...f, date: e.target.value}))}
-                    style={{flex:1, background:'#fafafa', border:'2px solid #16a34a', borderRadius:8, padding:'12px 16px', fontSize:18, color:'#222'}}
+                    style={{flex:1, background:'#fafafa', border:'2px solid #b45309', borderRadius:8, padding:'12px 16px', fontSize:18, color:'#222'}}
                   >
                     {getValidDates().map(d => {
                       const [yyyy, MM, dd] = d.split('-');
@@ -161,26 +161,31 @@ const OrderInfoPage: React.FC = () => {
           </div>
           {/* RIGHT: Chọn cửa hàng đến lấy */}
           <div style={{flex: 1}}>
-            <div style={{fontWeight: 600, fontSize: 20, marginBottom: 16, color: '#166534', borderLeft: '4px solid #16a34a', paddingLeft: 8}}>
+            <div style={{fontWeight: 600, fontSize: 20, marginBottom: 16, color: '#b45309', borderLeft: '4px solid #b45309', paddingLeft: 8}}>
               {orderType === 'pickup' ? 'Nhận hàng tại:' : 'Giao hàng đến:'}
             </div>
             {orderType === 'pickup'
               ? <div>
-                  <div style={{fontWeight: 600, fontSize: 20, marginBottom: 16, color: '#166534', borderLeft: '4px solid #16a34a', paddingLeft: 8}}>Chọn cửa hàng đến lấy</div>
+                  <div style={{fontWeight: 600, fontSize: 20, marginBottom: 16, color: '#b45309', borderLeft: '4px solid #b45309', paddingLeft: 8}}>Chọn cửa hàng đến lấy</div>
                   <div style={{display: 'flex', gap: 8, marginBottom: 8}}>
                     <input placeholder="Nhập tên cửa hàng để tìm kiếm" style={{flex:1, borderRadius:8, border:'1px solid #ccc', padding:'10px 12px', fontSize:16}} value={form.search} onChange={e => setForm(f => ({...f, search: e.target.value}))} />
-                    <button style={{border:'none', background:'#16a34a', color:'#fff', borderRadius:8, padding:'0 16px', fontSize:20, fontWeight:700, cursor:'pointer'}}>🔍</button>
+                    <button style={{border:'none', background:'#b45309', color:'#fff', borderRadius:8, padding:'0 16px', fontSize:20, fontWeight:700, cursor:'pointer'}}>
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="9" cy="9" r="7" stroke="white" strokeWidth="2"/>
+                        <line x1="14.1213" y1="14.1213" x2="18" y2="18" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                    </button>
                   </div>
                   <div style={{display:'flex', gap:8, marginBottom:16}}>
-                    <button style={{flex:1, background:'#16a34a', color:'#fff', border:'none', borderRadius:'8px 8px 0 0', padding:'8px 0', fontWeight:600, fontSize:16, cursor:'pointer'}}>Gần vị trí bạn</button>
-                    <button style={{flex:1, background:'#fff', color:'#16a34a', border:'1px solid #16a34a', borderRadius:'8px 8px 0 0', padding:'8px 0', fontWeight:600, fontSize:16, cursor:'pointer'}}>Cửa hàng lọc được</button>
+                    <button style={{flex:1, background:'#b45309', color:'#fff', border:'none', borderRadius:'8px 8px 0 0', padding:'8px 0', fontWeight:600, fontSize:16, cursor:'pointer'}}>Gần vị trí bạn</button>
+                    <button style={{flex:1, background:'#fff', color:'#b45309', border:'1px solid #b45309', borderRadius:'8px 8px 0 0', padding:'8px 0', fontWeight:600, fontSize:16, cursor:'pointer'}}>Cửa hàng lọc được</button>
                   </div>
                   <div>
                     {stores.filter(s => s.name.toLowerCase().includes(form.search.toLowerCase())).map(store => (
-                      <label key={store.id} style={{display:'block', border:'1px solid #16a34a', borderRadius:12, padding:16, marginBottom:12, cursor:'pointer', background: form.storeId === store.id ? '#f6fff8' : '#fff', position:'relative'}}>
+                      <label key={store.id} style={{display:'block', border:'1px solid #b45309', borderRadius:12, padding:16, marginBottom:12, cursor:'pointer', background: form.storeId === store.id ? '#f6fff8' : '#fff', position:'relative'}}>
                         <input type="radio" name="store" checked={form.storeId === store.id} onChange={() => setForm(f => ({...f, storeId: store.id}))} style={{position:'absolute', left:16, top:16}} />
                         <div style={{marginLeft:32}}>
-                          <div style={{fontWeight:700, color:'#166534', fontSize:17, marginBottom:4}}>{store.name}</div>
+                          <div style={{fontWeight:700, color:'#b45309', fontSize:17, marginBottom:4}}>{store.name}</div>
                           <div style={{fontSize:15, color:'#444', marginBottom:2}}>📍 {store.address}</div>
                           <div style={{fontSize:15, color:'#444'}}>☎ Hotline: {store.hotline}</div>
                         </div>
@@ -207,7 +212,7 @@ const OrderInfoPage: React.FC = () => {
                 },
               });
             }}
-            style={{padding: '8px 24px', borderRadius: 6, background: '#16a34a', color: '#fff', fontWeight: 700, fontSize: 16, border: 'none', cursor: 'pointer'}}>
+            style={{padding: '8px 24px', borderRadius: 6, background: '#b45309', color: '#fff', fontWeight: 700, fontSize: 16, border: 'none', cursor: 'pointer'}}>
             Xác nhận đơn hàng
           </button>
         </div>

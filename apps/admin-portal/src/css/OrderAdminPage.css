@@ -26,3 +26,20 @@
 .order-admin-table tr:hover {
   background: #e6f4ed;
 } 
+:root {}
+
+.order-admin-title, .order-admin-table th, .order-admin-table td {
+  color: var(--text-color);
+}
+.order-admin-title {
+  color: var(--primary-color);
+}
+.order-admin-root, .order-admin-container {
+  background: var(--background-secondary);
+}
+.order-admin-table tr:nth-child(even) {
+  background: var(--secondary-color);
+}
+.order-admin-table tr:nth-child(odd) {
+  background: #fff;
+} 

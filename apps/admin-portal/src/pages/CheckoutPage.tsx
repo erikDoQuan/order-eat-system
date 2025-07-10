@@ -14,11 +14,11 @@ const CheckoutPage: React.FC = () => {
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [toppingDishes, setToppingDishes] = useState<Dish[]>([]);
-  const [confirmRemove, setConfirmRemove] = useState<{ open: boolean; item: any | null }>({
+  const [confirmRemove, setConfirmRemove] = useState({
     open: false,
     item: null,
   });
+
   const navigate = useNavigate();
   useEffect(() => {
     let ignore = false;
@@ -26,19 +26,6 @@ const CheckoutPage: React.FC = () => {
       .then((all) => {
         if (ignore) return;
         setDishes(all);
-        fetch('/api/v1/categories')
-          .then((res) => res.json())
-          .then((catRes) => {
-            if (ignore) return;
-            const categories = catRes.data || [];
-            const toppingCat = categories.find((c: any) =>
-              (c.nameLocalized || c.name)?.toLowerCase().includes('topping'),
-            );
-            if (toppingCat) setToppingDishes(all.filter((d) => d.categoryId === toppingCat.id));
-          });
-      })
-      .catch(() => {
-        if (!ignore) setDishes([]);
       });
     return () => {
       ignore = true;
@@ -56,10 +43,6 @@ const CheckoutPage: React.FC = () => {
     let price = Number(dish.basePrice) || 0;
     if (item.size) {
       price += sizeOptions.find((s) => s.value === item.size)?.price || 0;
-    }
-    if (item.base && !['dày', 'mỏng'].includes(item.base)) {
-      const topping = toppingDishes.find((t) => t.id === item.base);
-      if (topping) price += Number(topping.basePrice) || 0;
     }
     return price;
   };
@@ -83,160 +66,207 @@ const CheckoutPage: React.FC = () => {
       <div
         style={{
           maxWidth: 1000,
-          margin: '32px auto',
-          padding: 32,
-          borderRadius: 12,
-          background: '#fff',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          margin: '0 auto',
+          padding: '32px 16px',
         }}
       >
         <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 24 }}>Sản phẩm</h2>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: 32, color: '#888' }}>Đang tải...</div>
-        ) : error ? (
-          <div style={{ textAlign: 'center', padding: 32, color: 'red' }}>{error}</div>
-        ) : orderItems.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 32, color: '#888' }}>
-            Chưa có món nào trong giỏ hàng
-          </div>
-        ) : (
-          <>
-            <div style={{ marginBottom: 24 }}>
-              {orderItems.map((item, idx) => {
-                const dish = getDish(item.dishId);
-                return (
-                  <div
-                    key={idx}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 20,
-                      borderBottom: '1px solid #eee',
-                      padding: '20px 0',
-                      minHeight: 100,
-                    }}
-                  >
-                    {dish?.imageUrl && (
-                      <img
-                        src={dish.imageUrl}
-                        alt={dish.name}
-                        style={{
-                          width: 100,
-                          height: 100,
-                          objectFit: 'cover',
-                          borderRadius: 10,
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                        }}
-                      />
-                    )}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>
-                        {dish?.name || `Món: ${item.dishId}`}
+        <div
+          style={{
+            background: '#fff',
+            borderRadius: 12,
+            boxShadow: '0 2px 8px #0001',
+            padding: 24,
+            marginTop: 32,
+          }}
+        >
+          {loading || (dishes.length === 0 && orderItems.length > 0) ? (
+            <div style={{ textAlign: 'center', padding: 32, color: '#888' }}>Đang tải...</div>
+          ) : error ? (
+            <div style={{ textAlign: 'center', padding: 32, color: '#dc2626' }}>{error}</div>
+          ) : orderItems.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 32, color: '#888' }}>Chưa có sản phẩm nào trong giỏ hàng.</div>
+          ) : (
+            <>
+              <div>
+                {orderItems.map((item, idx) => {
+                  const dish = getDish(item.dishId);
+                  if (!dish) return null;
+                  return (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 24, borderBottom: '1px solid #eee', paddingBottom: 16 }}>
+                      {/* Hình ảnh món */}
+                      {dish?.imageUrl ? (
+                        <img
+                          src={dish.imageUrl}
+                          alt={dish?.name || ''}
+                          style={{
+                            width: 80,
+                            height: 80,
+                            objectFit: 'cover',
+                            borderRadius: 12,
+                            background: '#f5f5f5',
+                            flexShrink: 0,
+                          }}
+                        />
+                      ) : null}
+                      {/* Thông tin món */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>
+                          {dish?.name || `Món: ${item.dishId}`}
+                        </div>
+                        {item.size && <div style={{ fontSize: 14 }}>Size: {item.size}</div>}
+                        {item.base && <div style={{ fontSize: 14 }}>Đế: {item.base}</div>}
+                        {item.note?.trim() && <div style={{ fontSize: 14 }}>Ghi chú: {item.note}</div>}
                       </div>
-                      {dish?.description && (
+                      {/* Số lượng & giá */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                        {/* Bộ đếm */}
                         <div
                           style={{
-                            color: '#666',
-                            fontSize: 14,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            maxWidth: 520,
-                            marginBottom: 2,
+                            display: 'flex',
+                            alignItems: 'center',
+                            border: '1px solid #ccc',
+                            borderRadius: 12,
+                            background: '#fff',
+                            width: 120,
+                            height: 40,
+                            justifyContent: 'space-between',
+                            padding: '0 8px',
                           }}
                         >
-                          {dish.description}
+                          <button
+                            type="button"
+                            style={{
+                              border: 'none',
+                              background: 'none',
+                              fontSize: 20,
+                              fontWeight: 700,
+                              color: item.quantity <= 1 ? '#bbb' : '#b45309',
+                              cursor: item.quantity <= 1 ? 'not-allowed' : 'pointer',
+                              width: 32,
+                              height: 32,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              borderRadius: 8,
+                              transition: 'color 0.2s',
+                            }}
+                            disabled={item.quantity <= 1}
+                            onClick={() => decreaseQuantity(item)}
+                          >
+                            -
+                          </button>
+                          <span
+                            style={{
+                              fontWeight: 600,
+                              fontSize: 18,
+                              width: 24,
+                              textAlign: 'center',
+                              userSelect: 'none',
+                            }}
+                          >
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            style={{
+                              border: 'none',
+                              background: 'none',
+                              fontSize: 20,
+                              fontWeight: 700,
+                              color: '#b45309',
+                              cursor: 'pointer',
+                              width: 32,
+                              height: 32,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              borderRadius: 8,
+                              transition: 'color 0.2s',
+                            }}
+                            onClick={() => increaseQuantity(item)}
+                          >
+                            +
+                          </button>
                         </div>
-                      )}
-                      {item.size && <div style={{ fontSize: 14 }}>Size: {item.size}</div>}
-                      {item.base && (
-                        <div style={{ fontSize: 14 }}>
-                          Đế:{' '}
-                          {['dày', 'mỏng'].includes(item.base)
-                            ? item.base.charAt(0).toUpperCase() + item.base.slice(1)
-                            : dishes.find((d) => d.id === item.base)?.name || item.base}
+                        {/* Giá */}
+                        <div style={{ minWidth: 110, textAlign: 'right', fontSize: 17, fontWeight: 600 }}>
+                          {(getItemPrice(item) * (item.quantity || 1)).toLocaleString('vi-VN')}₫
                         </div>
-                      )}
-                      {item.note?.trim() && <div style={{ fontSize: 14 }}>Ghi chú: {item.note}</div>}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          border: '1px solid #ccc',
-                          borderRadius: 8,
-                        }}
-                      >
+                        {/* Xoá */}
                         <button
+                          title="Xóa món này"
                           style={{
+                            width: 36,
+                            height: 36,
                             border: 'none',
                             background: 'none',
-                            fontSize: 20,
-                            padding: '0 8px',
-                            cursor: 'pointer',
                             color: '#C92A15',
-                          }}
-                          onClick={() => decreaseQuantity(item)}
-                        >
-                          -
-                        </button>
-                        <span style={{ padding: '0 8px', fontWeight: 600 }}>{item.quantity}</span>
-                        <button
-                          style={{
-                            border: 'none',
-                            background: 'none',
                             fontSize: 20,
-                            padding: '0 8px',
                             cursor: 'pointer',
-                            color: '#C92A15',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                           }}
-                          onClick={() => increaseQuantity(item)}
+                          onClick={() => setConfirmRemove({ open: true, item })}
                         >
-                          +
+                          <Trash2 />
                         </button>
                       </div>
-                      <div style={{ minWidth: 110, textAlign: 'right', fontSize: 17, fontWeight: 600 }}>
-                        {(getItemPrice(item) * (item.quantity || 1)).toLocaleString('vi-VN')}₫
-                      </div>
-                      <button
-                        style={{
-                          border: 'none',
-                          background: 'none',
-                          color: '#C92A15',
-                          fontSize: 20,
-                          cursor: 'pointer',
-                        }}
-                        onClick={() => setConfirmRemove({ open: true, item })}
-                      >
-                        <Trash2 />
-                      </button>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700, fontSize: 20, marginTop: 32 }}>
-              <span>Tổng tiền</span>
-              <span style={{ color: 'red', fontWeight: 700, fontSize: 22 }}>{totalAmount.toLocaleString('vi-VN')}đ</span>
-            </div>
-            <div style={{ display: 'flex', gap: 16, marginTop: 36, justifyContent: 'center' }}>
-              <button
-                style={{ background: '#fff', color: '#C92A15', border: '1.5px solid #C92A15', borderRadius: 8, padding: '10px 28px', fontSize: 16, fontWeight: 600, cursor: 'pointer', minWidth: 120, transition: 'all 0.2s', marginRight: 0 }}
-                onClick={() => navigate(-1)}
-              >
-                ← Quay lại
-              </button>
-              <button
-                style={{ background: '#C92A15', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 28px', fontSize: 16, fontWeight: 600, cursor: 'pointer', minWidth: 120, transition: 'all 0.2s' }}
-                onClick={() => navigate('/order-type')}
-              >
-                Thanh toán
-              </button>
-            </div>
-          </>
-        )}
+                  );
+                })}
+              </div>
+              {/* Tổng tiền */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 32 }}>
+                <div style={{ fontWeight: 700, fontSize: 20 }}>
+                  <span>Tổng tiền</span>
+                  <span style={{ marginLeft: 16, color: '#b45309', fontWeight: 700, fontSize: 24 }}>{totalAmount.toLocaleString('vi-VN')}đ</span>
+                </div>
+              </div>
+              {/* Nút hành động */}
+              <div style={{ display: 'flex', gap: 16, marginTop: 36, justifyContent: 'center' }}>
+                <button
+                  style={{
+                    background: '#fff',
+                    color: '#b45309',
+                    border: '1.5px solid #b45309',
+                    borderRadius: 8,
+                    padding: '10px 28px',
+                    fontSize: 16,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    minWidth: 120,
+                    transition: 'all 0.2s',
+                    marginRight: 0,
+                  }}
+                  onClick={() => navigate(-1)}
+                >
+                  ← Quay lại
+                </button>
+                <button
+                  onClick={() => navigate('/order-type')}
+                  style={{
+                    background: '#b45309',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '10px 28px',
+                    fontSize: 16,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    minWidth: 120,
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  Thanh toán
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
+      {/* Modal xác nhận xoá */}
       <ModalConfirm
         visible={confirmRemove.open}
         onYes={() => {

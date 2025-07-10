@@ -110,3 +110,20 @@
     font-size: 12px;
   }
 } 
+:root {}
+
+.admin-dish-title, .admin-dish-table th, .admin-dish-table td {
+  color: var(--text-color);
+}
+.admin-dish-title {
+  color: var(--primary-color);
+}
+.admin-dish-root, .admin-dish-container {
+  background: var(--background-secondary);
+}
+.admin-dish-table tr:nth-child(even) {
+  background: var(--secondary-color);
+}
+.admin-dish-table tr:nth-child(odd) {
+  background: #fff;
+} 

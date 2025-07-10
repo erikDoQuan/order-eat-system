@@ -35,7 +35,17 @@ const OrderTypePage: React.FC = () => {
           <div
             className={`order-type-option${selectedType === 'delivery' ? ' active' : ''}`}
             onClick={() => handleSelect('delivery')}
-            style={{ position: 'relative', display: 'flex', alignItems: 'flex-start' }}
+            style={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'flex-start',
+              border: `2px solid ${selectedType === 'delivery' ? '#b45309' : '#e5e7eb'}`,
+              borderRadius: 12,
+              background: selectedType === 'delivery' ? '#f6fff8' : '#fff',
+              boxShadow: selectedType === 'delivery' ? '0 2px 8px #b4530922' : 'none',
+              marginBottom: 20,
+              transition: 'border-color 0.2s, box-shadow 0.2s, background 0.2s',
+            }}
           >
             <img src="/shipper-Bepcuame.png" alt="Đặt giao hàng" style={{width:100, height:'auto', flexShrink:0, marginRight:24}}/>
             <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
@@ -46,7 +56,7 @@ const OrderTypePage: React.FC = () => {
                 onChange={() => handleSelect('delivery')}
                 style={{ position: 'absolute', top: 0, right: 0, width: 22, height: 22 }}
               />
-              <div style={{ fontSize: 22, fontWeight: 700, color: '#166534', marginBottom: 8 }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: selectedType === 'delivery' ? '#b45309' : '#222', marginBottom: 8 }}>
                 Đặt giao hàng
               </div>
               <div style={{ height: 1, background: '#e5e7eb', margin: '8px 0 16px 0' }} />
@@ -58,7 +68,17 @@ const OrderTypePage: React.FC = () => {
           <div
             className={`order-type-option${selectedType === 'pickup' ? ' active' : ''}`}
             onClick={() => handleSelect('pickup')}
-            style={{ position: 'relative', display: 'flex', alignItems: 'flex-start' }}
+            style={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'flex-start',
+              border: `2px solid ${selectedType === 'pickup' ? '#b45309' : '#e5e7eb'}`,
+              borderRadius: 12,
+              background: selectedType === 'pickup' ? '#f6fff8' : '#fff',
+              boxShadow: selectedType === 'pickup' ? '0 2px 8px #b4530922' : 'none',
+              marginBottom: 20,
+              transition: 'border-color 0.2s, box-shadow 0.2s, background 0.2s',
+            }}
           >
             <img src="/Bepcuame-cuahang.png" alt="Đặt đến lấy" style={{width:100, height:'auto', flexShrink:0, marginRight:24}}/>
             <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
@@ -69,7 +89,7 @@ const OrderTypePage: React.FC = () => {
                 onChange={() => handleSelect('pickup')}
                 style={{ position: 'absolute', top: 0, right: 0, width: 22, height: 22 }}
               />
-              <div style={{ fontSize: 22, fontWeight: 700, color: '#166534', marginBottom: 8 }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: selectedType === 'pickup' ? '#b45309' : '#222', marginBottom: 8 }}>
                 Đặt đến lấy
               </div>
               <div style={{ height: 1, background: '#e5e7eb', margin: '8px 0 16px 0' }} />
@@ -79,15 +99,38 @@ const OrderTypePage: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="order-type-btn-group">
+        <div className="order-type-btn-group" style={{ display: 'flex', gap: 16, marginTop: 36, justifyContent: 'center' }}>
           <button
-            className="order-type-btn order-type-btn-continue"
+            style={{
+              background: '#fff',
+              color: '#b45309',
+              border: '1.5px solid #b45309',
+              borderRadius: 8,
+              padding: '10px 28px',
+              fontSize: 16,
+              fontWeight: 600,
+              cursor: 'pointer',
+              minWidth: 120,
+              transition: 'all 0.2s',
+              marginRight: 0,
+            }}
             onClick={() => navigate('/')}
           >
             ← Tiếp tục mua hàng
           </button>
           <button
-            className="order-type-btn order-type-btn-pay"
+            style={{
+              background: '#b45309',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '10px 28px',
+              fontSize: 16,
+              fontWeight: 600,
+              cursor: 'pointer',
+              minWidth: 120,
+              transition: 'all 0.2s',
+            }}
             onClick={handlePay}
           >
             Thanh toán

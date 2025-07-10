@@ -14,9 +14,9 @@
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  border: 2px solid #c92a15;
-  background: #e6f4ed;
-  color: #c92a15;
+  border: 2px solid var(--primary-color);
+  background: var(--secondary-color);
+  color: var(--primary-color);
   position: relative;
 }
 
@@ -24,7 +24,7 @@
   margin-left: 0.5rem;
   font-size: 1rem;
   font-weight: 600;
-  color: #111;
+  color: var(--text-color);
   text-decoration: underline;
   text-underline-offset: 2px;
   cursor: pointer;

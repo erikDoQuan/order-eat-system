@@ -62,7 +62,6 @@ export class OrderRepository {
 
     // Lọc lại ở đây để đảm bảo chỉ trả về order còn hoạt động
     const filteredResults = (results as Order[]);
-    console.log('[ORDER][FIND] Kết quả trả về:', filteredResults.map(o => o.id));
     return {
       data: filteredResults,
       totalItems: filteredResults.length,
@@ -85,13 +84,11 @@ export class OrderRepository {
   }
 
   async update(id: string, data: UpdateOrderDto): Promise<Order | null> {
-    console.log('[ORDER][PATCH] Update order', id, JSON.stringify(data));
     const [updated] = await this.drizzle.db
       .update(orders)
       .set(data as OrderUpdate)
       .where(eq(orders.id, id))
       .returning();
-    console.log('[ORDER][PATCH] Updated order result', updated);
     return updated ?? null;
   }
 

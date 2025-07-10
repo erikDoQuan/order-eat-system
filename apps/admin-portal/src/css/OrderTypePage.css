@@ -3,13 +3,14 @@
   margin: 32px auto;
   padding: 32px;
   border-radius: 12px;
-  background: #fff;
+  background: var(--background-secondary);
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 .order-type-title {
   font-size: 26px;
   font-weight: 700;
   margin-bottom: 24px;
+  color: var(--primary-color);
 }
 .order-type-desc {
   margin-bottom: 24px;
