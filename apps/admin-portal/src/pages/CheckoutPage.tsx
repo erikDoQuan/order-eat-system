@@ -11,7 +11,6 @@ import { ModalConfirm } from '../../../../packages/react-web-ui-shadcn/src/compo
 const CheckoutPage: React.FC = () => {
   const { user } = useContext(AuthContext);
   const { orderItems, addToCart, removeFromCart } = useCart();
-
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,20 +19,13 @@ const CheckoutPage: React.FC = () => {
     open: false,
     item: null,
   });
-
   const navigate = useNavigate();
-
-  /* -------------------------------------------------- */
-  /* Lấy danh sách món & topping                         */
-  /* -------------------------------------------------- */
   useEffect(() => {
     let ignore = false;
     getAllDishes()
       .then((all) => {
         if (ignore) return;
         setDishes(all);
-
-        // Tìm category topping
         fetch('/api/v1/categories')
           .then((res) => res.json())
           .then((catRes) => {
@@ -52,23 +44,16 @@ const CheckoutPage: React.FC = () => {
       ignore = true;
     };
   }, []);
-
-  /* -------------------------------------------------- */
-  /* Tính giá & xử lý tăng/giảm                          */
-  /* -------------------------------------------------- */
   const sizeOptions = [
     { value: 'small', price: 0 },
     { value: 'medium', price: 90_000 },
     { value: 'large', price: 190_000 },
   ];
-
   const getDish = (dishId: string) => dishes.find((d) => d.id === dishId);
-
   const getItemPrice = (item: any) => {
     const dish = getDish(item.dishId);
     if (!dish) return 0;
     let price = Number(dish.basePrice) || 0;
-
     if (item.size) {
       price += sizeOptions.find((s) => s.value === item.size)?.price || 0;
     }
@@ -78,7 +63,6 @@ const CheckoutPage: React.FC = () => {
     }
     return price;
   };
-
   const decreaseQuantity = (item: any) => {
     if (item.quantity > 1) {
       addToCart(item.dishId, { quantity: -1, size: item.size, base: item.base, note: item.note });
@@ -86,24 +70,16 @@ const CheckoutPage: React.FC = () => {
       removeFromCart({ dishId: item.dishId, size: item.size, base: item.base, note: item.note });
     }
   };
-
   const increaseQuantity = (item: any) => {
     addToCart(item.dishId, { quantity: 1, size: item.size, base: item.base, note: item.note });
   };
-
   const totalAmount = orderItems.reduce(
     (sum, item) => sum + getItemPrice(item) * (item.quantity || 1),
     0,
   );
-
-  /* -------------------------------------------------- */
-  /* Render                                             */
-  /* -------------------------------------------------- */
   return (
     <div style={{ background: '#fff', minHeight: '100vh' }}>
       <Navbar />
-
-      {/* Khung chính */}
       <div
         style={{
           maxWidth: 1000,
@@ -115,8 +91,6 @@ const CheckoutPage: React.FC = () => {
         }}
       >
         <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 24 }}>Sản phẩm</h2>
-
-        {/* Danh sách sản phẩm */}
         {loading ? (
           <div style={{ textAlign: 'center', padding: 32, color: '#888' }}>Đang tải...</div>
         ) : error ? (
@@ -155,8 +129,6 @@ const CheckoutPage: React.FC = () => {
                         }}
                       />
                     )}
-
-                    {/* Thông tin món */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>
                         {dish?.name || `Món: ${item.dishId}`}
@@ -187,10 +159,7 @@ const CheckoutPage: React.FC = () => {
                       )}
                       {item.note?.trim() && <div style={{ fontSize: 14 }}>Ghi chú: {item.note}</div>}
                     </div>
-
-                    {/* Số lượng & giá */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                      {/* Bộ đếm */}
                       <div
                         style={{
                           display: 'flex',
@@ -200,164 +169,67 @@ const CheckoutPage: React.FC = () => {
                         }}
                       >
                         <button
-                          type="button"
                           style={{
-                            width: 36,
-                            height: 36,
-                            border: '1px solid #ccc',
-                            borderRadius: 8,
-                            background: '#fff',
-                            fontSize: 22,
-                            fontWeight: 700,
+                            border: 'none',
+                            background: 'none',
+                            fontSize: 20,
+                            padding: '0 8px',
                             cursor: 'pointer',
+                            color: '#C92A15',
                           }}
-                          disabled={item.quantity <= 1}
                           onClick={() => decreaseQuantity(item)}
                         >
                           -
                         </button>
-                        <input
-                          type="number"
-                          min={1}
-                          value={item.quantity}
-                          onChange={(e) => {
-                            const value = parseInt(e.target.value, 10);
-                            if (isNaN(value) || value < 1) {
-                              removeFromCart({
-                                dishId: item.dishId,
-                                size: item.size,
-                                base: item.base,
-                                note: item.note,
-                              });
-                            } else {
-                              addToCart(item.dishId, {
-                                quantity: value - item.quantity,
-                                size: item.size,
-                                base: item.base,
-                                note: item.note,
-                              });
-                            }
-                          }}
-                          style={{
-                            width: 48,
-                            textAlign: 'center',
-                            fontWeight: 600,
-                            fontSize: 18,
-                            border: 'none',
-                            outline: 'none',
-                          }}
-                        />
+                        <span style={{ padding: '0 8px', fontWeight: 600 }}>{item.quantity}</span>
                         <button
-                          type="button"
                           style={{
-                            width: 36,
-                            height: 36,
-                            border: '1px solid #ccc',
-                            borderRadius: 8,
-                            background: '#fff',
-                            fontSize: 22,
-                            fontWeight: 700,
+                            border: 'none',
+                            background: 'none',
+                            fontSize: 20,
+                            padding: '0 8px',
                             cursor: 'pointer',
+                            color: '#C92A15',
                           }}
                           onClick={() => increaseQuantity(item)}
                         >
                           +
                         </button>
                       </div>
-
-                      {/* Giá */}
                       <div style={{ minWidth: 110, textAlign: 'right', fontSize: 17, fontWeight: 600 }}>
-                        {dishes.length === 0
-                          ? ''
-                          : (getItemPrice(item) * item.quantity).toLocaleString('vi-VN') + '₫'}
+                        {(getItemPrice(item) * (item.quantity || 1)).toLocaleString('vi-VN')}₫
                       </div>
-
-                      {/* Xoá */}
                       <button
-                        title="Xóa món này"
                         style={{
-                          width: 36,
-                          height: 36,
-                          border: '1px solid #ccc',
-                          borderRadius: 8,
-                          background: '#fff',
+                          border: 'none',
+                          background: 'none',
+                          color: '#C92A15',
+                          fontSize: 20,
                           cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
                         }}
                         onClick={() => setConfirmRemove({ open: true, item })}
                       >
-                        <Trash2 size={20} />
+                        <Trash2 />
                       </button>
                     </div>
                   </div>
                 );
               })}
             </div>
-
-            {/* Tổng tiền */}
-            <div
-              style={{
-                textAlign: 'right',
-                fontSize: 22,
-                fontWeight: 700,
-                color: '#C92A15',
-                marginBottom: 32,
-              }}
-            >
-              Tổng tiền: {totalAmount.toLocaleString('vi-VN')}₫
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700, fontSize: 20, marginTop: 32 }}>
+              <span>Tổng tiền</span>
+              <span style={{ color: 'red', fontWeight: 700, fontSize: 22 }}>{totalAmount.toLocaleString('vi-VN')}đ</span>
             </div>
-
-            {/* Nút hành động */}
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: 16,
-                alignItems: 'center',
-                marginTop: 8,
-              }}
-            >
+            <div style={{ display: 'flex', gap: 16, marginTop: 36, justifyContent: 'center' }}>
               <button
-                style={{
-                  background: '#6c8b7e',
-                  color: '#fff',
-                  padding: '8px 18px',
-                  fontSize: 15,
-                  fontWeight: 500,
-                  border: 'none',
-                  borderRadius: 6,
-                  height: 40,
-                  minWidth: 140,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                onClick={() => navigate('/')}
+                style={{ background: '#fff', color: '#C92A15', border: '1.5px solid #C92A15', borderRadius: 8, padding: '10px 28px', fontSize: 16, fontWeight: 600, cursor: 'pointer', minWidth: 120, transition: 'all 0.2s', marginRight: 0 }}
+                onClick={() => navigate(-1)}
               >
-                ← Tiếp tục mua hàng
+                ← Quay lại
               </button>
-
-              {/* Chuyển trang chọn hình thức đặt */}
               <button
-                onClick={() => navigate('/order-type')} // 👉 chuyển thẳng sang OrderTypePage
-                style={{
-                  padding: '8px 24px',
-                  borderRadius: 6,
-                  background: '#16a34a',
-                  color: '#fff',
-                  fontWeight: 700,
-                  fontSize: 16,
-                  border: 'none',
-                  height: 40,
-                  minWidth: 140,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
+                style={{ background: '#C92A15', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 28px', fontSize: 16, fontWeight: 600, cursor: 'pointer', minWidth: 120, transition: 'all 0.2s' }}
+                onClick={() => navigate('/order-type')}
               >
                 Thanh toán
               </button>
@@ -365,29 +237,17 @@ const CheckoutPage: React.FC = () => {
           </>
         )}
       </div>
-
-      {/* Modal xác nhận xoá */}
       <ModalConfirm
         visible={confirmRemove.open}
-        title="Xác nhận xoá"
-        message={`Bạn có chắc muốn xoá món '${
-          getDish(confirmRemove.item?.dishId)?.name || ''
-        }' khỏi giỏ hàng không?`}
-        btnYes="Xoá"
-        btnYesClassName="bg-[#dc2626] hover:bg-[#b91c1c] text-white border-none"
-        btnNo="Huỷ"
         onYes={() => {
           if (confirmRemove.item) {
-            removeFromCart({
-              dishId: confirmRemove.item.dishId,
-              size: confirmRemove.item.size,
-              base: confirmRemove.item.base,
-              note: confirmRemove.item.note,
-            });
+            removeFromCart(confirmRemove.item);
+            setConfirmRemove({ open: false, item: null });
           }
-          setConfirmRemove({ open: false, item: null });
         }}
         onNo={() => setConfirmRemove({ open: false, item: null })}
+        title="Xác nhận xoá"
+        message="Bạn có chắc chắn muốn xoá món này khỏi giỏ hàng?"
       />
     </div>
   );

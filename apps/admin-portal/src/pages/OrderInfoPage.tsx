@@ -22,7 +22,6 @@ const stores = [
   },
 ];
 
-// Hàm lấy 2 ngày: hôm nay và ngày mai
 function getValidDates() {
   const today = new Date();
   const tomorrow = new Date();
@@ -31,7 +30,6 @@ function getValidDates() {
   const format = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   return [format(today), format(tomorrow)];
 }
-// Hàm lấy giờ hợp lệ
 function getValidTimes(selectedDate: string) {
   const now = new Date();
   const todayStr = now.toISOString().slice(0, 10);
@@ -58,7 +56,7 @@ function getValidTimes(selectedDate: string) {
   const times: string[] = [];
   for (let h = startHour; h <= maxHour; h++) {
     for (let m = (h === startHour ? startMinute : 0); m < 60; m += 15) {
-      if (h === maxHour && m > 0) break; // chỉ cho 22:00
+      if (h === maxHour && m > 0) break;
       const hh = h.toString().padStart(2, '0');
       const mm = m.toString().padStart(2, '0');
       times.push(`${hh}:${mm}`);
@@ -69,7 +67,9 @@ function getValidTimes(selectedDate: string) {
 
 const OrderInfoPage: React.FC = () => {
   const query = useQuery();
-  const orderType = query.get('orderType');
+  const location = useLocation();
+  const orderType = location.state?.orderType || query.get('orderType');
+  const deliveryAddress = location.state?.address || '';
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
 
@@ -161,27 +161,35 @@ const OrderInfoPage: React.FC = () => {
           </div>
           {/* RIGHT: Chọn cửa hàng đến lấy */}
           <div style={{flex: 1}}>
-            <div style={{fontWeight: 600, fontSize: 20, marginBottom: 16, color: '#166534', borderLeft: '4px solid #16a34a', paddingLeft: 8}}>Chọn cửa hàng đến lấy</div>
-            <div style={{display: 'flex', gap: 8, marginBottom: 8}}>
-              <input placeholder="Nhập tên cửa hàng để tìm kiếm" style={{flex:1, borderRadius:8, border:'1px solid #ccc', padding:'10px 12px', fontSize:16}} value={form.search} onChange={e => setForm(f => ({...f, search: e.target.value}))} />
-              <button style={{border:'none', background:'#16a34a', color:'#fff', borderRadius:8, padding:'0 16px', fontSize:20, fontWeight:700, cursor:'pointer'}}>🔍</button>
+            <div style={{fontWeight: 600, fontSize: 20, marginBottom: 16, color: '#166534', borderLeft: '4px solid #16a34a', paddingLeft: 8}}>
+              {orderType === 'pickup' ? 'Nhận hàng tại:' : 'Giao hàng đến:'}
             </div>
-            <div style={{display:'flex', gap:8, marginBottom:16}}>
-              <button style={{flex:1, background:'#16a34a', color:'#fff', border:'none', borderRadius:'8px 8px 0 0', padding:'8px 0', fontWeight:600, fontSize:16, cursor:'pointer'}}>Gần vị trí bạn</button>
-              <button style={{flex:1, background:'#fff', color:'#16a34a', border:'1px solid #16a34a', borderRadius:'8px 8px 0 0', padding:'8px 0', fontWeight:600, fontSize:16, cursor:'pointer'}}>Cửa hàng lọc được</button>
-            </div>
-            <div>
-              {stores.filter(s => s.name.toLowerCase().includes(form.search.toLowerCase())).map(store => (
-                <label key={store.id} style={{display:'block', border:'1px solid #16a34a', borderRadius:12, padding:16, marginBottom:12, cursor:'pointer', background: form.storeId === store.id ? '#f6fff8' : '#fff', position:'relative'}}>
-                  <input type="radio" name="store" checked={form.storeId === store.id} onChange={() => setForm(f => ({...f, storeId: store.id}))} style={{position:'absolute', left:16, top:16}} />
-                  <div style={{marginLeft:32}}>
-                    <div style={{fontWeight:700, color:'#166534', fontSize:17, marginBottom:4}}>{store.name}</div>
-                    <div style={{fontSize:15, color:'#444', marginBottom:2}}>📍 {store.address}</div>
-                    <div style={{fontSize:15, color:'#444'}}>☎ Hotline: {store.hotline}</div>
+            {orderType === 'pickup'
+              ? <div>
+                  <div style={{fontWeight: 600, fontSize: 20, marginBottom: 16, color: '#166534', borderLeft: '4px solid #16a34a', paddingLeft: 8}}>Chọn cửa hàng đến lấy</div>
+                  <div style={{display: 'flex', gap: 8, marginBottom: 8}}>
+                    <input placeholder="Nhập tên cửa hàng để tìm kiếm" style={{flex:1, borderRadius:8, border:'1px solid #ccc', padding:'10px 12px', fontSize:16}} value={form.search} onChange={e => setForm(f => ({...f, search: e.target.value}))} />
+                    <button style={{border:'none', background:'#16a34a', color:'#fff', borderRadius:8, padding:'0 16px', fontSize:20, fontWeight:700, cursor:'pointer'}}>🔍</button>
                   </div>
-                </label>
-              ))}
-            </div>
+                  <div style={{display:'flex', gap:8, marginBottom:16}}>
+                    <button style={{flex:1, background:'#16a34a', color:'#fff', border:'none', borderRadius:'8px 8px 0 0', padding:'8px 0', fontWeight:600, fontSize:16, cursor:'pointer'}}>Gần vị trí bạn</button>
+                    <button style={{flex:1, background:'#fff', color:'#16a34a', border:'1px solid #16a34a', borderRadius:'8px 8px 0 0', padding:'8px 0', fontWeight:600, fontSize:16, cursor:'pointer'}}>Cửa hàng lọc được</button>
+                  </div>
+                  <div>
+                    {stores.filter(s => s.name.toLowerCase().includes(form.search.toLowerCase())).map(store => (
+                      <label key={store.id} style={{display:'block', border:'1px solid #16a34a', borderRadius:12, padding:16, marginBottom:12, cursor:'pointer', background: form.storeId === store.id ? '#f6fff8' : '#fff', position:'relative'}}>
+                        <input type="radio" name="store" checked={form.storeId === store.id} onChange={() => setForm(f => ({...f, storeId: store.id}))} style={{position:'absolute', left:16, top:16}} />
+                        <div style={{marginLeft:32}}>
+                          <div style={{fontWeight:700, color:'#166534', fontSize:17, marginBottom:4}}>{store.name}</div>
+                          <div style={{fontSize:15, color:'#444', marginBottom:2}}>📍 {store.address}</div>
+                          <div style={{fontSize:15, color:'#444'}}>☎ Hotline: {store.hotline}</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              : <div>{deliveryAddress}</div>
+            }
           </div>
         </div>
         <div style={{marginTop:32, textAlign:'right'}}>

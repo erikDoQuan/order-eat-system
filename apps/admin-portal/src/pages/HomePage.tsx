@@ -12,6 +12,7 @@ import DishCard from './DishCard';
 import { CartPopup } from '../components/CartPopup';
 import { getOrderItemsByUserId } from '../services/user.api';
 import { AuthContext } from '../context/AuthContext';
+import Footer from '../components/Footer';
 
 export default function HomePage() {
   const [dishes, setDishes] = useState<Dish[]>([]);
@@ -25,6 +26,7 @@ export default function HomePage() {
   const [cartLoading, setCartLoading] = useState(false);
   const { user } = useContext(AuthContext);
   const { t } = useTranslation();
+  const [visibleAppetizerCount, setVisibleAppetizerCount] = useState(3);
 
   useEffect(() => {
     getAllDishes().then(d => setDishes(d || []));
@@ -46,6 +48,13 @@ export default function HomePage() {
   );
   const spaghettiDishes = dishes.filter(
     d => d.status === 'available' && d.categoryId && categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('mỳ ý') && cat.id === d.categoryId),
+  );
+  const appetizerDishes = dishes.filter(
+    d => d.status === 'available' && d.categoryId && categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('khai vị') && cat.id === d.categoryId)
+  );
+  // Nếu không tìm thấy theo 'khai vị', thử 'appetizer'
+  const appetizerDishesFallback = dishes.filter(
+    d => d.status === 'available' && d.categoryId && categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('appetizer') && cat.id === d.categoryId)
   );
 
   // Lọc pizza theo filter
@@ -154,6 +163,30 @@ export default function HomePage() {
           </div>
         </div>
       )}
+      {(appetizerDishes.length > 0 || appetizerDishesFallback.length > 0) && (
+        <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('appetizer')}</h2>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+            {(appetizerDishes.length > 0 ? appetizerDishes : appetizerDishesFallback)
+              .slice(0, visibleAppetizerCount)
+              .map(dish => (
+                <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+            ))}
+          </div>
+          {(visibleAppetizerCount < (appetizerDishes.length > 0 ? appetizerDishes.length : appetizerDishesFallback.length)) && (
+            <div className="mb-12 mt-4 flex justify-center">
+              <a
+                className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                style={{ textDecoration: 'none' }}
+                onClick={() => setVisibleAppetizerCount(prev => prev + 3)}
+              >
+                {t('view_more')}
+                <em className="ri-add-line" />
+              </a>
+            </div>
+          )}
+        </div>
+      )}
       {showCart && (
         <>
           <div
@@ -173,6 +206,7 @@ export default function HomePage() {
           />
         </>
       )}
+      <Footer />
     </div>
   );
 }

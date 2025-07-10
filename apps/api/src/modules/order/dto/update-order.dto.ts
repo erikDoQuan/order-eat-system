@@ -65,9 +65,15 @@ export class UpdateOrderDto {
 
   @ApiProperty({
     description: 'Cập nhật địa chỉ giao hàng (bắt buộc nếu type = delivery)',
-    example: '123 Đường ABC, Quận 1, TP.HCM',
+    example: { address: '123 Đường ABC, Quận 1, TP.HCM', phone: '0987654321', name: 'Nguyễn Văn A' },
     required: false,
+    type: Object,
   })
   @IsOptional()
-  deliveryAddress?: string;
+  @IsObject()
+  deliveryAddress?: {
+    address: string;
+    phone: string;
+    name?: string;
+  };
 }

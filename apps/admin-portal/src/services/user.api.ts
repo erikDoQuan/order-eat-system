@@ -37,7 +37,9 @@ export async function register(
   address: string,
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const res = await fetch('http://localhost:3000/api/v1/admin/users', {
+    console.log('Sending registration request:', { email, firstName, lastName, phoneNumber, address });
+    
+    const res = await fetch('http://localhost:3001/api/v1/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -47,16 +49,20 @@ export async function register(
         lastName,
         phoneNumber,
         address,
-        role: 'user',
-        isActive: true,
       }),
     });
+    
+    console.log('Registration response status:', res.status);
+    
     const data = await res.json().catch(() => null);
+    console.log('Registration response data:', data);
+    
     if (res.ok) {
-      return { success: true, message: 'Đăng ký thành công' };
+      return { success: true, message: data?.message || 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.' };
     }
     return { success: false, message: data?.message || 'Đăng ký thất bại' };
   } catch (err) {
+    console.error('Registration error:', err);
     return { success: false, message: 'Có lỗi xảy ra' };
   }
 }

@@ -24,7 +24,6 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const { setUser } = useContext(AuthContext);
 
-  // Dữ liệu quận/huyện và phường/xã cho Khánh Hòa
   const province = 'Khánh Hòa';
   const districtData: Record<string, string[]> = {
     'Khánh Hòa': ['TP Nha Trang', 'TP Cam Ranh', 'Huyện Diên Khánh', 'Huyện Cam Lâm'],
@@ -37,22 +36,42 @@ export default function RegisterPage() {
   };
   const allWardsInKhanhHoa = Object.values(wardData).reduce((acc, arr) => acc.concat(arr), []);
 
-  // Validate email theo chuẩn mạnh
+  const commonStreets = [
+    'Nguyễn Trãi', 'Trần Phú', 'Lý Tự Trọng', 'Thái Nguyên', 'Lê Lợi', 'Pasteur',
+    'Yersin', 'Bạch Đằng', 'Tôn Đức Thắng', 'Võ Văn Tần', 'Nguyễn Thiện Thuật',
+    'Lương Định Của', 'Vũ Lăng', 'Phạm Văn Đồng', 'Nguyễn Tất Thành', 'Trần Hưng Đạo',
+    'Lê Thánh Tôn', 'Nguyễn Huệ', 'Hùng Vương', 'Lê Hồng Phong', 'Nguyễn Du',
+    'Trần Quang Khải', 'Nguyễn Bỉnh Khiêm', 'Lê Quý Đôn', 'Nguyễn Công Trứ',
+    'Đường 2/4', 'Đường 23/10', 'Đường 3/2', 'Đường 16/4', 'Đường 19/8',
+    'Đường Trần Quý Cáp', 'Đường Nguyễn Khuyến', 'Đường Trần Cao Vân',
+    'Đường Lê Đại Hành', 'Đường Nguyễn Thị Minh Khai', 'Đường Võ Thị Sáu',
+    'Đường Nguyễn Thị Định', 'Đường Lê Văn Lương', 'Đường Nguyễn Văn Linh',
+    'Đường Võ Nguyên Giáp', 'Đường Nguyễn Sinh Sắc', 'Đường Phan Chu Trinh',
+    'Đường Huỳnh Thúc Kháng', 'Đường Trần Đại Nghĩa', 'Đường Nguyễn Văn Cừ',
+    'Đường Lê Văn Việt', 'Đường Nguyễn Hữu Thọ', 'Đường Võ Văn Kiệt',
+    'Đường Mai Chí Thọ', 'Đường Nguyễn Thị Thập', 'Đường Lê Văn Lương',
+    'Đường Nguyễn Văn Quỳ', 'Đường Trần Văn Ơn', 'Đường Nguyễn Văn Trỗi',
+    'Đường Võ Thị Sáu', 'Đường Nguyễn Thị Minh Khai', 'Đường Lê Thị Riêng',
+    'Đường Nguyễn Thị Định', 'Đường Võ Thị Sáu', 'Đường Nguyễn Thị Minh Khai',
+    'Đường Lê Thị Riêng', 'Đường Nguyễn Thị Định', 'Đường Võ Thị Sáu',
+    'Đường Nguyễn Thị Minh Khai', 'Đường Lê Thị Riêng', 'Đường Nguyễn Thị Định'
+  ];
+
   const validateEmail = (email: string) => {
     return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
   };
-  // Validate phone theo chuẩn Việt Nam
   const validatePhone = (phone: string) => {
     return /^(0|\+84)[3|5|7|8|9][0-9]{8}$/.test(phone);
   };
-  // Validate password mạnh
   const validatePassword = (pw: string) => {
-    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(pw);
+    return pw.length >= 6;
   };
 
-  // Validate địa chỉ
-  const validateHouseNumber = (v: string) => v.trim().length > 0 && /^[\w\d\s/-]+$/.test(v);
-  const validateStreet = (v: string) => v.trim().length > 0 && /^[\w\d\s/-]+$/.test(v);
+  const validateHouseNumber = (v: string) => v.trim().length > 0 && /^[\w\d\s/-]+$/.test(v.trim());
+  const validateStreet = (v: string) => {
+    const trimmed = v.trim();
+    return trimmed.length > 0 && /^[a-zA-ZÀ-ỹĂăÂâĐđÊêÔôƠơƯư\s\d/-]+$/.test(trimmed);
+  };
   const validateDistrict = (v: string) => (districtData[province] || []).includes(v);
   const validateWard = (v: string) => Object.values(wardData).flat().includes(v);
 
@@ -63,7 +82,6 @@ export default function RegisterPage() {
     ward: '',
   });
 
-  // Validate realtime cho các trường
   const [emailError, setEmailError] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -95,7 +113,7 @@ export default function RegisterPage() {
       return;
     }
     if (!validatePassword(password)) {
-      setMessage('Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt');
+      setMessage('Mật khẩu phải có ít nhất 6 ký tự');
       return;
     }
     if (password !== confirmPassword) {
@@ -104,7 +122,6 @@ export default function RegisterPage() {
     }
     setLoading(true);
     setMessage('');
-    // Ghép địa chỉ
     const address = `${houseNumber}, ${street}, ${ward}, ${district}, ${province}`;
     const res = await register(email, password, firstName, lastName, phoneNumber, address);
     if (res.message?.toLowerCase().includes('phone') || res.message?.toLowerCase().includes('số điện thoại')) {
@@ -120,27 +137,18 @@ export default function RegisterPage() {
     setMessage(res.message);
     setLoading(false);
     if (res.success) {
-      setUser({
-        email,
-        firstName,
-        lastName,
-        phoneNumber,
-        role: 'user',
-      });
       setTimeout(() => {
-        navigate('/', { replace: true });
-      }, 800);
+        navigate('/login', { replace: true });
+      }, 3000);
     }
   };
 
-  // Validate realtime cho email
   const handleEmailChange = (v: string) => {
     setEmail(v);
     if (!v || v.trim() === '') setEmailError('');
     else if (!validateEmail(v)) setEmailError('Email không hợp lệ');
     else setEmailError('');
   };
-  // Validate realtime cho phone
   const handlePhoneChange = (v: string) => {
     setPhoneNumber(v);
     if (!v || v.trim() === '') setPhoneError('');
@@ -149,25 +157,21 @@ export default function RegisterPage() {
     else if (!validatePhone(v)) setPhoneError('Số điện thoại không hợp lệ');
     else setPhoneError('');
   };
-  // Validate realtime cho password
   const handlePasswordChange = (v: string) => {
     setPassword(v);
     if (!v || v.trim() === '') setPasswordError('');
-    else if (!validatePassword(v)) setPasswordError('Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt');
+    else if (!validatePassword(v)) setPasswordError('Mật khẩu phải có ít nhất 6 ký tự');
     else setPasswordError('');
-    // Đồng thời check lại xác nhận mật khẩu
     if (!confirmPassword || confirmPassword.trim() === '') setConfirmPasswordError('');
     else if (v !== confirmPassword) setConfirmPasswordError('Mật khẩu xác nhận không khớp');
     else setConfirmPasswordError('');
   };
-  // Validate realtime cho confirm password
   const handleConfirmPasswordChange = (v: string) => {
     setConfirmPassword(v);
     if (!v || v.trim() === '') setConfirmPasswordError('');
     else if (password !== v) setConfirmPasswordError('Mật khẩu xác nhận không khớp');
     else setConfirmPasswordError('');
   };
-  // Validate realtime cho địa chỉ
   const handleHouseNumberChange = (v: string) => {
     setHouseNumber(v);
     setAddressErrors(errors => ({...errors, houseNumber: (!v || v.trim() === '') ? '' : (!validateHouseNumber(v) ? 'Số nhà không hợp lệ' : '')}));
@@ -220,7 +224,21 @@ export default function RegisterPage() {
             </div>
             <div style={{marginBottom:16}}>
               <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Tên đường</label>
-              <input type="text" placeholder="Nguyễn Trãi" name="street" autoComplete="off" value={street} onChange={e => handleStreetChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} />
+              <input 
+                type="text" 
+                placeholder="Nguyễn Trãi" 
+                name="street" 
+                autoComplete="off" 
+                value={street} 
+                onChange={e => handleStreetChange(e.target.value)}
+                list="street-suggestions"
+                style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} 
+              />
+              <datalist id="street-suggestions">
+                {commonStreets.map((streetName, idx) => (
+                  <option key={streetName + idx} value={streetName} />
+                ))}
+              </datalist>
               {addressErrors.street && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{addressErrors.street}</div>}
             </div>
             <div style={{marginBottom:16}}>

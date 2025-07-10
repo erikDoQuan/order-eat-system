@@ -2,8 +2,9 @@ import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { AuthContext } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import { createOrder } from '../services/order.api';
 
-// Hàm lấy 2 ngày: hôm nay và ngày mai
 function getValidDates() {
   const today = new Date();
   const tomorrow = new Date();
@@ -12,7 +13,6 @@ function getValidDates() {
   const format = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   return [format(today), format(tomorrow)];
 }
-// Hàm lấy giờ hợp lệ
 function getValidTimes(selectedDate: string) {
   const now = new Date();
   const todayStr = now.toISOString().slice(0, 10);
@@ -48,25 +48,21 @@ function getValidTimes(selectedDate: string) {
   return times;
 }
 
-// Chỉ cho phép chọn Nha Trang
 const provinces = ['Khánh Hòa'];
-const districts = ['Chọn Quận/ Huyện']; // TODO: lấy từ API theo tỉnh
-const wards = ['Chọn Phường/ Xã']; // TODO: lấy từ API theo quận
-
-// Demo dữ liệu tỉnh/thành, quận/huyện, phường/xã
+const districts = ['Chọn Quận/ Huyện'];
+const wards = ['Chọn Phường/ Xã'];
 const districtData: Record<string, string[]> = {
   'Khánh Hòa': ['TP Nha Trang'],
 };
 const wardData: Record<string, string[]> = {
   'TP Nha Trang': ['Phường Vĩnh Hòa', 'Phường Vĩnh Hải', 'Phường Phước Hải', 'Phường Xương Huân', 'Phường Vạn Thắng', 'Phường Phước Tân', 'Phường Lộc Thọ', 'Phường Tân Lập', 'Phường Phước Hòa', 'Phường Vĩnh Nguyên'],
 };
-
-// Gộp tất cả phường/xã của Khánh Hòa
 const allWardsInKhanhHoa = Object.values(wardData).reduce((acc, arr) => acc.concat(arr), []);
 
 const DeliveryOrderPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
+  const { orderItems, dishes, clearCart } = useCart();
   const [form, setForm] = useState({
     useOldAddress: true,
     oldAddress: '',
@@ -82,13 +78,12 @@ const DeliveryOrderPage: React.FC = () => {
     time: '',
     date: getValidDates()[0],
   });
+  const orderType = localStorage.getItem('orderType') || 'pickup';
 
   useEffect(() => {
     if (user) {
-      // Fill họ tên, số điện thoại
       let name = user.name || [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || '';
       let phone = user.phoneNumber || user.phone_number || '';
-      // Fill địa chỉ nếu có
       let address = '', street = '', ward = '', district = '', province = 'Khánh Hòa';
       if (user.address) {
         const parts = user.address.split(',').map(s => s.trim());
@@ -110,7 +105,6 @@ const DeliveryOrderPage: React.FC = () => {
     }
   }, [user]);
 
-  // Khi chọn tỉnh/thành, reset quận/huyện, phường/xã
   useEffect(() => {
     setForm(f => ({
       ...f,
@@ -118,7 +112,6 @@ const DeliveryOrderPage: React.FC = () => {
       ward: '',
     }));
   }, [form.province]);
-  // Khi chọn quận/huyện, reset phường/xã
   useEffect(() => {
     setForm(f => ({
       ...f,
@@ -126,7 +119,6 @@ const DeliveryOrderPage: React.FC = () => {
     }));
   }, [form.district]);
 
-  // Fill địa chỉ cũ khi chọn checkbox
   useEffect(() => {
     if (form.useOldAddress && user?.address) {
       const parts = user.address.split(',').map(s => s.trim());
@@ -169,13 +161,59 @@ const DeliveryOrderPage: React.FC = () => {
     }
   }, [form.timeType]);
 
-  const handleSubmit = () => {
+  const sizeOptions = [
+    { value: 'small', price: 0 },
+    { value: 'medium', price: 90000 },
+    { value: 'large', price: 190000 },
+  ];
+  const getItemPrice = (item: any) => {
+    const dish = dishes.find((d: any) => d.id === item.dishId);
+    if (!dish) return 0;
+    let price = Number(dish.basePrice) || 0;
+    if (item.size) {
+      price += sizeOptions.find((s) => s.value === item.size)?.price || 0;
+    }
+    if (item.base && !['dày', 'mỏng'].includes(item.base)) {
+      const topping = dishes.find((d: any) => d.id === item.base);
+      if (topping) price += Number(topping.basePrice) || 0;
+    }
+    return price;
+  };
+
+  const handleSubmit = async () => {
     if (!form.name || !form.phone || !form.province || !form.district || !form.ward || !form.address || !form.street) {
       alert('Vui lòng nhập đầy đủ thông tin giao hàng!');
       return;
     }
-    // TODO: gửi dữ liệu về backend
-    alert('Đặt hàng thành công! (demo)');
+    const items = orderItems.map(item => {
+      const dish = dishes.find(d => d.id === item.dishId);
+      return {
+        ...item,
+        name: dish?.name || '-',
+        image: dish?.imageUrl || '',
+        price: getItemPrice(item),
+      };
+    });
+    const subtotal = items.reduce((sum, item) => sum + Number(item.price ?? 0) * Number(item.quantity ?? 0), 0);
+    const shippingFee = orderType === 'delivery' ? 25000 : 0;
+    const totalAmount = subtotal + shippingFee;
+    navigate('/payment-info', {
+      state: {
+        orderType,
+        address: form.address,
+        street: form.street,
+        ward: form.ward,
+        district: form.district,
+        province: form.province,
+        detail: form.detail,
+        name: form.name,
+        phone: form.phone,
+        items,
+        subtotal,
+        shippingFee,
+        totalAmount,
+      }
+    });
   };
 
   return (
@@ -191,39 +229,38 @@ const DeliveryOrderPage: React.FC = () => {
             <label style={{display:'flex',alignItems:'center',marginBottom:8}}>
               <input type="checkbox" checked={form.useOldAddress} onChange={e => setForm(f => ({...f, useOldAddress: e.target.checked}))} style={{marginRight:8}} /> Sử dụng địa chỉ cũ
             </label>
-            <select style={{width:'100%',marginBottom:12,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}} value={form.oldAddress} onChange={e => setForm(f => ({...f, oldAddress: e.target.value}))} disabled={!form.useOldAddress}>
+            <select style={{width:'100%',marginBottom:12,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}} value={form.oldAddress || ''} onChange={e => setForm(f => ({...f, oldAddress: e.target.value}))} disabled={!form.useOldAddress}>
               <option value="">Chọn địa chỉ ...</option>
               {/* TODO: map địa chỉ cũ từ user */}
             </select>
             <label>Họ và tên: <span style={{color:'red'}}>*</span></label>
-            <input value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} style={{width:'100%',marginTop:4,marginBottom:12,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}} />
+            <input value={form.name || ''} onChange={e => setForm(f => ({...f, name: e.target.value}))} style={{width:'100%',marginTop:4,marginBottom:12,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}} />
             <label>Số điện thoại: <span style={{color:'red'}}>*</span></label>
-            <input value={form.phone} onChange={e => setForm(f => ({...f, phone: e.target.value}))} style={{width:'100%',marginTop:4,marginBottom:12,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}} />
+            <input value={form.phone || ''} onChange={e => setForm(f => ({...f, phone: e.target.value}))} style={{width:'100%',marginTop:4,marginBottom:12,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}} />
             <label>Tỉnh/Thành <span style={{color:'red'}}>*</span></label>
-            <select value={form.province} disabled style={{width:'100%',marginTop:4,marginBottom:12,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16,background:'#f3f4f6'}}>
+            <select value={form.province || 'Khánh Hòa'} disabled style={{width:'100%',marginTop:4,marginBottom:12,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16,background:'#f3f4f6'}}>
               {provinces.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
             <label>Quận/Huyện <span style={{color:'red'}}>*</span></label>
-            <select value={form.district} onChange={e => setForm(f => ({...f, district: e.target.value}))} style={{width:'100%',marginTop:4,marginBottom:12,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}}>
+            <select value={form.district || ''} onChange={e => setForm(f => ({...f, district: e.target.value}))} style={{width:'100%',marginTop:4,marginBottom:12,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}}>
               <option value="">Chọn Quận/ Huyện</option>
               {(districtData['Khánh Hòa'] || []).map(d => <option key={d} value={d}>{d}</option>)}
             </select>
             <label>Phường/Xã <span style={{color:'red'}}>*</span></label>
-            <select value={form.ward} onChange={e => setForm(f => ({...f, ward: e.target.value}))} style={{width:'100%',marginTop:4,marginBottom:12,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}}>
+            <select value={form.ward || ''} onChange={e => setForm(f => ({...f, ward: e.target.value}))} style={{width:'100%',marginTop:4,marginBottom:12,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}}>
               <option value="">Chọn Phường/ Xã</option>
               {allWardsInKhanhHoa.map(w => <option key={w} value={w}>{w}</option>)}
             </select>
             <label>Số nhà: <span style={{color:'red'}}>*</span></label>
-            <input value={form.address} onChange={e => setForm(f => ({...f, address: e.target.value}))} style={{width:'100%',marginTop:4,marginBottom:4,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}} />
+            <input value={form.address || ''} onChange={e => setForm(f => ({...f, address: e.target.value}))} style={{width:'100%',marginTop:4,marginBottom:4,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}} />
             <div style={{fontSize:13,color:'#b91c1c',marginBottom:4}}>* Lưu ý:</div>
-            <div style={{fontSize:13,marginBottom:4}}>- Trong thời gian chuyển đổi địa giới hành chính, <b>quý khách vui lòng nhập địa chỉ giao hàng theo thông tin cũ (trước ngày 1/7/2025)</b>.</div>
             <div style={{fontSize:13,marginBottom:4}}>- Nếu nhà không có số, vui lòng nhập: 1</div>
             <div style={{fontSize:13,marginBottom:4}}>VD1: Nhà số 6 Hẻm hoặc Ngõ hoặc Kiệt 12 =&gt; Nhập: 12</div>
             <div style={{fontSize:13,marginBottom:4}}>VD2: Nhà số 6A hoặc 6bis hoặc H6 hoặc L6 =&gt; Nhập: 6</div>
             <label>Tên đường: <span style={{color:'red'}}>*</span></label>
-            <input value={form.street} onChange={e => setForm(f => ({...f, street: e.target.value}))} style={{width:'100%',marginTop:4,marginBottom:12,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}} />
+            <input value={form.street || ''} onChange={e => setForm(f => ({...f, street: e.target.value}))} style={{width:'100%',marginTop:4,marginBottom:12,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}} />
             <label>Thông tin chi tiết:</label>
-            <input value={form.detail} onChange={e => setForm(f => ({...f, detail: e.target.value}))} style={{width:'100%',marginTop:4,marginBottom:12,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}} />
+            <input value={form.detail || ''} onChange={e => setForm(f => ({...f, detail: e.target.value}))} style={{width:'100%',marginTop:4,marginBottom:12,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}} />
             <div style={{fontSize:13,marginBottom:4}}>Vui lòng nhập đủ Hẻm/ Ngõ/ Ngách/ Kiệt/ Thôn/ Ấp/ Chung Cư/ Khu Đô Thị/ Khu Dân Cư/ Số Căn Hộ cụ thể kèm những yêu cầu khác (nếu có) để hướng dẫn cho nhân viên giao hàng.</div>
           </div>
           {/* RIGHT: Chọn thời gian nhận hàng */}
@@ -238,17 +275,17 @@ const DeliveryOrderPage: React.FC = () => {
             {form.timeType === 'custom' && (
               <div style={{display:'flex', gap:12, marginTop:16}}>
                 <select
-                  value={form.time}
+                  value={form.time || ''}
                   onChange={e => setForm(f => ({...f, time: e.target.value}))}
                   style={{flex:1, background:'#fafafa', border:'2px solid #16a34a', borderRadius:8, padding:'12px 16px', fontSize:18, color:'#222'}}
                 >
                   <option value="">Chọn giờ</option>
-                  {getValidTimes(form.date).map(t => (
+                  {getValidTimes(form.date || '').map(t => (
                     <option key={t} value={t}>{t}</option>
                   ))}
                 </select>
                 <select
-                  value={form.date}
+                  value={form.date || ''}
                   onChange={e => setForm(f => ({...f, date: e.target.value}))}
                   style={{flex:1, background:'#fafafa', border:'2px solid #16a34a', borderRadius:8, padding:'12px 16px', fontSize:18, color:'#222'}}
                 >
@@ -259,14 +296,25 @@ const DeliveryOrderPage: React.FC = () => {
                 </select>
               </div>
             )}
-            <div style={{marginTop:24, fontSize:15, color:'#444'}}>
-              Quý khách có nhu cầu xuất hóa đơn GTGT, vui lòng quét mã QR trên biên lai mỗi hóa đơn hoặc truy cập <br/>
-              <a href="https://evat-tpc.qsrvietnam.com/" target="_blank" rel="noopener noreferrer">https://evat-tpc.qsrvietnam.com/</a><br/>
-              sau 60 phút và xuất hóa đơn trong vòng 120 phút kể từ lúc mua hàng.
-            </div>
             <div style={{display:'flex', gap:24, marginTop:48, justifyContent:'flex-end'}}>
               <button onClick={() => navigate(-1)} style={{background:'#6b9080',color:'#fff',border:'none',borderRadius:8,padding:'12px 32px',fontSize:18,fontWeight:600,cursor:'pointer'}}>Quay lại</button>
-              <button onClick={handleSubmit} style={{background:'#166534',color:'#fff',border:'none',borderRadius:8,padding:'12px 32px',fontSize:18,fontWeight:600,cursor:'pointer'}}>Thanh toán &rarr;</button>
+              <button
+                onClick={handleSubmit}
+                style={{
+                  background: '#C92A15',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '10px 28px',
+                  fontSize: 16,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  minWidth: 120,
+                  transition: 'all 0.2s',
+                }}
+              >
+                Thanh toán &rarr;
+              </button>
             </div>
           </div>
         </div>

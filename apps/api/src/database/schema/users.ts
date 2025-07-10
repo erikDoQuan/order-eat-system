@@ -1,5 +1,5 @@
 import { InferInsertModel, InferSelectModel, relations } from 'drizzle-orm';
-import { pgEnum, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { boolean, pgEnum, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 
 import { USER_ROLE } from '~/modules/user/constants/users.constant';
 import { baseColumns } from './_base';
@@ -18,6 +18,7 @@ export const users = pgTable('users', {
   lastLogin: timestamp('last_login', { withTimezone: true }),
   role: userRoleEnum('role').notNull().default(USER_ROLE.USER),
   avatar: varchar('avatar'),
+  isEmailVerified: boolean('is_email_verified').notNull().default(false),
 });
 
 export const usersRelations = relations(users, ({ many }) => ({

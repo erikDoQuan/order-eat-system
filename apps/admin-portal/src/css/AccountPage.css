@@ -144,7 +144,7 @@
 .table-recent-orders th, .table-recent-orders td {
   padding: 16px 18px;
   text-align: left;
-  font-size: 18px;
+  font-size: 15px;
   vertical-align: middle;
 }
 .table-recent-orders th {
@@ -174,4 +174,43 @@
 }
 .table-recent-orders .order-status-completed, .table-recent-orders .order-status-confirmed {
   color: #17823c;
+}
+.order-status-pending,
+.order-status-delivering {
+  color: #17823c !important; /* xanh đậm */
+  font-weight: 600;
+}
+.order-status-cancelled {
+  color: #d32f2f !important; /* đỏ */
+  font-weight: 600;
+}
+.order-date {
+  white-space: nowrap;
+}
+.table-recent-orders td:first-child, .table-recent-orders th:first-child {
+  min-width: 70px;
+  max-width: 90px;
+}
+.table-recent-orders td:nth-child(3), .table-recent-orders th:nth-child(3) {
+  min-width: 110px;
+  max-width: 120px;
+}
+.table-recent-orders td:nth-child(4), .table-recent-orders th:nth-child(4) {
+  min-width: 110px;
+  max-width: 130px;
+}
+.table-recent-orders td:last-child, .table-recent-orders th:last-child {
+  min-width: 110px;
+  max-width: 130px;
+}
+.table-recent-orders,
+.table-recent-orders th,
+.table-recent-orders td,
+.table-recent-orders a,
+.table-recent-orders .order-status-cancelled,
+.table-recent-orders .order-status-completed,
+.table-recent-orders .order-status-confirmed,
+.table-recent-orders .order-status-pending,
+.table-recent-orders .order-status-delivering {
+  font-size: 14px;
 }

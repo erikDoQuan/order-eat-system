@@ -5,33 +5,41 @@ import '../css/OrderSuccessPage.css';
 import { useCart } from '../context/CartContext';
 import { getAllDishes } from '../services/dish.api';
 import axios from 'axios';
+import { createOrder, getOrderDetail } from '../services/order.api';
 
 const OrderSuccessPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const orderId = location.state?.orderId || 'MÃ ĐƠN';
   const { clearCart } = useCart();
   const [orderNumber, setOrderNumber] = useState<string | number>('...');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const order = location.state?.order;
+  const orderId = location.state?.orderId;
 
   useEffect(() => {
     clearCart();
-  }, [clearCart]);
+    // eslint-disable-next-line
+  }, []); // chỉ chạy 1 lần khi mount
 
   useEffect(() => {
-    if (orderId && orderId !== 'MÃ ĐƠN') {
-      axios.get(`/api/v1/orders/${orderId}`)
-        .then(res => {
-          if (res.data?.data?.order_number || res.data?.data?.orderNumber) {
-            setOrderNumber(res.data?.data?.order_number || res.data?.data?.orderNumber);
-          } else {
-            setOrderNumber('...');
-          }
+    if (order) {
+      setOrderNumber(order.order_number || order.orderNumber || order.id || '...');
+    } else if (orderId) {
+      setLoading(true);
+      getOrderDetail(orderId)
+        .then((data) => {
+          setOrderNumber(data.order_number || data.orderNumber || data.id || '...');
+          setError(null);
         })
-        .catch(() => setOrderNumber('...'));
+        .catch(() => {
+          setError('Không tìm thấy thông tin đơn hàng.');
+        })
+        .finally(() => setLoading(false));
     } else {
-      setOrderNumber('...');
+      setError('Không có thông tin đơn hàng.');
     }
-  }, [orderId]);
+  }, [order, orderId]);
 
   return (
     <div className="order-success-root">
@@ -44,14 +52,32 @@ const OrderSuccessPage: React.FC = () => {
           </div>
           <div className="order-success-right">
             <div className="order-success-successbox">
-              BẠN ĐÃ ĐẶT HÀNG THÀNH CÔNG!
+              {error ? (
+                <span style={{ color: 'red' }}>{error}</span>
+              ) : (
+                'BẠN ĐÃ ĐẶT HÀNG THÀNH CÔNG!'
+              )}
             </div>
             <div className="order-success-thank">Cảm ơn bạn đã đặt hàng tại BẾP CỦA MẸ</div>
             <div className="order-success-orderid">
-              Mã đơn hàng của bạn là: <span>#{orderNumber}</span>
+              Mã đơn hàng của bạn là: <span>#{loading ? '...' : orderNumber}</span>
             </div>
             <div className="order-success-track">
-              Để kiểm tra tình trạng đơn hàng vui lòng click vào đây: <a href="#">THEO DÕI ĐƠN HÀNG</a>
+              Để kiểm tra tình trạng đơn hàng vui lòng click vào đây: 
+              <a
+                href="#"
+                onClick={e => {
+                  e.preventDefault();
+                  if (orderId || (order && (order.id || order.orderId))) {
+                    const id = orderId || order.id || order.orderId;
+                    navigate(`/orders/${id}`);
+                  } else {
+                    alert('Không tìm thấy mã đơn hàng!');
+                  }
+                }}
+              >
+                THEO DÕI ĐƠN HÀNG
+              </a>
             </div>
             <div className="order-success-hotline">
               Mọi thắc mắc và yêu cầu hỗ trợ vui lòng liên hệ tổng đài CSKH: <span>0337782571</span>

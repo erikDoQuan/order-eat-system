@@ -1,14 +1,13 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
-
+import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { updateUser } from '../services/user.api';
 import { fetchMe } from '../services/me.api';
 import { getOrdersByUserId } from '../services/order.api';
 import { getAllDishes } from '../services/dish.api';
 import { Dish } from '../types/dish.type';
-
 import '../css/AccountPage.css';
 
 export default function AccountPage() {
@@ -38,9 +37,13 @@ export default function AccountPage() {
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [searchValue, setSearchValue] = useState('');
   const [searchResult, setSearchResult] = useState<any[]|null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ORDERS_PER_PAGE = 5;
+  const paginatedOrders = (searchResult !== null ? searchResult : recentOrders.filter(order => order.status === 'completed'));
+  const totalPages = Math.ceil(paginatedOrders.length / ORDERS_PER_PAGE);
+  const displayedOrders = paginatedOrders.slice((currentPage - 1) * ORDERS_PER_PAGE, currentPage * ORDERS_PER_PAGE);
   const { t } = useTranslation();
 
-  // Luôn đồng bộ form với user mỗi khi user thay đổi
   useEffect(() => {
     setForm({
       name: (user?.firstName || '') + (user?.lastName ? ' ' + user.lastName : ''),
@@ -55,7 +58,6 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (user?.id) {
-      // Lấy tất cả đơn hàng cho tab lịch sử
       getOrdersByUserId(user.id).then(orders => {
         const sorted = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setRecentOrders(sorted);
@@ -236,11 +238,11 @@ export default function AccountPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {(searchResult !== null ? searchResult : recentOrders.filter(order => order.status === 'completed')).map(order => {
+                      {displayedOrders.map(order => {
                         const items = (order.orderItems?.items || []);
                         const dishNames = items.map((item: any) => getDishName(item.dishId)).join(', ');
                         const orderNumber = order.order_number || order.orderNumber || '-';
-                        const orderLink = `/orders/${orderNumber}`;
+                        const orderLink = `/orders/${order.id}`;
                         const date = new Date(order.createdAt);
                         const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
                         let statusText = '';
@@ -248,19 +250,22 @@ export default function AccountPage() {
                         else if (order.status === 'completed') statusText = t('order_completed');
                         else if (order.status === 'confirmed') statusText = t('order_confirmed');
                         else if (order.status === 'pending') statusText = t('order_pending');
+                        else if (order.status === 'delivering') statusText = 'Đang giao hàng';
                         else statusText = order.status;
                         return (
                           <tr key={order.id}>
                             <td>
-                              <a href={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>{orderNumber}</a>
+                              <Link to={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>{orderNumber}</Link>
                             </td>
                             <td style={{whiteSpace:'pre-line'}}>{dishNames}</td>
-                            <td>{dateStr}</td>
+                            <td className="order-date">{dateStr}</td>
                             <td>{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
                             <td className={
                               order.status === 'cancelled' ? 'order-status-cancelled' :
                               order.status === 'completed' ? 'order-status-completed' :
-                              order.status === 'confirmed' ? 'order-status-confirmed' : ''
+                              order.status === 'confirmed' ? 'order-status-confirmed' :
+                              order.status === 'delivering' ? 'order-status-delivering' :
+                              order.status === 'pending' ? 'order-status-pending' : ''
                             }>{statusText}</td>
                           </tr>
                         );
@@ -269,6 +274,28 @@ export default function AccountPage() {
                   </table>
                 </div>
               </div>
+              {totalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16, gap: 8 }}>
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentPage(i + 1)}
+                      style={{
+                        minWidth: 32,
+                        height: 32,
+                        borderRadius: 6,
+                        border: '1px solid #ccc',
+                        background: currentPage === i + 1 ? '#17823c' : '#fff',
+                        color: currentPage === i + 1 ? '#fff' : '#222',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+              )}
             </>
           )}
           {tab === 'info' && (
@@ -433,7 +460,7 @@ export default function AccountPage() {
                         const items = (order.orderItems?.items || []);
                         const dishNames = items.map((item: any) => getDishName(item.dishId)).join(', ');
                         const orderNumber = order.order_number || order.orderNumber || '-';
-                        const orderLink = `/orders/${orderNumber}`;
+                        const orderLink = `/orders/${order.id}`;
                         const date = new Date(order.createdAt);
                         const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
                         let statusText = '';
@@ -441,11 +468,12 @@ export default function AccountPage() {
                         else if (order.status === 'completed') statusText = t('order_completed');
                         else if (order.status === 'confirmed') statusText = t('order_confirmed');
                         else if (order.status === 'pending') statusText = t('order_pending');
+                        else if (order.status === 'delivering') statusText = 'Đang giao hàng';
                         else statusText = order.status;
                         return (
                           <tr key={order.id}>
                             <td>
-                              <a href={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>{orderNumber}</a>
+                              <Link to={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>{orderNumber}</Link>
                             </td>
                             <td style={{whiteSpace:'pre-line'}}>{dishNames}</td>
                             <td>{dateStr}</td>
@@ -453,7 +481,9 @@ export default function AccountPage() {
                             <td className={
                               order.status === 'cancelled' ? 'order-status-cancelled' :
                               order.status === 'completed' ? 'order-status-completed' :
-                              order.status === 'confirmed' ? 'order-status-confirmed' : ''
+                              order.status === 'confirmed' ? 'order-status-confirmed' :
+                              order.status === 'delivering' ? 'order-status-delivering' :
+                              order.status === 'pending' ? 'order-status-pending' : ''
                             }>{statusText}</td>
                           </tr>
                         );

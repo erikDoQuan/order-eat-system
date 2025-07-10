@@ -24,6 +24,7 @@ import OrderAdminPage from './admin/OrderAdminPage';
 import { LanguageProvider } from './context/LanguageContext';
 import './i18n';
 import DeliveryOrderPage from './pages/DeliveryOrderPage';
+import OrderDetailPage from './pages/OrderDetailPage';
 
 import './globals.scss';
 
@@ -120,6 +121,8 @@ function AppWithCartProvider() {
           <Route index element={<HomePage />} />
           <Route path="profile" element={<AccountPage />} />
         </Route>
+        {/* Route chi tiết đơn hàng */}
+        <Route path="/orders/:orderId" element={<OrderDetailPage />} />
         {/* Route admin không dùng layout => không bị render Navbar */}
         <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
         <Route path="/admin/profile" element={<AdminRoute><AccountAdminPage /></AdminRoute>} />

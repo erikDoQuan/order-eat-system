@@ -12,6 +12,7 @@ import { FetchUsersDto, FetchUsersResponseDto } from '~/modules/user/dto/fetch-u
 import { AuthBaseService } from '~/shared-modules/auth-base/auth-base.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { VerificationService } from '~/modules/auth/verification.service';
 
 @Injectable()
 export class UsersService {
@@ -20,6 +21,7 @@ export class UsersService {
     private readonly userRepository: UserRepository,
     private readonly authBaseService: AuthBaseService,
     private readonly awsS3Service: AwsS3Service,
+    private readonly verificationService: VerificationService,
   ) {
     this.logger.setContext(UsersService.name);
   }
@@ -60,17 +62,37 @@ export class UsersService {
   async create(data: CreateUserDto): Promise<UserWithoutPassword> {
     const email = data.email.toLowerCase();
 
-    const existingUser = await this.userRepository.findByEmail(email);
+    const existingUser = await this.userRepository.findByEmailWithInactive(email);
     if (existingUser) {
+      if (!existingUser.isActive) {
+        // Update lại user cũ với thông tin mới và isActive=true
+        const hashedPassword = await hashPassword(data.password);
+        return this.userRepository.update(existingUser.id, {
+          ...data,
+          email,
+          password: hashedPassword,
+          isActive: true,
+        });
+      }
       throw new BadRequestException('Email already in use');
     }
 
     const hashedPassword = await hashPassword(data.password);
-    return this.userRepository.create({
+    const newUser = await this.userRepository.create({
       ...data,
       email,
       password: hashedPassword,
     });
+
+    // Gửi email xác thực
+    try {
+      await this.verificationService.sendVerificationEmail(newUser.id);
+    } catch (error) {
+      this.logger.error(`Failed to send verification email to ${email}: ${error.message}`);
+      // Không throw error để không ảnh hưởng đến việc tạo user
+    }
+
+    return newUser;
   }
 
   async update(id: string, updateDto: UpdateUserDto): Promise<UserWithoutPassword | null> {

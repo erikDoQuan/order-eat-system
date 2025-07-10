@@ -9,6 +9,7 @@ import { CartPopup } from './CartPopup';
 import { useCart } from '../context/CartContext';
 import { getAllDishes } from '../services/dish.api';
 import LanguageSwitcher from './LanguageSwitcher';
+import { FaBell } from 'react-icons/fa';
 
 import '../css/Navbar.css';
 
@@ -214,6 +215,7 @@ export default function Navbar() {
 
           {/* Giỏ hàng nằm phía cuối bên phải (ĐÃ SỬA: thêm border-radius đẹp) */}
           <div className="ml-auto flex items-center gap-2 rounded-full border-2 border-white bg-white px-4 py-2 transition hover:shadow-lg" style={{ cursor: 'pointer', position: 'relative' }} onClick={handleOpenCart}>
+            <FaBell size={22} style={{ marginRight: 18, cursor: 'pointer', color: '#C92A15' }} />
             <CartIcon />
             <span className="text-sm font-bold text-[#a01f10]">{t('cart')}</span>
             {showCartPopup && (

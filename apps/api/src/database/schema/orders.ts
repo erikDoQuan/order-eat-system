@@ -42,7 +42,7 @@ export const orders = pgTable('orders', {
 
   type: orderTypeEnum('type').default('delivery'),
 
-  deliveryAddress: varchar('delivery_address', { length: 255 }),
+  deliveryAddress: json('delivery_address'),
 
   note: varchar('note', { length: 255 }),
 

@@ -5,6 +5,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { DishRepository } from '~/database/repositories/dish.repository';
+import { DishSnapshotRepository } from '~/database/repositories/dish_snapshot.repository';
 
 
 @Injectable()
@@ -12,6 +13,7 @@ export class OrderService {
   constructor(
     private readonly orderRepository: OrderRepository,
     private readonly dishRepository: DishRepository,
+    private readonly dishSnapshotRepository: DishSnapshotRepository, // thêm dòng này
   ) {}
 
   async findAll(dto: FetchOrdersDto) {
@@ -22,6 +24,54 @@ export class OrderService {
   async findOne(id: string) {
     const order = await this.orderRepository.findOne(id);
     if (!order) throw new NotFoundException('Đơn hàng không tồn tại');
+    // Enrich từng item với thông tin sản phẩm
+    const orderItems = (order.orderItems as { items: any[] } | undefined)?.items;
+    if (orderItems && Array.isArray(orderItems)) {
+      const enrichedItems = await Promise.all(
+        orderItems.map(async (item) => {
+          let name = '-';
+          let image = '';
+          let price = 0;
+          let baseName = item.base;
+          let toppingPrice = 0;
+          // Ưu tiên lấy từ snapshot nếu có
+          if (item.dishSnapshotId) {
+            const snapshot = await this.dishSnapshotRepository.findOne(item.dishSnapshotId);
+            if (snapshot) {
+              name = snapshot.name || name;
+              image = snapshot.imageUrl || image;
+              price = Number(snapshot.basePrice) || price;
+            }
+          }
+          // Nếu không có snapshot, lấy từ dish
+          if ((!name || name === '-') && item.dishId) {
+            const dish = await this.dishRepository.findOne(item.dishId);
+            if (dish) {
+              name = dish.name || name;
+              image = dish.imageUrl || dish.image || image;
+              price = Number(dish.basePrice) || price;
+            }
+          }
+          // Nếu item.base là id topping, enrich tên và giá topping
+          if (item.base && !['dày', 'mỏng'].includes(item.base)) {
+            const topping = await this.dishRepository.findOne(item.base);
+            if (topping) {
+              baseName = topping.name;
+              toppingPrice = Number(topping.basePrice) || 0;
+            }
+          }
+          return {
+            ...item,
+            name,
+            image,
+            price,
+            baseName,
+            toppingPrice,
+          };
+        })
+      );
+      (order.orderItems as { items: any[] }).items = enrichedItems;
+    }
     return order;
   }
 
@@ -30,11 +80,29 @@ export class OrderService {
     if (dto.type === 'delivery' && !dto.deliveryAddress) {
       throw new Error('Địa chỉ giao hàng là bắt buộc khi chọn hình thức giao hàng (delivery)');
     }
-    // Đảm bảo mỗi item có id
+    // Đảm bảo mỗi item có id và enrich snapshot
     if (dto.orderItems && dto.orderItems.items) {
-      dto.orderItems.items = dto.orderItems.items.map(item => ({
-        ...item,
-        id: item.id || uuidv4(),
+      dto.orderItems.items = await Promise.all(dto.orderItems.items.map(async item => {
+        const dish = await this.dishRepository.findOne(item.dishId);
+        // Tạo snapshot
+        const snapshot = await this.dishSnapshotRepository.create({
+          dishId: dish.id,
+          name: dish.name,
+          basePrice: dish.basePrice,
+          description: dish.description,
+          imageUrl: dish.imageUrl || dish.image, // tuỳ schema
+          status: dish.status,
+          size: item.size,
+          typeName: dish.typeName,
+          categoryId: dish.categoryId,
+          createdBy: dish.createdBy,
+          updatedBy: dish.updatedBy,
+        });
+        return {
+          ...item,
+          id: item.id || uuidv4(),
+          dishSnapshotId: snapshot.id, // lưu id snapshot vào item
+        };
       }));
       // Tính tổng tiền giống frontend
       let total = 0;
@@ -53,20 +121,25 @@ export class OrderService {
         }
         total += price * (item.quantity || 1);
       }
+      if (dto.type === 'delivery') {
+        total += 25000;
+      }
       dto.totalAmount = total;
       console.log('Tổng tiền lưu vào DB:', dto.totalAmount);
     }
     // Xử lý pickupTime cho đơn pickup
     let pickupTime: string | undefined = dto.pickupTime;
-    if (dto.type === 'pickup') {
+    if (dto.type === 'pickup' || dto.type === 'delivery') {
       if (!pickupTime) {
-        // Nếu không truyền pickupTime, mặc định +15 phút từ thời điểm tạo (giờ Việt Nam)
+        // Nếu không truyền pickupTime, mặc định:
+        // - pickup: +15 phút
+        // - delivery: +30 phút
         const now = new Date();
         // Lấy thời gian UTC+7
         const vnOffset = 7 * 60; // phút
         const localNow = new Date(now.getTime() + (vnOffset - now.getTimezoneOffset()) * 60000);
-        const pickupDate = new Date(localNow.getTime() + 15 * 60000);
-        // Định dạng yyyy-MM-dd HH:mm
+        let addMinutes = dto.type === 'pickup' ? 15 : 30;
+        const pickupDate = new Date(localNow.getTime() + addMinutes * 60000);
         const yyyy = pickupDate.getFullYear();
         const MM = String(pickupDate.getMonth() + 1).padStart(2, '0');
         const dd = String(pickupDate.getDate()).padStart(2, '0');
@@ -79,12 +152,19 @@ export class OrderService {
     }
     // Chỉ truyền các trường hợp lệ vào DB
     const { note, ...rest } = dto;
-    return this.orderRepository.create({
+    const order = await this.orderRepository.create({
       ...rest,
       orderItems: dto.orderItems, // đã có note trong từng item
       note: note, // nếu muốn lưu note tổng
       pickupTime,
     });
+    // Lấy lại order từ DB để chắc chắn có trường orderNumber
+    const orderFull = await this.orderRepository.findOne(order.id);
+    console.log('ORDER CREATED:', orderFull);
+    return {
+      ...orderFull,
+      order_number: orderFull?.orderNumber || orderFull?.order_number || orderFull?.id,
+    };
   }
 
   async update(id: string, dto: UpdateOrderDto) {

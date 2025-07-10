@@ -13,6 +13,7 @@ export enum DishSize {
   LARGE = 'large',
 }
 
+// Đã xóa class DishTranslationsDto và mọi tham chiếu, chỉ giữ name: string, description?: string
 export class CreateDishDto {
   @ApiProperty({ description: 'Tên món ăn' })
   @IsString()

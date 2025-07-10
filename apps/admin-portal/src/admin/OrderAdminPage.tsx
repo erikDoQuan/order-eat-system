@@ -41,8 +41,9 @@ export default function OrderAdminPage() {
   }, []);
 
   const getUserName = (userId: string) => {
+    if (!userId) return '';
     const user = users.find(u => u.id === userId);
-    return user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email : userId;
+    return user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email : userId || '';
   };
 
   const getDishName = (dishId: string) => {
@@ -56,9 +57,26 @@ export default function OrderAdminPage() {
     return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' ' + d.toLocaleDateString('vi-VN');
   };
 
+  const formatDeliveryAddress = (deliveryAddress: any) => {
+    if (!deliveryAddress) return '';
+    if (typeof deliveryAddress === 'string') return deliveryAddress;
+    if (typeof deliveryAddress === 'object') {
+      // Ưu tiên address, storeName, name, phone
+      let str = deliveryAddress.address || '';
+      if (deliveryAddress.storeName) str += ` (${deliveryAddress.storeName})`;
+      if (deliveryAddress.name) str += ` - ${deliveryAddress.name}`;
+      if (deliveryAddress.phone) str += ` - ${deliveryAddress.phone}`;
+      return str.trim();
+    }
+    return '';
+  };
+
   // Filter theo tên người dùng nếu cần tìm kiếm
   const filteredOrders = orders
-    .filter(order => getUserName(order.userId).toLowerCase().includes(search.toLowerCase()))
+    .filter(order => {
+      const name = getUserName(order.userId) || '';
+      return name.toLowerCase().includes(search.toLowerCase());
+    })
     .sort((a, b) => (b.order_number || 0) - (a.order_number || 0));
 
   const handleDelete = async (id: string) => {
@@ -164,7 +182,7 @@ export default function OrderAdminPage() {
                   <th className="py-2 px-3 border-b">Tổng tiền</th>
                   <th className="py-2 px-3 border-b">Trạng thái</th>
                   <th className="py-2 px-3 border-b">Loại</th>
-                  <th className="py-2 px-3 border-b">Pickup Time</th>
+                  <th className="py-2 px-3 border-b">Giờ lấy</th>
                   <th className="py-2 px-3 border-b">Địa chỉ</th>
                   <th className="py-2 px-3 border-b">Ghi chú</th>
                   <th className="py-2 px-3 border-b">Hành động</th>
@@ -186,7 +204,7 @@ export default function OrderAdminPage() {
                       <td className="py-2 px-3 border-b">{order.status}</td>
                       <td className="py-2 px-3 border-b">{order.type}</td>
                       <td className="py-2 px-3 border-b">{order.pickupTime || ''}</td>
-                      <td className="py-2 px-3 border-b">{order.deliveryAddress}</td>
+                      <td className="py-2 px-3 border-b">{formatDeliveryAddress(order.deliveryAddress)}</td>
                       <td className="py-2 px-3 border-b">{order.note}</td>
                       <td className="py-2 px-3 border-b">
                         <button className="mr-2 text-blue-600 hover:underline" onClick={() => handleEdit(order)}><Edit size={16} /></button>
@@ -204,7 +222,26 @@ export default function OrderAdminPage() {
                             <td className="py-2 px-3 border-b" rowSpan={maxItems}>{getUserName(order.userId)}</td>
                           </>
                         )}
-                        <td className="py-2 px-3 border-b">{getDishName(item.dishId)}</td>
+                        <td className="py-2 px-3 border-b">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            {item.dishSnapshot?.image && (
+                              <img
+                                src={item.dishSnapshot.image}
+                                alt={item.dishSnapshot.name}
+                                style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6 }}
+                              />
+                            )}
+                            <div>
+                              <div className="font-medium">{item.dishSnapshot?.name || getDishName(item.dishId)}</div>
+                              {item.dishSnapshot?.description && (
+                                <div className="text-xs text-gray-500">{item.dishSnapshot.description}</div>
+                              )}
+                              {item.dishSnapshot?.price !== undefined && (
+                                <div className="text-xs text-gray-700">{item.dishSnapshot.price.toLocaleString('vi-VN')}đ</div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
                         <td className="py-2 px-3 border-b">{item.quantity}</td>
                         {i === 0 && (
                           <>
@@ -212,13 +249,16 @@ export default function OrderAdminPage() {
                             <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.status}</td>
                             <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.type}</td>
                             <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.pickupTime || ''}</td>
-                            <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.deliveryAddress}</td>
-                            <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.note}</td>
-                            <td className="py-2 px-3 border-b" rowSpan={maxItems}>
-                              <button className="mr-2 text-blue-600 hover:underline" onClick={() => handleEdit(order)}><Edit size={16} /></button>
-                              <button className="text-red-600 hover:underline" onClick={() => handleDelete(order.id)} disabled={saving}><Trash2 size={16} /></button>
-                            </td>
+                            <td className="py-2 px-3 border-b" rowSpan={maxItems}>{formatDeliveryAddress(order.deliveryAddress)}</td>
                           </>
+                        )}
+                        {/* Ghi chú của từng món */}
+                        <td className="py-2 px-3 border-b">{item.note || ''}</td>
+                        {i === 0 && (
+                          <td className="py-2 px-3 border-b" rowSpan={maxItems}>
+                            <button className="mr-2 text-blue-600 hover:underline" onClick={() => handleEdit(order)}><Edit size={16} /></button>
+                            <button className="text-red-600 hover:underline" onClick={() => handleDelete(order.id)} disabled={saving}><Trash2 size={16} /></button>
+                          </td>
                         )}
                       </tr>
                     ))

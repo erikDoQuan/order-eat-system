@@ -1,10 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, IsOptional } from 'class-validator';
 
 import { USER_ROLE } from '~/modules/user/constants/users.constant';
 
-export class CreateUserDto {
+export class RegisterDto {
   @ApiProperty({
     description: 'The first name of the user',
     example: 'John',
@@ -29,6 +29,7 @@ export class CreateUserDto {
   })
   @IsEmail()
   @IsNotEmpty()
+  @Transform(({ value }: { value: string }) => value.trim().toLowerCase())
   email: string;
 
   @ApiProperty({
@@ -56,30 +57,4 @@ export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
   password: string;
-
-  @ApiProperty({
-    description: 'The role of the user',
-    enum: USER_ROLE,
-    example: USER_ROLE.ADMIN,
-  })
-  @IsEnum(USER_ROLE)
-  @IsNotEmpty()
-  role: USER_ROLE;
-
-  @ApiProperty({
-    description: 'The status of the user',
-    example: 'false',
-  })
-  @IsBoolean()
-  @IsNotEmpty()
-  isActive: boolean;
-
-  @ApiProperty({
-    description: 'Whether the email is verified',
-    example: 'false',
-    required: false,
-  })
-  @IsBoolean()
-  @IsOptional()
-  isEmailVerified?: boolean;
-}
+} 

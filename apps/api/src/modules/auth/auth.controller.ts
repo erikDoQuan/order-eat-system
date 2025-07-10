@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Req, Res } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Response as ExpressResponse, Request } from 'express';
@@ -7,6 +7,10 @@ import { AppConfigsService } from '~/config/config.service';
 import { AuthService } from './auth.service';
 import { LoginWithCredentialsDoc, SignOutDoc } from './docs/auth.doc';
 import { SignInDto } from './dto/auth.dto';
+import { VerificationService } from './verification.service';
+import { VerifyEmailDto, ResendVerificationDto } from './dto/verification.dto';
+import { RegisterDto } from './dto/register.dto';
+import { UserRepository } from '~/database/repositories/user.repository';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -14,6 +18,8 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: AppConfigsService,
+    private readonly verificationService: VerificationService,
+    private readonly userRepository: UserRepository,
   ) {}
 
   @Post('login')
@@ -51,5 +57,46 @@ export class AuthController {
     }
 
     return this.authService.signOut(refreshToken, ip, ua);
+  }
+
+  @Get('verify-email')
+  @ApiOperation({ summary: 'Verify email with token' })
+  @ApiOkResponse({ description: 'Email verified successfully' })
+  async verifyEmail(@Query('token') token: string) {
+    return this.verificationService.verifyEmail(token);
+  }
+
+  @Post('resend-verification')
+  @Throttle({ default: { limit: 3, ttl: 60000 } }) // Giới hạn 3 lần/phút
+  @ApiOperation({ summary: 'Resend verification email' })
+  @ApiOkResponse({ description: 'Verification email sent successfully' })
+  async resendVerificationEmail(@Body() resendDto: ResendVerificationDto) {
+    return this.verificationService.resendVerificationEmail(resendDto.userId);
+  }
+
+  @Post('register')
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // Giới hạn 5 lần/phút
+  @ApiOperation({ summary: 'Register new user with email verification' })
+  @ApiOkResponse({ description: 'User registered successfully, verification email sent' })
+  async register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
+  }
+
+  // Endpoint tạm thời để debug - kiểm tra tất cả email
+  @Get('debug/emails')
+  async getAllEmails() {
+    return this.userRepository.getAllEmails();
+  }
+
+  // Endpoint test để kiểm tra cấu hình email
+  @Post('test-email')
+  async testEmail(@Body() body: { email: string }) {
+    try {
+      await this.verificationService.sendVerificationEmail(body.email);
+      return { success: true, message: 'Test email sent successfully' };
+    } catch (error) {
+      console.error('Test email error:', error);
+      return { success: false, message: error.message };
+    }
   }
 }

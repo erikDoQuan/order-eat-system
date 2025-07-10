@@ -9,9 +9,11 @@ const OrderTypePage: React.FC = () => {
 
   const handleSelect = (type: 'delivery' | 'pickup') => {
     setSelectedType(type);
+    localStorage.setItem('orderType', type);
   };
 
   const handlePay = () => {
+    localStorage.setItem('orderType', selectedType);
     if (selectedType === 'delivery') {
       navigate('/delivery-order');
     } else {
@@ -30,7 +32,6 @@ const OrderTypePage: React.FC = () => {
           <div style={{fontSize: 17}}>Quý khách có thể chọn Đặt giao hàng tận nơi hoặc Đặt đến lấy trực tiếp tại chi nhánh nhà hàng gần nhất.</div>
         </div>
         <div className="order-type-options">
-          {/* DELIVERY */}
           <div
             className={`order-type-option${selectedType === 'delivery' ? ' active' : ''}`}
             onClick={() => handleSelect('delivery')}
@@ -38,7 +39,6 @@ const OrderTypePage: React.FC = () => {
           >
             <img src="/shipper-Bepcuame.png" alt="Đặt giao hàng" style={{width:100, height:'auto', flexShrink:0, marginRight:24}}/>
             <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
-              {/* Checkmark hoặc radio ở góc phải */}
               <input
                 type="radio"
                 name="orderType"
@@ -46,14 +46,15 @@ const OrderTypePage: React.FC = () => {
                 onChange={() => handleSelect('delivery')}
                 style={{ position: 'absolute', top: 0, right: 0, width: 22, height: 22 }}
               />
-              <div style={{ fontSize: 22, fontWeight: 700, color: '#166534', marginBottom: 8 }}>Đặt giao hàng</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: '#166534', marginBottom: 8 }}>
+                Đặt giao hàng
+              </div>
               <div style={{ height: 1, background: '#e5e7eb', margin: '8px 0 16px 0' }} />
               <div style={{ fontSize: 16, color: '#222' }}>
                 Giao hàng nhanh trong phạm vi giao hàng của nhà hàng. Phụ thu phí giao hàng từ <span style={{color:'#dc2626', fontWeight:600}}>25,000đ</span> với tất cả các đơn đặt hàng qua Website hoặc Hotline <b>0337782572</b>.
               </div>
             </div>
           </div>
-          {/* PICKUP */}
           <div
             className={`order-type-option${selectedType === 'pickup' ? ' active' : ''}`}
             onClick={() => handleSelect('pickup')}
@@ -68,7 +69,9 @@ const OrderTypePage: React.FC = () => {
                 onChange={() => handleSelect('pickup')}
                 style={{ position: 'absolute', top: 0, right: 0, width: 22, height: 22 }}
               />
-              <div style={{ fontSize: 22, fontWeight: 700, color: '#166534', marginBottom: 8 }}>Đặt đến lấy</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: '#166534', marginBottom: 8 }}>
+                Đặt đến lấy
+              </div>
               <div style={{ height: 1, background: '#e5e7eb', margin: '8px 0 16px 0' }} />
               <div style={{ fontSize: 16, color: '#222' }}>
                 Nhận đơn hàng của bạn tại <b>Nhà hàng Bếp Của Mẹ</b>

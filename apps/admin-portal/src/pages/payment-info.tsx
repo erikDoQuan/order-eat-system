@@ -10,50 +10,59 @@ import '../css/payment-info.css';
 const PaymentInfoPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const state = location.state as any;
-  // fallback nếu không có state (truy cập trực tiếp)
+  const state = location.state as any || {};
+  const orderType = state?.orderType || 'pickup';
+  console.log('STATE:', state, 'orderType:', orderType);
   const store = state?.store || { name: 'Chưa chọn cửa hàng', address: '' };
   const customer = state?.customer || { name: '', phone: '' };
-
-  // Lấy giỏ hàng thực tế
-  const { orderItems, cart } = useCart();
-  const { dishes } = useCart();
-  // Lấy danh sách món ăn từ cart (nếu có)
-  const items = orderItems || [];
-
-  // Copy logic tính giá từ CheckoutPage
+  const { user } = useContext(AuthContext);
+  const { orderItems, dishes } = useCart();
+  const items = Array.isArray(state?.items) && state.items.length > 0 ? state.items : (orderItems || []);
+  // Thêm sizeOptions và toppingDishes, getItemPrice giống CheckoutPage
   const sizeOptions = [
     { value: 'small', price: 0 },
     { value: 'medium', price: 90000 },
     { value: 'large', price: 190000 },
   ];
+  const [toppingDishes, setToppingDishes] = React.useState<any[]>([]);
+  React.useEffect(() => {
+    fetch('/api/v1/categories')
+      .then((res) => res.json())
+      .then((catRes) => {
+        const categories = catRes.data || [];
+        const toppingCat = categories.find((c: any) =>
+          (c.nameLocalized || c.name)?.toLowerCase().includes('topping'),
+        );
+        if (toppingCat) setToppingDishes(dishes.filter((d) => d.categoryId === toppingCat.id));
+      });
+  }, [dishes]);
+  const getDish = (dishId: string) => dishes.find((d) => d.id === dishId);
   const getItemPrice = (item: any) => {
-    const dish = (dishes || []).find((d: any) => d.id === item.dishId);
+    const dish = getDish(item.dishId);
     if (!dish) return 0;
     let price = Number(dish.basePrice) || 0;
     if (item.size) {
       price += sizeOptions.find((s) => s.value === item.size)?.price || 0;
     }
-    
     if (item.base && !['dày', 'mỏng'].includes(item.base)) {
-      const topping = (dishes || []).find((d: any) => d.id === item.base);
+      const topping = toppingDishes.find((t) => t.id === item.base);
       if (topping) price += Number(topping.basePrice) || 0;
     }
     return price;
   };
-  const total = items.reduce(
-    (sum, item) => sum + getItemPrice(item) * (item.quantity || 1),
-    0
-  );
-
-  const getDishName = (dishId: string) => {
-    const dish = (dishes || []).find((d: any) => d.id === dishId);
-    return dish?.name || dishId;
+  // Hàm lấy thông tin món ăn từ dishId
+  const getDishInfo = (item) => {
+    const dish = dishes.find(d => d.id === item.dishId);
+    return {
+      name: item.name || dish?.name || 'Món ăn',
+      price: typeof item.price !== 'undefined' ? item.price : (dish?.basePrice ? Number(dish.basePrice) : 0),
+    };
   };
-
-  const { user } = useContext(AuthContext);
-
-  // Thêm hàm lấy danh sách giờ hợp lệ
+  const subtotal = state?.subtotal ?? 0;
+  const shippingFee = orderType === 'delivery' ? (state?.shippingFee ?? 25000) : 0;
+  // Thay thế logic tính giá subtotal, totalAmountDisplay:
+  const computedSubtotal = items.reduce((sum, item) => sum + getItemPrice(item) * (item.quantity || 1), 0);
+  const totalAmountDisplay = computedSubtotal + shippingFee;
   function getValidTimes(selectedDate: string) {
     const now = new Date();
     const todayStr = now.toISOString().slice(0, 10);
@@ -77,8 +86,6 @@ const PaymentInfoPage: React.FC = () => {
     }
     return times;
   }
-
-  // Hàm lấy 2 ngày: hôm nay và ngày mai
   function getValidDates() {
     const today = new Date();
     const tomorrow = new Date();
@@ -87,14 +94,55 @@ const PaymentInfoPage: React.FC = () => {
     const format = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     return [format(today), format(tomorrow)];
   }
-
-  // Giả sử có biến form lưu state ngày/giờ
   const [form, setForm] = React.useState({
     timeType: 'now',
     time: '',
     date: new Date().toISOString().slice(0, 10),
-    // ... các trường khác
   });
+  let deliveryTimeText = '';
+  if (orderType === 'delivery') {
+    if (form.timeType === 'custom' && form.date && form.time) {
+      deliveryTimeText = `Giao lúc: ${form.time} ${form.date.split('-').reverse().join('/')}`;
+    } else {
+      const now = new Date();
+      now.setMinutes(now.getMinutes() + 30);
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      deliveryTimeText = `Dự kiến giao lúc: ${pad(now.getHours())}:${pad(now.getMinutes())} ${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} (tối thiểu 30 phút sau khi đặt hàng thành công)`;
+    }
+  }
+  const deliveryAddress = [state?.address, state?.street, state?.ward, state?.district, state?.province, state?.detail].filter(Boolean).join(', ');
+
+  // 1. Thêm hàm handleOrder để gọi createOrder với deliveryAddress là object
+  const handleOrder = async () => {
+    const orderType = state?.orderType || 'pickup';
+    let deliveryAddressObj;
+    if (orderType === 'delivery') {
+      deliveryAddressObj = {
+        address: [state?.address, state?.street, state?.ward, state?.district, state?.province, state?.detail].filter(Boolean).join(', '),
+      };
+    } else {
+      // Pickup: lưu địa chỉ cửa hàng
+      deliveryAddressObj = {
+        address: store.address || '',
+        storeName: store.name || '',
+      };
+    }
+    const payload = {
+      userId: user?.id,
+      orderItems: { items: items },
+      totalAmount: totalAmountDisplay,
+      type: orderType,
+      deliveryAddress: deliveryAddressObj,
+      note: '', // lấy từ textarea nếu cần
+    };
+    try {
+      const orderRes = await createOrder(payload);
+      console.log('ORDER RESPONSE:', orderRes); // debug
+      navigate('/order-success', { state: { order: orderRes } });
+    } catch (err) {
+      alert('Có lỗi khi đặt hàng, vui lòng thử lại!');
+    }
+  };
 
   return (
     <div className="payment-info-root">
@@ -104,15 +152,31 @@ const PaymentInfoPage: React.FC = () => {
           <div className="payment-info-left">
             <div className="payment-info-block">
               <div className="payment-info-title">Thông tin nhận hàng</div>
-              <div className="payment-info-text">
-                Nhận hàng tại: <span className="payment-info-highlight">{store.name}</span>
-              </div>
-              <div className="payment-info-text">
-                {store.address}
-              </div>
-              <div className="payment-info-text">
-                <b>Khách hàng:</b> {customer.name} &nbsp; <b>Điện thoại:</b> {customer.phone}
-              </div>
+              {orderType === 'delivery' ? (
+                <>
+                  <div className="payment-info-text">
+                    <b>Giao hàng đến:</b> <span className="payment-info-highlight">{deliveryAddress}</span>
+                  </div>
+                  <div className="payment-info-text">
+                    <b>Khách hàng:</b> {state?.name || ''} &nbsp; <b>Điện thoại:</b> {state?.phone || ''}
+                  </div>
+                  <div className="payment-info-text">
+                    <b>Phí giao hàng:</b> {shippingFee.toLocaleString('vi-VN')}đ
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="payment-info-text">
+                    Nhận hàng tại: <span className="payment-info-highlight">{store.name}</span>
+                  </div>
+                  <div className="payment-info-text">
+                    {store.address}
+                  </div>
+                  <div className="payment-info-text">
+                    <b>Khách hàng:</b> {customer.name} &nbsp; <b>Điện thoại:</b> {customer.phone}
+                  </div>
+                </>
+              )}
             </div>
             <div className="payment-info-block">
               <div className="payment-info-title">Phương thức thanh toán</div>
@@ -142,42 +206,43 @@ const PaymentInfoPage: React.FC = () => {
               </div>
             </div>
             <div className="payment-info-block">
-              <div className="payment-info-title">Đơn hàng của bạn</div>
+              <div className="payment-info-title">
+                Đơn hàng của bạn
+              </div>
               {items.length === 0 ? (
                 <div className="payment-info-empty">Chưa có sản phẩm trong giỏ hàng</div>
               ) : (
                 <>
-                  {items.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="payment-info-item"
-                    >
-                      <div className="payment-info-item-details">
-                        <span className="payment-info-item-name">{getDishName(item.dishId)}</span>
-                        <span className="payment-info-item-price">{item.price ? Number(item.price).toLocaleString('vi-VN') : ''}</span>
-                        <span className="payment-info-item-quantity">x{item.quantity}</span>
-                      </div>
-                      {item.note && (
-                        <div className="payment-info-item-note">
-                          <span className="payment-info-item-note-label">Ghi chú:</span>
-                          {item.note}
+                  {items.map((item, idx) => {
+                    // const { name, price } = getDishInfo(item);
+                    const dish = getDish(item.dishId);
+                    const name = item.name || dish?.name || 'Món ăn';
+                    const price = getItemPrice(item);
+                    return (
+                      <div key={idx} className="payment-info-item">
+                        <div className="payment-info-item-details">
+                          <span className="payment-info-item-name">{name}</span>
+                          <span className="payment-info-item-price">{price ? Number(price).toLocaleString('vi-VN') : ''}</span>
+                          <span className="payment-info-item-quantity">x{item.quantity}</span>
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        {item.note && (
+                          <div className="payment-info-item-note">
+                            <span className="payment-info-item-note-label">Ghi chú:</span>
+                            {item.note}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                   <hr className="payment-info-divider" />
                   <div className="payment-info-total">
                     <span>Tạm tính(x{items.length})</span>
-                    <span>{total.toLocaleString('vi-VN')}đ</span>
+                    <span>{computedSubtotal.toLocaleString('vi-VN')}đ</span>
                   </div>
                   <div className="payment-info-total">
                     <span>Phụ thu</span>
                     <span>0đ</span>
                   </div>
-                  {(() => {
-                    const note = items.map(item => item.note).filter(Boolean).join(' | ');
-                    return null;
-                  })()}
                   <div className="payment-info-total">
                     <span>Giảm giá</span>
                     <span>0đ</span>
@@ -188,100 +253,57 @@ const PaymentInfoPage: React.FC = () => {
                   </div>
                   <div className="payment-info-total">
                     <span>Phí giao hàng</span>
-                    <span>0đ</span>
+                    <span>{shippingFee.toLocaleString('vi-VN')}đ</span>
                   </div>
                   <hr className="payment-info-divider" />
                   <div className="payment-info-total">
-                    <span>Tổng tiền</span>
-                    <span>{total.toLocaleString('vi-VN')}đ</span>
+                    <span>Tổng cộng</span>
+                    <span>{totalAmountDisplay.toLocaleString('vi-VN')}đ</span>
                   </div>
                 </>
               )}
             </div>
+  
+            <div style={{ display: 'flex', gap: 16, justifyContent: 'flex-end', marginTop: 24 }}>
+              <button
+                onClick={() => navigate(-1)}
+                style={{
+                  background: '#6b9080',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '10px 28px',
+                  fontSize: 16,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  minWidth: 120,
+                  transition: 'all 0.2s',
+                }}
+              >
+                Quay lại
+              </button>
+              <button
+                className="payment-info-paybtn"
+                onClick={handleOrder}
+                style={{
+                  background: '#C92A15',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '10px 28px',
+                  fontSize: 16,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  minWidth: 120,
+                  transition: 'all 0.2s',
+                }}
+              >
+                Thanh toán
+              </button>
+            </div>
           </div>
         </div>
       </div>
-      <div className="order-type-btn-group">
-        <button
-          onClick={() => navigate(-1)}
-          className="order-type-btn order-type-btn-continue"
-        >
-          <ArrowLeft size={20} style={{marginRight: 6}} />
-          Quay lại
-        </button>
-        <button
-          className="order-type-btn order-type-btn-pay"
-          onClick={async () => {
-            // Xác định orderType: nếu store.name hoặc store.address chứa "lấy tại cửa hàng" thì là pickup, ngược lại là delivery
-            let orderType = 'delivery';
-            if (
-              (store.name && store.name.toLowerCase().includes('lấy tại cửa hàng')) ||
-              (store.address && store.address.toLowerCase().includes('lấy tại cửa hàng')) ||
-              state?.orderType === 'pickup'
-            ) {
-              orderType = 'pickup';
-            }
-            // Tổng hợp ghi chú từ order_items
-            const note = items
-              .map(item => item.note)
-              .filter(Boolean)
-              .join(' | ');
-            const orderData: any = {
-              userId: user?.id,
-              orderItems: { items },
-              totalAmount: Number(total),
-              status: 'pending',
-              type: orderType,
-              deliveryAddress: store.address,
-              note, // tổng hợp từ order_items
-            };
-            // Thêm pickupTime nếu là pickup và user chọn thời gian
-            if (orderType === 'pickup') {
-              if (form.timeType === 'custom' && form.date && form.time) {
-                // Ghép ngày và giờ thành pickupTime định dạng yyyy-MM-dd HH:mm
-                const [yyyy, MM, dd] = form.date.split('-');
-                orderData.pickupTime = `${yyyy}-${MM}-${dd} ${form.time}`;
-              }
-              // Nếu là now thì không truyền pickupTime, backend sẽ tự động set
-            }
-            console.log('typeof total:', typeof total, total);
-            console.log('typeof orderData.totalAmount:', typeof orderData.totalAmount, orderData.totalAmount);
-            console.log('orderData gửi lên:', orderData);
-            // Gọi API tạo đơn hàng
-            try {
-              const res = await createOrder(orderData);
-              const orderId = res?.data?.id || res?.data?._id || res?.orderId || 'MÃ ĐƠN';
-              navigate('/order-success', { state: { orderId } });
-            } catch (err: any) {
-              if (err?.response?.data) {
-                console.error('Lỗi đặt hàng:', err.response.data);
-                alert('Lỗi: ' + JSON.stringify(err.response.data, null, 2));
-              } else {
-                console.error('Lỗi đặt hàng:', err);
-                alert('Lỗi: ' + err.message);
-              }
-            }
-          }}
-        >
-          Đặt hàng
-          <ArrowRight size={20} style={{marginLeft: 6}} />
-        </button>
-      </div>
-      {form.timeType === 'custom' && (
-        <div style={{display:'flex', gap:12, marginTop:16}}>
-          <select value={form.time} onChange={e => setForm(f => ({...f, time: e.target.value}))} style={{flex:1}}>
-            <option value="">Chọn giờ</option>
-            {getValidTimes(form.date).map(t => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-          <select value={form.date} onChange={e => setForm(f => ({...f, date: e.target.value}))} style={{flex:1}}>
-            {getValidDates().map(d => (
-              <option key={d} value={d}>{d.split('-').reverse().join('/')}</option>
-            ))}
-          </select>
-        </div>
-      )}
     </div>
   );
 };
