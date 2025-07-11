@@ -60,9 +60,20 @@ export default function OrderDetailPage() {
         Chi tiết đơn hàng # {orderNumber}
       </h1>
         <div className="order-detail-status-row">
-          <span className="order-detail-status-text">
+          <span
+            className="order-detail-status-text"
+            style={{
+              color:
+                status === 'confirmed' || status === 'completed'
+                  ? '#16a34a'
+                  : status === 'cancelled'
+                  ? '#dc2626'
+                  : undefined,
+              fontWeight: 700,
+            }}
+          >
             {getOrderStatusText(status)}
-        </span>
+          </span>
           <span className="order-detail-date">
           Ngày đặt hàng: {new Date(createdAt).toLocaleString('vi-VN')}
         </span>

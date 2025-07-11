@@ -35,10 +35,10 @@ export default function AccountAdminPage() {
           </span>
         </div>
         <div className="mx-auto max-w-xl rounded-lg bg-white p-8 shadow-sm">
-          <h2 className="mb-6 text-xl font-bold text-gray-900">Thông tin tài khoản admin</h2>
+          <h2 className="mb-6 text-xl font-bold text-gray-900">Admin Account Information</h2>
           <div className="space-y-4">
             <div>
-              <b>Họ và tên:</b>{' '}
+              <b>Full Name:</b>{' '}
               <span>
                 {user?.firstName} {user?.lastName}
               </span>
@@ -47,17 +47,17 @@ export default function AccountAdminPage() {
               <b>Email:</b> <span>{user?.email}</span>
             </div>
             <div>
-              <b>Số điện thoại:</b> <span>{phone}</span>
+              <b>Phone Number:</b> <span>{phone}</span>
             </div>
             <div>
-              <b>Vai trò:</b> <span>{user?.role}</span>
+              <b>Role:</b> <span>{user?.role}</span>
             </div>
           </div>
           <button
             className="mt-8 flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
             onClick={handleLogout}
           >
-            <LogOut size={18} className="text-white" /> Đăng xuất
+            <LogOut size={18} className="text-white" /> Logout
           </button>
         </div>
       </div>

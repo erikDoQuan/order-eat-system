@@ -23,13 +23,20 @@ export default function OrderAdminPage() {
     setLoading(true);
     Promise.all([
       axios.get('/api/v1/orders'),
-      getAllUsers(),
+      getAllUsers(1, 1000),
       getAllDishes()
     ])
       .then(([ordersRes, usersRes, dishesRes]) => {
         const ordersArr = Array.isArray(ordersRes.data?.data?.data) ? ordersRes.data.data.data : [];
         setOrders(ordersArr);
-        setUsers(usersRes);
+        // Sắp xếp: active lên trên, sau đó theo createdAt mới nhất
+        const sortedUsers = [...(usersRes.users || [])].sort((a, b) => {
+          if ((b.isActive ? 1 : 0) !== (a.isActive ? 1 : 0)) {
+            return (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0);
+          }
+          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        });
+        setUsers(sortedUsers);
         setDishes(dishesRes);
       })
       .catch(() => setError('Không thể tải danh sách đơn hàng hoặc dữ liệu liên quan'))
@@ -41,9 +48,15 @@ export default function OrderAdminPage() {
   }, []);
 
   const getUserName = (userId: string) => {
-    if (!userId) return '';
+    if (!userId) return 'Không rõ';
     const user = users.find(u => u.id === userId);
-    return user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email : userId || '';
+    if (user) {
+      const name = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+      if (name) return name;
+      if (user.email) return user.email;
+      return user.id;
+    }
+    return userId;
   };
 
   const getDishName = (dishId: string) => {
@@ -79,6 +92,14 @@ export default function OrderAdminPage() {
     })
     .sort((a, b) => (b.order_number || 0) - (a.order_number || 0));
 
+  // Thêm mapping cho status
+  const statusLabel: Record<string, string> = {
+    pending: 'Pending',
+    confirmed: 'Confirmed',
+    completed: 'Completed',
+    cancelled: 'Cancelled',
+  };
+
   const handleDelete = async (id: string) => {
     if (!window.confirm('Bạn có chắc muốn xóa đơn hàng này?')) return;
     setSaving(true);
@@ -92,7 +113,19 @@ export default function OrderAdminPage() {
   };
 
   const handleEdit = (order: any) => {
-    setEditingOrder(order);
+    // Nếu là delivery và chưa có phone, tự động lấy số điện thoại user
+    let newOrder = { ...order };
+    if (order.type === 'delivery') {
+      const user = users.find(u => u.id === order.userId);
+      if (user) {
+        let deliveryAddress = typeof order.deliveryAddress === 'object' ? { ...order.deliveryAddress } : { address: order.deliveryAddress };
+        if (!deliveryAddress.phone) {
+          deliveryAddress.phone = user.phoneNumber || '';
+        }
+        newOrder.deliveryAddress = deliveryAddress;
+      }
+    }
+    setEditingOrder(newOrder);
     setShowEdit(true);
   };
 
@@ -104,7 +137,12 @@ export default function OrderAdminPage() {
       const payload: any = {
         status: editingOrder.status,
         type: editingOrder.type,
-        deliveryAddress: editingOrder.deliveryAddress,
+        deliveryAddress: editingOrder.type === 'delivery'
+          ? {
+              address: typeof editingOrder.deliveryAddress === 'object' ? editingOrder.deliveryAddress.address : editingOrder.deliveryAddress,
+              phone: typeof editingOrder.deliveryAddress === 'object' ? editingOrder.deliveryAddress.phone : ''
+            }
+          : editingOrder.deliveryAddress,
         isActive: editingOrder.isActive,
       };
       if (editingOrder.orderItems) payload.orderItems = editingOrder.orderItems;
@@ -155,18 +193,18 @@ export default function OrderAdminPage() {
           </div>
         </div>
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-[#C92A15]">Quản lý đơn hàng</h1>
+          <h1 className="text-2xl font-bold text-[#C92A15]">Order Management</h1>
         </div>
         <div className="mb-4 flex justify-end">
           <input
             type="text"
-            placeholder="Tìm kiếm theo tên người đặt..."
+            placeholder="Search by customer name..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full max-w-xs rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
           />
         </div>
-        {loading && <div>Đang tải...</div>}
+        {loading && <div>Loading...</div>}
         {error && <div style={{ color: 'red' }}>{error}</div>}
         {!loading && !error && (
           <div className="overflow-x-auto">
@@ -174,18 +212,19 @@ export default function OrderAdminPage() {
               <thead>
                 <tr className="bg-gray-100 text-gray-700">
                   {/* <th className="py-2 px-3 border-b">STT</th> */}
-                  <th className="py-2 px-3 border-b">Mã đơn</th>
-                  <th className="py-2 px-3 border-b">Ngày đặt</th>
-                  <th className="py-2 px-3 border-b">Người đặt</th>
-                  <th className="py-2 px-3 border-b">Chi tiết món</th>
-                  <th className="py-2 px-3 border-b">Số lượng</th>
-                  <th className="py-2 px-3 border-b">Tổng tiền</th>
-                  <th className="py-2 px-3 border-b">Trạng thái</th>
-                  <th className="py-2 px-3 border-b">Loại</th>
-                  <th className="py-2 px-3 border-b">Giờ lấy</th>
-                  <th className="py-2 px-3 border-b">Địa chỉ</th>
-                  <th className="py-2 px-3 border-b">Ghi chú</th>
-                  <th className="py-2 px-3 border-b">Hành động</th>
+                  <th className="py-2 px-3 border-b">Order Code</th>
+                  <th className="py-2 px-3 border-b">Order Date</th>
+                  <th className="py-2 px-3 border-b">Customer</th>
+                  <th className="py-2 px-3 border-b">Admin Created/Updated</th>
+                  <th className="py-2 px-3 border-b">Dish Details</th>
+                  <th className="py-2 px-3 border-b">Quantity</th>
+                  <th className="py-2 px-3 border-b">Total Amount</th>
+                  <th className="py-2 px-3 border-b">Status</th>
+                  <th className="py-2 px-3 border-b">Type</th>
+                  <th className="py-2 px-3 border-b">Pickup Time</th>
+                  <th className="py-2 px-3 border-b">Address</th>
+                  <th className="py-2 px-3 border-b">Note</th>
+                  <th className="py-2 px-3 border-b">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -198,6 +237,7 @@ export default function OrderAdminPage() {
                       <td className="py-2 px-3 border-b font-medium">{order.order_number || order.orderNumber ? `#${order.order_number || order.orderNumber}` : '-'}</td>
                       <td className="py-2 px-3 border-b">{formatDate(order.createdAt)}</td>
                       <td className="py-2 px-3 border-b">{getUserName(order.userId)}</td>
+                      <td className="py-2 px-3 border-b">{getUserName(order.createdBy) || getUserName(order.updatedBy)}</td>
                       <td className="py-2 px-3 border-b"></td>
                       <td className="py-2 px-3 border-b"></td>
                       <td className="py-2 px-3 border-b">{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
@@ -220,6 +260,7 @@ export default function OrderAdminPage() {
                             <td className="py-2 px-3 border-b font-medium" rowSpan={maxItems}>{order.order_number || order.orderNumber ? `#${order.order_number || order.orderNumber}` : '-'}</td>
                             <td className="py-2 px-3 border-b" rowSpan={maxItems}>{formatDate(order.createdAt)}</td>
                             <td className="py-2 px-3 border-b" rowSpan={maxItems}>{getUserName(order.userId)}</td>
+                            <td className="py-2 px-3 border-b" rowSpan={maxItems}>{getUserName(order.createdBy) || getUserName(order.updatedBy)}</td>
                           </>
                         )}
                         <td className="py-2 px-3 border-b">
@@ -246,7 +287,7 @@ export default function OrderAdminPage() {
                         {i === 0 && (
                           <>
                             <td className="py-2 px-3 border-b" rowSpan={maxItems}>{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
-                            <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.status}</td>
+                            <td className="py-2 px-3 border-b" rowSpan={maxItems}>{statusLabel[order.status] || order.status}</td>
                             <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.type}</td>
                             <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.pickupTime || ''}</td>
                             <td className="py-2 px-3 border-b" rowSpan={maxItems}>{formatDeliveryAddress(order.deliveryAddress)}</td>
@@ -271,43 +312,65 @@ export default function OrderAdminPage() {
         {showEdit && editingOrder && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
             <form className="bg-white p-6 rounded shadow-md min-w-[320px]" onSubmit={handleEditSubmit}>
-              <h2 className="text-lg font-bold mb-4">Chỉnh sửa đơn hàng</h2>
+              <h2 className="text-lg font-bold mb-4">Edit Order</h2>
               <div className="mb-3">
-                <label className="block text-sm font-medium">Trạng thái</label>
+                <label className="block text-sm font-medium">Status</label>
                 <select
                   className="w-full border rounded px-2 py-1"
                   value={editingOrder.status}
                   onChange={e => setEditingOrder({ ...editingOrder, status: e.target.value })}
                 >
-                  <option value="pending">Chờ xác nhận</option>
-                  <option value="confirmed">Đã xác nhận</option>
-                  <option value="preparing">Đang chuẩn bị</option>
-                  <option value="delivering">Đang giao</option>
-                  <option value="completed">Hoàn thành</option>
-                  <option value="cancelled">Đã hủy</option>
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="preparing">Preparing</option>
+                  <option value="delivering">Delivering</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
                 </select>
               </div>
               <div className="mb-3">
-                <label className="block text-sm font-medium">Loại</label>
+                <label className="block text-sm font-medium">Type</label>
                 <select
                   className="w-full border rounded px-2 py-1"
                   value={editingOrder.type}
                   onChange={e => setEditingOrder({ ...editingOrder, type: e.target.value })}
                 >
-                  <option value="pickup">Nhận tại quán</option>
-                  <option value="delivery">Giao tận nơi</option>
+                  <option value="pickup">Pickup</option>
+                  <option value="delivery">Delivery</option>
                 </select>
               </div>
               <div className="mb-3">
-                <label className="block text-sm font-medium">Địa chỉ</label>
+                <label className="block text-sm font-medium">Address</label>
                 <input
                   className="w-full border rounded px-2 py-1"
-                  value={editingOrder.deliveryAddress || ''}
-                  onChange={e => setEditingOrder({ ...editingOrder, deliveryAddress: e.target.value })}
+                  value={typeof editingOrder.deliveryAddress === 'object' ? editingOrder.deliveryAddress.address || '' : editingOrder.deliveryAddress || ''}
+                  onChange={e => setEditingOrder({
+                    ...editingOrder,
+                    deliveryAddress: {
+                      ...(typeof editingOrder.deliveryAddress === 'object' ? editingOrder.deliveryAddress : {}),
+                      address: e.target.value
+                    }
+                  })}
                 />
+                {editingOrder.type === 'delivery' && (
+                  <div className="mt-2">
+                    <label className="block text-sm font-medium">Recipient Phone</label>
+                    <input
+                      className="w-full border rounded px-2 py-1"
+                      value={typeof editingOrder.deliveryAddress === 'object' ? editingOrder.deliveryAddress.phone || '' : ''}
+                      onChange={e => setEditingOrder({
+                        ...editingOrder,
+                        deliveryAddress: {
+                          ...(typeof editingOrder.deliveryAddress === 'object' ? editingOrder.deliveryAddress : {}),
+                          phone: e.target.value
+                        }
+                      })}
+                    />
+                  </div>
+                )}
               </div>
               <div className="mb-3">
-                <label className="block text-sm font-medium">Ghi chú</label>
+                <label className="block text-sm font-medium">Note</label>
                 <input
                   className="w-full border rounded px-2 py-1"
                   value={editingOrder.note || ''}
@@ -315,7 +378,7 @@ export default function OrderAdminPage() {
                 />
               </div>
               <div className="mb-3">
-                <label className="block text-sm font-medium">Tổng tiền</label>
+                <label className="block text-sm font-medium">Total Amount</label>
                 <input
                   type="number"
                   className="w-full border rounded px-2 py-1"
@@ -326,8 +389,8 @@ export default function OrderAdminPage() {
                 />
               </div>
               <div className="flex justify-end gap-2 mt-4">
-                <button type="button" className="px-4 py-2 rounded bg-gray-200" onClick={() => setShowEdit(false)} disabled={saving}>Hủy</button>
-                <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white" disabled={saving}>Lưu</button>
+                <button type="button" className="px-4 py-2 rounded bg-gray-200" onClick={() => setShowEdit(false)} disabled={saving}>Cancel</button>
+                <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white" disabled={saving}>Save</button>
               </div>
             </form>
           </div>

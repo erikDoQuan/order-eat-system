@@ -15,7 +15,11 @@ export class UserRepository {
   constructor(private readonly drizzle: DrizzleService) {}
 
   async find(fetchUsersDto: FetchUsersDto): Promise<UserResult> {
-    const { search, offset, limit, status } = fetchUsersDto;
+    let { search, offset, limit, status, page } = fetchUsersDto;
+
+    if (page && limit) {
+      offset = (page - 1) * limit;
+    }
 
     const baseConditions: SQL[] = [];
 

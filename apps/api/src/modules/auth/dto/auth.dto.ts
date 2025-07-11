@@ -16,3 +16,23 @@ export class SignInDto {
   @Length(8, 255, { message: 'password has to be at between 8 and 255 characters' })
   password: string;
 }
+
+export class ForgotPasswordDto {
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @ApiProperty({ example: 'token-from-email' })
+  @IsString()
+  @IsNotEmpty()
+  token: string;
+
+  @ApiProperty({ example: 'NewPassword-2024!' })
+  @IsString()
+  @IsNotEmpty()
+  @Length(8, 255)
+  newPassword: string;
+}

@@ -1,9 +1,9 @@
 import React, { useContext, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 import { AuthContext } from '../context/AuthContext';
 import { adminLogin } from '../services/adminAuth.api';
-import { login } from '../services/auth.api';
+import { login, sendForgotPasswordEmail } from '../services/auth.api';
 import { fetchMe } from '../services/me.api';
 import Navbar from '../components/Navbar';
 
@@ -14,6 +14,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotMessage, setForgotMessage] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   const navigate = useNavigate();
   const { setUser } = useContext(AuthContext);
@@ -67,6 +71,23 @@ export default function LoginPage() {
     setMessage('Đăng nhập không thành công, hãy kiểm tra lại email hoặc mật khẩu');
   };
 
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotLoading(true);
+    setForgotMessage('');
+    try {
+      await sendForgotPasswordEmail(forgotEmail);
+      setForgotMessage('A reset password link has been sent to your email.');
+      setTimeout(() => {
+        setShowForgot(false);
+        navigate('/reset-password?email=' + encodeURIComponent(forgotEmail));
+      }, 2000);
+    } catch (err: any) {
+      setForgotMessage('Failed to send reset email. Please try again.');
+    }
+    setForgotLoading(false);
+  };
+
   return (
     <>
       <Navbar />
@@ -101,12 +122,42 @@ export default function LoginPage() {
             <button type="submit" className="login-btn" disabled={loading}>
               {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </button>
+            <div style={{ marginTop: 12, textAlign: 'right' }}>
+              <Link to="/forgot-password" className="forgot-link" style={{ color: '#007bff', textDecoration: 'underline', fontSize: 14 }}>
+                Quên mật khẩu?
+              </Link>
+            </div>
           </form>
           {message && (
             <div className={`login-message ${message.toLowerCase().includes('thành công') ? 'success' : 'error'}`}>{message}</div>
           )}
         </div>
       </div>
+      {showForgot && (
+        <div className="modal-forgot" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#fff', padding: 32, borderRadius: 8, minWidth: 320, position: 'relative' }}>
+            <button onClick={() => setShowForgot(false)} style={{ position: 'absolute', top: 8, right: 8, background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>×</button>
+            <h3 className="login-title" style={{ marginBottom: 16, color: '#C92A15' }}>Quên mật khẩu</h3>
+            <form onSubmit={handleForgotSubmit} className="login-form space-y-5">
+              <div>
+                <label>Email</label>
+                <input
+                  type="email"
+                  required
+                  value={forgotEmail}
+                  onChange={e => setForgotEmail(e.target.value)}
+                  className=""
+                  placeholder="Nhập email của bạn"
+                />
+              </div>
+              <button type="submit" className="login-btn" disabled={forgotLoading} style={{ borderRadius: 999 }}>
+                {forgotLoading ? 'Đang gửi...' : 'Gửi liên kết đặt lại mật khẩu'}
+              </button>
+            </form>
+            {forgotMessage && <div className={`login-message ${forgotMessage.includes('sent') ? 'success' : 'error'}`}>{forgotMessage}</div>}
+          </div>
+        </div>
+      )}
     </>
   );
 }

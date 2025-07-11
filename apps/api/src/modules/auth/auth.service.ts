@@ -4,12 +4,13 @@ import { USER_ROLE } from '~/modules/user/constants/users.constant';
 import { AuthBaseService } from '~/shared-modules/auth-base/auth-base.service';
 import { UserRepository } from '~/database/repositories/user.repository';
 import { hashPassword } from '~/common/utils/password.util';
-import { SignInDto } from './dto/auth.dto';
+import { SignInDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RefreshTokensService } from './refresh-tokens.service';
 import { TokenService } from './token.service';
 import { VerificationService } from './verification.service';
 import * as jwt from 'jsonwebtoken';
+import { EmailService } from '~/modules/email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -132,7 +133,7 @@ export class AuthService {
 
     // Kiểm tra email đã tồn tại (active hoặc inactive)
     const existingUser = await this.userRepository.findByEmailWithInactive(normalizedEmail);
-    if (existingUser) {
+    if (existingUser && existingUser.isActive) {
       throw new BadRequestException('Email này đã tồn tại');
     }
 
@@ -160,5 +161,31 @@ export class AuthService {
       success: true,
       message: 'Đăng ký thành công! Đã gửi email xác thực, vui lòng kiểm tra email.',
     };
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.userRepository.findByEmailWithInactive(email.trim().toLowerCase());
+    if (!user || !user.isActive) throw new BadRequestException('Email not found or inactive');
+    const payload = { userId: user.id, email: user.email, type: 'reset', createdAt: Date.now() };
+    const secret = process.env.EMAIL_VERIFICATION_SECRET || 'email-secret';
+    const token = jwt.sign(payload, secret, { expiresIn: '1h' });
+    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/reset-password?token=${token}`;
+    await this.verificationService.emailService.sendResetPasswordEmail(user.email, resetLink, `${user.firstName} ${user.lastName}`);
+    return { success: true, message: 'Reset password email sent' };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const secret = process.env.EMAIL_VERIFICATION_SECRET || 'email-secret';
+    let payload: any;
+    try {
+      payload = jwt.verify(token, secret);
+    } catch (err) {
+      throw new BadRequestException('Invalid or expired token');
+    }
+    const user = await this.userRepository.findOne(payload.userId);
+    if (!user || !user.isActive) throw new BadRequestException('User not found or inactive');
+    const hashed = await hashPassword(newPassword);
+    await this.userRepository.update(user.id, { password: hashed });
+    return { success: true, message: 'Password updated successfully' };
   }
 }

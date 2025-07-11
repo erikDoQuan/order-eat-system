@@ -26,6 +26,10 @@ const AdminUserPage: React.FC = () => {
   const [form, setForm] = useState<Partial<UserType> & { password?: string }>({});
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
+  const page = 1;
+  const pageSize = 1000;
+  // const [totalUsers, setTotalUsers] = useState(0);
+  // const [totalPages, setTotalPages] = useState(1);
 
   // User dropdown logic
   const handleLogout = () => {
@@ -47,15 +51,25 @@ const AdminUserPage: React.FC = () => {
   // User logic
   const fetchUsers = () => {
     setLoading(true);
-    getAllUsers()
-      .then(setUsers)
+    getAllUsers(page, pageSize, search)
+      .then(({ users }) => {
+        // Sắp xếp: active lên trên, sau đó theo createdAt mới nhất
+        const sortedUsers = [...(users || [])].sort((a, b) => {
+          if ((b.isActive ? 1 : 0) !== (a.isActive ? 1 : 0)) {
+            return (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0);
+          }
+          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        });
+        setUsers(sortedUsers);
+      })
       .catch(() => setError('Không thể tải danh sách khách hàng'))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+    // eslint-disable-next-line
+  }, [page, pageSize, search]);
 
   const handleAdd = () => {
     setEditing(null);
@@ -137,11 +151,11 @@ const AdminUserPage: React.FC = () => {
                   }}
                 >
                   <UserIcon size={18} className="text-gray-500" />
-                  Tài khoản
+                  Account
                 </button>
                 <button className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100" onClick={handleLogout}>
                   <LogOut size={18} className="text-red-400" />
-                  Đăng xuất
+                  Logout
                 </button>
               </div>
             )}
@@ -153,24 +167,24 @@ const AdminUserPage: React.FC = () => {
         </div>
         {/* User management content */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-[#C92A15]">Quản lý khách hàng</h1>
+          <h1 className="text-2xl font-bold text-[#C92A15]">User Management</h1>
           <button
             onClick={handleAdd}
             className="bg-[#C92A15] text-white px-4 py-2 rounded-lg shadow hover:bg-[#a81f0f] transition"
           >
-            + Thêm khách hàng
+            + Add User
           </button>
         </div>
         <div className="mb-4 flex justify-end">
           <input
             type="text"
-            placeholder="Tìm kiếm khách hàng..."
+            placeholder="Search user..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full max-w-xs rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
           />
         </div>
-        {loading && <div>Đang tải...</div>}
+        {loading && <div>Loading...</div>}
         {error && <div style={{ color: 'red' }}>{error}</div>}
         {!loading && !error && (
           <div className="overflow-x-auto">
@@ -179,56 +193,51 @@ const AdminUserPage: React.FC = () => {
                 <tr className="bg-gray-100 text-gray-700">
                   <th className="py-2 px-3 border-b">STT</th>
                   <th className="py-2 px-3 border-b">Email</th>
-                  <th className="py-2 px-3 border-b">Tên</th>
+                  <th className="py-2 px-3 border-b">Name</th>
                   <th className="py-2 px-3 border-b">SĐT</th>
                   <th className="py-2 px-3 border-b">Địa chỉ</th>
-                  <th className="py-2 px-3 border-b">Vai trò</th>
-                  <th className="py-2 px-3 border-b">Kích hoạt</th>
-                  <th className="py-2 px-3 border-b">Hành động</th>
+                  <th className="py-2 px-3 border-b">Role</th>
+                  <th className="py-2 px-3 border-b">Status</th>
+                  <th className="py-2 px-3 border-b">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {users.filter(u => (u.name || `${u.firstName || ''} ${u.lastName || ''}` || '').toLowerCase().includes(search.toLowerCase()) || (u.email || '').toLowerCase().includes(search.toLowerCase())).map((u, idx) => (
-                  <tr key={u.id} className="hover:bg-gray-50 transition">
-                    <td className="py-2 px-3 border-b text-xs text-gray-500">{idx + 1}</td>
-                    <td className="py-2 px-3 border-b font-medium">{u.email}</td>
-                    <td className="py-2 px-3 border-b">{u.name || [u.firstName, u.lastName].filter(Boolean).join(' ')}</td>
-                    <td className="py-2 px-3 border-b">{u.phoneNumber || '-'}</td>
-                    <td className="py-2 px-3 border-b">{u.address || '-'}</td>
-                    <td className="py-2 px-3 border-b">{u.role || '-'}</td>
-                    <td className="py-2 px-3 border-b">
-                      <span className={`badge-status ${u.isActive ? 'active' : 'inactive'}`}>{u.isActive ? 'Đang hoạt động' : 'Đã tắt'}</span>
-                    </td>
-                    <td className="py-2 px-3 border-b">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEdit(u)}
-                          title="Sửa"
-                          className="p-2 rounded hover:bg-blue-100 text-blue-600"
-                        >
-                          <Edit size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(u.id)}
-                          disabled={saving}
-                          title="Xóa"
-                          className="p-2 rounded hover:bg-red-100 text-red-600 disabled:opacity-50"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {users
+                  .filter(u => (u.name || `${u.firstName || ''} ${u.lastName || ''}` || '').toLowerCase().includes(search.toLowerCase()) || (u.email || '').toLowerCase().includes(search.toLowerCase()))
+                  .sort((a, b) => {
+                    // Active lên trên, trong mỗi nhóm thì user mới nhất lên trên
+                    if ((b.isActive ? 1 : 0) !== (a.isActive ? 1 : 0)) {
+                      return (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0);
+                    }
+                    return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+                  })
+                  .map((u, idx) => (
+                    <tr key={u.id} className="hover:bg-gray-50 transition">
+                      <td className="py-2 px-3 border-b text-xs text-gray-500">{idx + 1}</td>
+                      <td className="py-2 px-3 border-b font-medium">{u.email}</td>
+                      <td className="py-2 px-3 border-b">{u.name || [u.firstName, u.lastName].filter(Boolean).join(' ')}</td>
+                      <td className="py-2 px-3 border-b">{u.phoneNumber || '-'}</td>
+                      <td className="py-2 px-3 border-b">{u.address || '-'}</td>
+                      <td className="py-2 px-3 border-b">{u.role || '-'}</td>
+                      <td className="py-2 px-3 border-b">
+                        <span className={`badge-status ${u.isActive ? 'active' : 'inactive'}`}>{u.isActive ? 'Active' : 'Inactive'}</span>
+                      </td>
+                      <td className="py-2 px-3 border-b">
+                        <button className="mr-2 text-blue-600 hover:underline" onClick={() => handleEdit(u)}><Edit size={16} /></button>
+                        <button className="text-red-600 hover:underline" onClick={() => handleDelete(u.id)}><Trash2 size={16} /></button>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
+            {/* PHÂN TRANG DẠNG SỐ ĐƠN GIẢN */}
           </div>
         )}
         {showForm && (
           <div className="modal-admin">
             <div className="modal-content-admin">
               <button className="modal-close-admin" onClick={() => setShowForm(false)} type="button">×</button>
-              <h2 className="text-lg font-semibold mb-4">{editing ? 'Sửa khách hàng' : 'Thêm khách hàng'}</h2>
+              <h2 className="text-lg font-semibold mb-4">{editing ? 'Edit User' : 'Add User'}</h2>
               <form onSubmit={handleSubmit}>
                 <div className="mb-4">
                   <label className="block mb-1 font-medium">Email</label>
@@ -242,7 +251,7 @@ const AdminUserPage: React.FC = () => {
                 </div>
                 {!editing && (
                   <div className="mb-4">
-                    <label className="block mb-1 font-medium">Mật khẩu</label>
+                    <label className="block mb-1 font-medium">Password</label>
                     <input
                       value={form.password || ''}
                       onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
@@ -285,25 +294,25 @@ const AdminUserPage: React.FC = () => {
                   />
                 </div>
                 <div className="mb-4">
-                  <label className="block mb-1 font-medium">Vai trò</label>
+                  <label className="block mb-1 font-medium">Role</label>
                   <select
                     value={form.role || 'user'}
                     onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
                     className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
                   >
-                    <option value="user">Khách hàng</option>
-                    <option value="admin">Quản trị viên</option>
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
                   </select>
                 </div>
                 <div className="mb-4">
-                  <label className="block mb-1 font-medium">Kích hoạt</label>
+                  <label className="block mb-1 font-medium">Status</label>
                   <input
                     type="checkbox"
                     checked={form.isActive !== false}
                     onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))}
                     className="mr-2"
                   />
-                  <span>{form.isActive !== false ? 'Đang hoạt động' : 'Đã tắt'}</span>
+                  <span>{form.isActive !== false ? 'Active' : 'Inactive'}</span>
                 </div>
                 <div className="flex justify-end gap-2">
                   <button
@@ -311,14 +320,14 @@ const AdminUserPage: React.FC = () => {
                     onClick={() => setShowForm(false)}
                     className="px-4 py-2 rounded border border-gray-300 bg-gray-100 hover:bg-gray-200 transition"
                   >
-                    Hủy
+                    Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={saving}
                     className="px-4 py-2 rounded bg-[#C92A15] text-white hover:bg-[#a81f0f] transition disabled:opacity-50"
                   >
-                    {saving ? 'Đang lưu...' : 'Lưu'}
+                    {saving ? 'Saving...' : 'Save'}
                   </button>
                 </div>
               </form>

@@ -19,9 +19,17 @@ export type User = {
   updatedBy?: string;
 };
 
-export const getAllUsers = async (): Promise<User[]> => {
-  const res = await axios.get('/api/v1/admin/users');
-  return res.data.data;
+export const getAllUsers = async (page = 1, limit = 10, search = ''): Promise<{ users: User[]; totalItems: number; currentPage: number; totalPages: number }> => {
+  const params: any = { page, limit };
+  if (search) params.search = search;
+  const res = await axios.get('/api/v1/admin/users', { params });
+  const meta = res.data.meta?.paging || {};
+  return {
+    users: res.data.data,
+    totalItems: meta.totalItems || res.data.totalItems || res.data.pagination?.totalItems || 0,
+    currentPage: meta.currentPage || page,
+    totalPages: meta.totalPages || Math.ceil((meta.totalItems || 0) / (meta.itemsPerPage || limit))
+  };
 };
 
 export const deleteUser = async (id: string) => {

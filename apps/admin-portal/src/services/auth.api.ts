@@ -64,3 +64,15 @@ export async function login(
     return { success: false, message: 'Có lỗi xảy ra' };
   }
 }
+
+export async function sendForgotPasswordEmail(email: string): Promise<void> {
+  const res = await fetch('http://localhost:3000/api/v1/auth/forgot-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.message || 'Failed to send reset email');
+  }
+}

@@ -20,6 +20,12 @@ export class FetchUsersDto {
   limit?: number = 10;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number = 1;
+
+  @IsOptional()
   @Transform(
     ({ value }) => {
       const items = Array.isArray(value) ? value : (value as string).split(',').map(v => v.trim());

@@ -26,6 +26,8 @@ import './i18n';
 import DeliveryOrderPage from './pages/DeliveryOrderPage';
 import OrderDetailPage from './pages/OrderDetailPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
+import ResetPasswordPage from './pages/reset-password';
+import ForgotPasswordPage from './pages/forgot-password';
 
 import './globals.scss';
 
@@ -143,6 +145,8 @@ function AppWithCartProvider() {
         <Route path="/order-success" element={<OrderSuccessPage />} />
         {/* Route xác thực email */}
         <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       </Routes>
     </CartProvider>
   );

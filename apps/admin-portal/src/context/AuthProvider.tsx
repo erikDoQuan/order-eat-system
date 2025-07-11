@@ -14,7 +14,17 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   const setUser = (u: AuthUser | null) => {
     setUserState(u);
-    if (u) localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
+    if (u) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
+      if (u.id) {
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('order-eat-cart-') && !key.endsWith(String(u.id))) {
+            localStorage.removeItem(key);
+          }
+        });
+      }
+      localStorage.removeItem('order-eat-cart-guest');
+    }
     else {
       localStorage.removeItem(STORAGE_KEY);
     }

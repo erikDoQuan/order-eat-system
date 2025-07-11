@@ -29,7 +29,7 @@ export default function Navbar() {
   const [dishes, setDishes] = useState<any[]>([]);
   const { t } = useTranslation();
   const [showNotificationPopup, setShowNotificationPopup] = useState(false);
-  const [notification, setNotification] = useState<any>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [notificationLoading, setNotificationLoading] = useState(false);
   const [hasOrderNotification, setHasOrderNotification] = useState(false);
   const [notificationHover, setNotificationHover] = useState(false);
@@ -63,37 +63,38 @@ export default function Navbar() {
       const validOrders = orders.filter((o: any) => o.status === 'confirmed' || o.status === 'completed');
       setHasOrderNotification(validOrders.length > 0);
       if (!validOrders.length) {
-        setNotification(null);
+        setNotifications([]);
         setNotificationLoading(false);
         return;
       }
-      // Lấy đơn mới nhất trong validOrders
-      const latestOrder = validOrders.sort((a, b) => {
+      // Map từng order thành notification
+      const notificationsArr = validOrders.sort((a, b) => {
         if (a.createdAt && b.createdAt) return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         if (a.orderNumber && b.orderNumber) return b.orderNumber - a.orderNumber;
         return 0;
-      })[0];
-      // Map orderItems to product names
-      let items = latestOrder.orderItems;
-      if (typeof items === 'string') {
-        try { items = JSON.parse(items); } catch { items = null; }
-      }
-      const products = (items?.items || []).map((item: any) => {
-        const dish = dishes.find((d: any) => d.id === item.dishId);
+      }).map(order => {
+        let items = order.orderItems;
+        if (typeof items === 'string') {
+          try { items = JSON.parse(items); } catch { items = null; }
+        }
+        const products = (items?.items || []).map((item: any) => {
+          const dish = dishes.find((d: any) => d.id === item.dishId);
+          return {
+            name: dish ? dish.name : item.dishId,
+            quantity: item.quantity || 1,
+          };
+        });
         return {
-          name: dish ? dish.name : item.dishId,
-          quantity: item.quantity || 1,
+          orderId: order.orderNumber || order.id,
+          products,
+          date: order.createdAt || new Date().toISOString(),
+          total: Number(order.totalAmount) || 0,
+          status: order.status === 'completed' ? 'Hoàn thành' : 'Đã xác nhận',
         };
       });
-      setNotification({
-        orderId: latestOrder.orderNumber || latestOrder.id,
-        products,
-        date: latestOrder.createdAt || new Date().toISOString(),
-        total: Number(latestOrder.totalAmount) || 0,
-        status: latestOrder.status === 'completed' ? 'Hoàn thành' : 'Đã xác nhận',
-      });
+      setNotifications(notificationsArr);
     } catch (e) {
-      setNotification(null);
+      setNotifications([]);
       setHasOrderNotification(false);
     }
     setNotificationLoading(false);
@@ -298,11 +299,14 @@ export default function Navbar() {
             style={{ cursor: 'pointer', position: 'relative' }}
           >
             <div
-              onMouseEnter={() => {
-                setShowNotificationPopup(true);
-                if (!notification && !notificationLoading) fetchLatestOrderNotification();
+              onClick={() => {
+                if (showCartPopup) return; // Nếu đang mở giỏ hàng thì không mở thông báo
+                setShowNotificationPopup(v => {
+                  const next = !v;
+                  if (next && !notificationLoading) fetchLatestOrderNotification();
+                  return next;
+                });
               }}
-              onMouseLeave={() => setShowNotificationPopup(false)}
               style={{ display: 'inline-block', position: 'relative' }}
             >
               <FaBell size={22} style={{ marginRight: 18, cursor: 'pointer', color: '#C92A15', position: 'relative' }} />
@@ -327,21 +331,21 @@ export default function Navbar() {
                 >
                   {notificationLoading ? (
                     <div style={{ width: 320, background: '#fff', borderRadius: 16, boxShadow: '0 4px 32px #0003', zIndex: 100, padding: 32, textAlign: 'center', color: '#b45309', fontWeight: 600 }}>Đang tải thông báo...</div>
-                  ) : notification ? (
+                  ) : (
                     <NotificationPopup
-                      notification={notification}
+                      notifications={notifications}
                       onClose={() => setShowNotificationPopup(false)}
                       className="notification-popup"
                     />
-                  ) : (
-                    <div style={{ width: 320, background: '#fff', borderRadius: 16, boxShadow: '0 4px 32px #0003', zIndex: 100, padding: 32, textAlign: 'center', color: '#b45309', fontWeight: 600 }}>Không có đơn hàng gần đây</div>
                   )}
                 </div>
               )}
             </div>
             <div
-              onMouseEnter={() => setShowCartPopup(true)}
-              onMouseLeave={() => setShowCartPopup(false)}
+              onClick={() => {
+                if (showNotificationPopup) return; // Nếu đang mở thông báo thì không mở giỏ hàng
+                setShowCartPopup(v => !v);
+              }}
               style={{ display: 'inline-block', position: 'relative' }}
             >
               <CartIcon />

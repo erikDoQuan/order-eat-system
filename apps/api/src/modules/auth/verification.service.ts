@@ -89,12 +89,28 @@ export class VerificationService {
     }
     // Kiểm tra email đã tồn tại chưa
     const existingUser = await this.userRepository.findByEmailWithInactive(payload.email);
-    if (existingUser) {
+    if (existingUser && existingUser.isActive) {
       throw new BadRequestException('Email này đã tồn tại hoặc đã được xác thực.');
     }
-    // Hash password trước khi lưu
     const hashedPassword = await hashPassword(payload.password);
-    // Tạo user mới
+    if (existingUser && !existingUser.isActive) {
+      // Nếu user đã bị xóa, update lại user này thành active và xác thực
+      await this.userRepository.update(existingUser.id, {
+        password: hashedPassword,
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        phoneNumber: payload.phoneNumber,
+        address: payload.address,
+        role: USER_ROLE.USER,
+        isActive: true,
+        isEmailVerified: true,
+      });
+      return {
+        success: true,
+        message: 'Xác thực email thành công! Tài khoản đã được kích hoạt lại.',
+      };
+    }
+    // Nếu chưa có user nào, tạo mới
     await this.userRepository.create({
       email: payload.email,
       password: hashedPassword,

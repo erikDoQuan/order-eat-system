@@ -81,12 +81,12 @@ export default function AdminPage() {
   };
 
   const statusMap: any = {
-    completed: 'Hoàn thành',
-    confirmed: 'Đã xác nhận',
-    delivering: 'Đang giao',
-    preparing: 'Đang chuẩn bị',
-    pending: 'Chờ xác nhận',
-    cancelled: 'Đã hủy',
+    completed: 'Completed',
+    confirmed: 'Confirmed',
+    delivering: 'Delivering',
+    preparing: 'Preparing',
+    pending: 'Pending',
+    cancelled: 'Cancelled',
   };
 
   return (
@@ -134,10 +134,10 @@ export default function AdminPage() {
 
         <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: 'Tổng món ăn', value: dishCount, bg: 'bg-blue-500', icon: '🍕' },
-            { label: 'Đơn hàng hôm nay', value: todayOrderCount, bg: 'bg-green-500', icon: '📦' },
-            { label: 'Doanh thu hôm nay', value: todayRevenue.toLocaleString('vi-VN') + ' đ', bg: 'bg-yellow-500', icon: '💰' },
-            { label: 'Khách hàng mới', value: userCount, bg: 'bg-purple-500', icon: '👥' },
+            { label: 'Total Dishes', value: dishCount, bg: 'bg-blue-500', icon: '🍕' },
+            { label: "Today's Orders", value: todayOrderCount, bg: 'bg-green-500', icon: '📦' },
+            { label: "Today's Revenue", value: todayRevenue.toLocaleString('vi-VN') + '₫', bg: 'bg-yellow-500', icon: '💰' },
+            { label: 'New Users', value: userCount, bg: 'bg-purple-500', icon: '👥' },
           ].map(card => (
             <div key={card.label} className="rounded-lg bg-white p-6 shadow-sm">
               <div className="flex items-center">
@@ -157,35 +157,35 @@ export default function AdminPage() {
 
         {/* ---------- QUICK ACTIONS ---------- */}
         <div className="mb-8">
-          <h2 className="mb-4 text-lg font-medium text-gray-900">Thao tác nhanh</h2>
+          <h2 className="mb-4 text-lg font-medium text-gray-900">Quick Actions</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
-                title: 'Thêm món ăn',
-                subtitle: 'Tạo món ăn mới',
+                title: 'Add Dish',
+                subtitle: 'Create a new dish',
                 icon: '➕',
                 bg: 'bg-blue-100',
                 color: 'text-blue-600',
                 onClick: () => navigate('/admin/dishes/add'),
               },
               {
-                title: 'Quản lý đơn hàng',
-                subtitle: 'Xem và xử lý đơn hàng',
+                title: 'Order Management',
+                subtitle: 'View and process orders',
                 icon: '📋',
                 bg: 'bg-green-100',
                 color: 'text-green-600',
                 onClick: () => navigate('/admin/orders'),
               },
               {
-                title: 'Báo cáo',
-                subtitle: 'Xem báo cáo doanh thu',
+                title: 'Report',
+                subtitle: 'View revenue reports',
                 icon: '📊',
                 bg: 'bg-yellow-100',
                 color: 'text-yellow-600',
               },
               {
-                title: 'Cài đặt',
-                subtitle: 'Cấu hình hệ thống',
+                title: 'Settings',
+                subtitle: 'System configuration',
                 icon: '⚙️',
                 bg: 'bg-purple-100',
                 color: 'text-purple-600',
@@ -213,22 +213,22 @@ export default function AdminPage() {
         {/* ---------- RECENT ORDERS ---------- */}
         <div className="rounded-lg bg-white shadow-sm">
           <div className="border-b border-gray-200 px-6 py-4">
-            <h3 className="text-lg font-medium text-gray-900">Đơn hàng gần đây</h3>
+            <h3 className="text-lg font-medium text-gray-900">Recent Orders</h3>
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              {recentOrders.length === 0 && <div className="text-gray-500">Không có đơn hàng nào</div>}
+              {recentOrders.length === 0 && <div className="text-gray-500">No orders</div>}
               {recentOrders.map(order => {
                 const items = (order.orderItems?.items || []);
                 const dishNames = items.map((item: any) => getDishName(item.dishId)).join(', ');
                 return (
                   <div key={order.id} className="flex items-center justify-between border-b border-gray-100 pb-4 last:border-b-0">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Đơn hàng #{order.order_number || order.orderNumber || '-'}</p>
+                      <p className="text-sm font-medium text-gray-900">Order #{order.order_number || order.orderNumber || '-'}</p>
                       <p className="text-xs text-gray-500">{dishNames}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-medium text-gray-900">{Number(order.totalAmount).toLocaleString('vi-VN')} đ</p>
+                      <p className="text-sm font-medium text-gray-900">{Number(order.totalAmount).toLocaleString('vi-VN')}₫</p>
                       <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${statusColor(order.status)}`}>
                         {statusMap[order.status] || order.status}
                       </span>

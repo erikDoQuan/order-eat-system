@@ -6,7 +6,7 @@ import { Response as ExpressResponse, Request } from 'express';
 import { AppConfigsService } from '~/config/config.service';
 import { AuthService } from './auth.service';
 import { LoginWithCredentialsDoc, SignOutDoc } from './docs/auth.doc';
-import { SignInDto } from './dto/auth.dto';
+import { SignInDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
 import { VerificationService } from './verification.service';
 import { VerifyEmailDto, ResendVerificationDto } from './dto/verification.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -89,6 +89,18 @@ export class AuthController {
   @ApiOkResponse({ description: 'User registered successfully, verification email sent' })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
+  }
+
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Send reset password email' })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
+  }
+
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Reset password with token' })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto.token, dto.newPassword);
   }
 
   // Endpoint tạm thời để debug - kiểm tra tất cả email

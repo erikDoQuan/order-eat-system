@@ -58,7 +58,7 @@ const AdminCategoryPage: React.FC = () => {
 
   useEffect(() => {
     fetchCategories();
-    getAllUsers().then(setUsers);
+    getAllUsers(1, 1000).then(res => setUsers(res.users || []));
   }, []);
 
   const handleAdd = () => {
@@ -108,9 +108,13 @@ const AdminCategoryPage: React.FC = () => {
   };
 
   const getUserName = (id?: string) => {
+    if (!id) return '-';
     const user = users.find(u => u.id === id);
-    if (!user) return '-';
-    return user.name || [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.email || '-';
+    if (user) {
+      return user.name || [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.email || user.id || '-';
+    }
+    // Nếu không tìm thấy user, fallback sang hiển thị id
+    return id;
   };
 
   return (
@@ -135,11 +139,11 @@ const AdminCategoryPage: React.FC = () => {
                   }}
                 >
                   <User size={18} className="text-gray-500" />
-                  Tài khoản
+                  Account
                 </button>
                 <button className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100" onClick={handleLogout}>
                   <LogOut size={18} className="text-red-400" />
-                  Đăng xuất
+                  Logout
                 </button>
               </div>
             )}
@@ -151,35 +155,35 @@ const AdminCategoryPage: React.FC = () => {
         </div>
         {/* Category management content */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-[#C92A15]">Quản lý danh mục</h1>
+          <h1 className="text-2xl font-bold text-[#C92A15]">Category Management</h1>
           <button
             onClick={handleAdd}
             className="bg-[#C92A15] text-white px-4 py-2 rounded-lg shadow hover:bg-[#a81f0f] transition"
           >
-            + Thêm danh mục
+            + Add Category
           </button>
         </div>
         <div className="mb-4 flex justify-end">
           <input
             type="text"
-            placeholder="Tìm kiếm danh mục..."
+            placeholder="Search category..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full max-w-xs rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
           />
         </div>
-        {loading && <div>Đang tải...</div>}
+        {loading && <div>Loading...</div>}
         {error && <div style={{ color: 'red' }}>{error}</div>}
         {!loading && !error && (
           <div className="overflow-x-auto">
             <table className="table-admin-category">
               <thead>
                 <tr className="bg-gray-100 text-gray-700">
-                  <th className="py-2 px-3 border-b">STT</th>
-                  <th className="py-2 px-3 border-b">Tên danh mục</th>
-                  <th className="py-2 px-3 border-b">Kích hoạt</th>
-                  <th className="py-2 px-3 border-b">Người tạo</th>
-                  <th className="py-2 px-3 border-b">Hành động</th>
+                  <th className="py-2 px-3 border-b">No.</th>
+                  <th className="py-2 px-3 border-b">Category Name</th>
+                  <th className="py-2 px-3 border-b">Active</th>
+                  <th className="py-2 px-3 border-b">Created by</th>
+                  <th className="py-2 px-3 border-b">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -188,14 +192,14 @@ const AdminCategoryPage: React.FC = () => {
                     <td className="py-2 px-3 border-b text-xs text-gray-500">{idx + 1}</td>
                     <td className="py-2 px-3 border-b font-medium">{cat.name}</td>
                     <td className="py-2 px-3 border-b">
-                      <span className={`badge-status ${cat.isActive ? 'active' : 'inactive'}`}>{cat.isActive ? 'Đang hoạt động' : 'Đã tắt'}</span>
+                      <span className={`badge-status ${cat.isActive ? 'active' : 'inactive'}`}>{cat.isActive ? 'Active' : 'Inactive'}</span>
                     </td>
                     <td className="py-2 px-3 border-b text-xs">{getUserName(cat.createdBy)}</td>
                     <td className="py-2 px-3 border-b">
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleEdit(cat)}
-                          title="Sửa"
+                          title="Edit"
                           className="p-2 rounded hover:bg-blue-100 text-blue-600"
                         >
                           <Edit size={18} />
@@ -203,7 +207,7 @@ const AdminCategoryPage: React.FC = () => {
                         <button
                           onClick={() => handleDelete(cat.id)}
                           disabled={saving}
-                          title="Xóa"
+                          title="Delete"
                           className="p-2 rounded hover:bg-red-100 text-red-600 disabled:opacity-50"
                         >
                           <Trash2 size={18} />
@@ -220,10 +224,10 @@ const AdminCategoryPage: React.FC = () => {
           <div className="modal-admin">
             <div className="modal-content-admin">
               <button className="modal-close-admin" onClick={() => setShowForm(false)} type="button">×</button>
-              <h2 className="text-lg font-semibold mb-4">{editing ? 'Sửa danh mục' : 'Thêm danh mục'}</h2>
+              <h2 className="text-lg font-semibold mb-4">{editing ? 'Edit Category' : 'Add Category'}</h2>
               <form onSubmit={handleSubmit}>
                 <div className="mb-4">
-                  <label className="block mb-1 font-medium">Tên danh mục</label>
+                  <label className="block mb-1 font-medium">Category Name</label>
                   <input
                     value={name}
                     onChange={e => setName(e.target.value)}
@@ -232,14 +236,14 @@ const AdminCategoryPage: React.FC = () => {
                   />
                 </div>
                 <div className="mb-4">
-                  <label className="block mb-1 font-medium">Kích hoạt</label>
+                  <label className="block mb-1 font-medium">Active</label>
                   <select
                     value={isActive ? 'active' : 'inactive'}
                     onChange={e => setIsActive(e.target.value === 'active')}
                     className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
                   >
-                    <option value="active">Đang hoạt động</option>
-                    <option value="inactive">Đã tắt</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
                   </select>
                 </div>
                 <div className="flex justify-end gap-2">
@@ -248,14 +252,14 @@ const AdminCategoryPage: React.FC = () => {
                     onClick={() => setShowForm(false)}
                     className="px-4 py-2 rounded border border-gray-300 bg-gray-100 hover:bg-gray-200 transition"
                   >
-                    Hủy
+                    Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={saving}
                     className="px-4 py-2 rounded bg-[#C92A15] text-white hover:bg-[#a81f0f] transition disabled:opacity-50"
                   >
-                    {saving ? 'Đang lưu...' : 'Lưu'}
+                    {saving ? 'Saving...' : 'Save'}
                   </button>
                 </div>
               </form>
