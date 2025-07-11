@@ -28,7 +28,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     getAllDishes().then(dishes => setDishCount(dishes.length));
-    getAllUsers().then(users => setUserCount(users.filter(u => u.role === 'user' && u.isActive !== false).length));
+    getAllUsers().then(res => setUserCount(res.users.filter(u => u.isActive !== false).length));
     getAllOrders().then(orders => {
       const today = new Date();
       const isToday = (dateStr: string) => {
@@ -37,7 +37,7 @@ export default function AdminPage() {
       };
       const todayOrders = orders.filter((o: any) => o.createdAt && isToday(o.createdAt));
       setTodayOrderCount(todayOrders.length);
-      setTodayRevenue(todayOrders.reduce((sum: number, o: any) => sum + (parseFloat(o.totalAmount) || 0), 0));
+      setTodayRevenue(todayOrders.reduce((sum: number, o: any) => sum + (isToday(o.createdAt) ? (parseFloat(o.totalAmount) || 0) : 0), 0));
       // Sắp xếp và lấy 3 đơn hàng gần nhất
       const sorted = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setRecentOrders(sorted.slice(0, 3));

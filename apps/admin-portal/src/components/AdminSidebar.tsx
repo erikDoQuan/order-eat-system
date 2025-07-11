@@ -2,12 +2,12 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const adminMenu = [
-  { label: 'Tổng quan', path: '/admin' },
-  { label: 'Quản lý danh mục', path: '/admin/category' },
-  { label: 'Quản lý món ăn', path: '/admin/dishes' },
-  { label: 'Quản lý người dùng', path: '/admin/customers' },
-  { label: 'Quản lý đơn hàng', path: '/admin/orders' },
-  { label: 'Cài đặt', path: '/admin/settings' },
+  { label: 'Dashboard', path: '/admin' },
+  { label: 'Category Management', path: '/admin/category' },
+  { label: 'Dish Management', path: '/admin/dishes' },
+  { label: 'User Management', path: '/admin/customers' },
+  { label: 'Order Management', path: '/admin/orders' },
+  { label: 'Settings', path: '/admin/settings' },
 ];
 
 export default function AdminSidebar() {
@@ -18,7 +18,7 @@ export default function AdminSidebar() {
     <aside className="admin-sidebar">
       <div className="admin-logo" onClick={() => navigate('/admin')} style={{ cursor: 'pointer', marginBottom: 32 }}>
         <img src="/logo.png" alt="Logo" style={{ width: 48, height: 48, borderRadius: 12, margin: '0 auto' }} />
-        <div style={{ fontWeight: 700, fontSize: 20, color: '#C92A15', textAlign: 'center', marginTop: 8 }}>BẾP CỦA MẸ</div>
+        <div style={{ fontWeight: 700, fontSize: 20, color: '#C92A15', textAlign: 'center', marginTop: 8 }}>BEP CUAME ADMIN</div>
       </div>
       <nav>
         <ul className="admin-menu">

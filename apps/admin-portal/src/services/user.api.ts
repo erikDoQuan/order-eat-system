@@ -24,8 +24,10 @@ export const getAllUsers = async (page = 1, limit = 10, search = ''): Promise<{ 
   if (search) params.search = search;
   const res = await axios.get('/api/v1/admin/users', { params });
   const meta = res.data.meta?.paging || {};
+  // Map is_active -> isActive nếu có
+  const users = (res.data.data || []).map((u: any) => ({ ...u, isActive: u.isActive !== undefined ? u.isActive : u.is_active }));
   return {
-    users: res.data.data,
+    users,
     totalItems: meta.totalItems || res.data.totalItems || res.data.pagination?.totalItems || 0,
     currentPage: meta.currentPage || page,
     totalPages: meta.totalPages || Math.ceil((meta.totalItems || 0) / (meta.itemsPerPage || limit))
