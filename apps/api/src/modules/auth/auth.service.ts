@@ -9,6 +9,7 @@ import { RegisterDto } from './dto/register.dto';
 import { RefreshTokensService } from './refresh-tokens.service';
 import { TokenService } from './token.service';
 import { VerificationService } from './verification.service';
+import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class AuthService {
@@ -126,45 +127,38 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto) {
-    // DEBUG: Log toàn bộ email trong database để kiểm tra
-    console.log('DEBUG: getAllEmails', await this.userRepository.getAllEmails());
     const { email, password, firstName, lastName, phoneNumber, address } = registerDto;
-
-    // Normalize email trước khi kiểm tra
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Kiểm tra email đã tồn tại chưa (bao gồm cả active và inactive)
+    // Kiểm tra email đã tồn tại (active hoặc inactive)
     const existingUser = await this.userRepository.findByEmailWithInactive(normalizedEmail);
     if (existingUser) {
       throw new BadRequestException('Email này đã tồn tại');
     }
 
-    // Hash password trước khi tạo user
-    const hashedPassword = await hashPassword(password);
-
-    // Tạo user mới
-    const newUser = await this.userRepository.create({
+    // Tạo token xác thực chứa thông tin đăng ký (mã hóa bằng JWT)
+    const payload = {
       email: normalizedEmail,
-      password: hashedPassword,
+      password, // sẽ hash khi xác thực
       firstName,
       lastName,
       phoneNumber,
       address,
-      role: USER_ROLE.USER,
-      isActive: true,
-      isEmailVerified: false,
-    });
-    await this.verificationService.sendVerificationEmail(newUser.id);
+      createdAt: Date.now(),
+    };
+    const secret = process.env.EMAIL_VERIFICATION_SECRET || 'email-secret';
+    const token = jwt.sign(payload, secret, { expiresIn: '1h' });
+
+    // Gửi email xác thực với token này
+    try {
+      await this.verificationService.sendVerificationEmailRaw(normalizedEmail, token, `${firstName} ${lastName}`);
+    } catch (error) {
+      throw new BadRequestException('Không thể gửi email xác thực. Vui lòng kiểm tra lại địa chỉ email.');
+    }
+
     return {
       success: true,
       message: 'Đăng ký thành công! Đã gửi email xác thực, vui lòng kiểm tra email.',
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        isEmailVerified: newUser.isEmailVerified,
-      },
     };
   }
 }

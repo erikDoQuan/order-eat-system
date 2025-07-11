@@ -66,7 +66,7 @@ export class AuthController {
     @Query('redirect') redirect: string,
     @Res() res: ExpressResponse,
   ) {
-    await this.verificationService.verifyEmail(token);
+    await this.verificationService.verifyEmailWithToken(token);
     // Đảm bảo URL an toàn, tránh open redirect
     const safeRedirect =
       redirect && redirect.startsWith('http://localhost:3001')

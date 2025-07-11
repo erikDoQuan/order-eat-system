@@ -84,10 +84,14 @@ export default function RegisterPage() {
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
 
+  const emailInputRef = React.useRef<HTMLInputElement>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateEmail(email)) {
-      setMessage('Email không hợp lệ');
+      setMessage('Email không hợp lệ, vui lòng kiểm tra lại.');
+      setEmailError('Email không hợp lệ, vui lòng kiểm tra lại.');
+      emailInputRef.current?.focus();
       return;
     }
     if (!validatePhone(phoneNumber)) {
@@ -122,10 +126,7 @@ export default function RegisterPage() {
     setMessage(res.message);
     setLoading(false);
     if (res.success) {
-      setMessage('Đăng ký thành công! Hãy kiểm tra email của bạn và click link xác thực trong mail. Bạn sẽ được chuyển đến trang đăng nhập.');
-      setTimeout(() => {
-        navigate('/login', { replace: true });
-      }, 3000);
+      setMessage('Cảm ơn bạn đã đăng ký! Vui lòng kiểm tra email và xác thực. Bếp của Mẹ cảm ơn bạn.');
     }
   };
 
@@ -164,21 +165,26 @@ export default function RegisterPage() {
       <Navbar />
       <div className="register-container" style={{background:'#f6fff8', minHeight:'100vh', paddingTop:40}}>
         <div className="register-box" style={{maxWidth:440, margin:'0 auto', background:'#fff', borderRadius:16, boxShadow:'0 2px 8px rgba(0,0,0,0.08)', padding:'32px 32px 24px 32px'}}>
-          <h2 className="register-title" style={{textAlign:'center', fontWeight:700, fontSize:28, marginBottom:24}}>Tạo tài khoản</h2>
+          {/* Tiêu đề chỉ hiển thị khi chưa đăng ký thành công */}
+          {!(message.includes('thành công')) && (
+            <h2 className="register-title" style={{textAlign:'center', fontWeight:700, fontSize:28, marginBottom:24}}>Tạo tài khoản</h2>
+          )}
           {message.includes('thành công') ? (
             <div style={{
-              padding: '32px 16px',
-              borderRadius: 12,
-              background: '#f8fafc',
+              maxWidth: 420,
+              margin: '0 auto',
+              background: '#fff',
+              borderRadius: 16,
+              border: '2px solid #22c55e',
+              boxShadow: '0 2px 12px rgba(34,197,94,0.08)',
+              padding: '36px 28px 28px 28px',
               textAlign: 'center',
-              color: '#166534',
-              fontWeight: 600,
-              fontSize: 18,
-              boxShadow: '0 2px 8px rgba(22,101,52,0.08)',
-              border: '1.5px solid #b45309',
+              fontFamily: 'Segoe UI',
             }}>
-              <div style={{fontSize: 40, marginBottom: 12}}>🎉</div>
-              Đăng ký thành công!<br />Vui lòng kiểm tra email và xác thực, cảm ơn bạn.
+              <div style={{fontSize: 24, fontWeight: 800, color: '#16a34a', marginBottom: 12}}>Đăng ký thành công!</div>
+              <div style={{fontSize: 17, color: '#0f172a', fontWeight: 500, marginBottom: 8}}>Cảm ơn bạn đã đăng ký.</div>
+              <div style={{fontSize: 15, color: '#334155', marginBottom: 6}}>Vui lòng kiểm tra email và xác thực để hoàn tất quá trình.</div>
+              <div style={{fontSize: 15, color: '#22c55e', fontWeight: 600, marginTop: 10}}>Bếp của Mẹ trân trọng cảm ơn bạn!</div>
             </div>
           ) : (
             <form className="register-form" onSubmit={handleSubmit} autoComplete="off">
@@ -194,7 +200,7 @@ export default function RegisterPage() {
               </div>
               <div style={{marginBottom:16}}>
                 <label style={{fontWeight:600, marginBottom:4, display:'block'}}>Email</label>
-                <input type="email" placeholder="example@gmail.com" name="email" autoComplete="off" required value={email} onChange={e => handleEmailChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} />
+                <input ref={emailInputRef} type="email" placeholder="example@gmail.com" name="email" autoComplete="off" required value={email} onChange={e => handleEmailChange(e.target.value)} style={{width:'100%',padding:10,borderRadius:8,border:'1px solid #ccc',background:'#fafafa'}} />
                 {emailError && <div style={{color:'#dc2626',fontSize:13,marginTop:2}}>{emailError}</div>}
               </div>
               <div style={{marginBottom:16}}>

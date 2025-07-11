@@ -27,9 +27,9 @@ async function bootstrap() {
   const configs = app.get(AppConfigsService);
   const appConfig = configs.get('app');
 
-  // Bật CORS cho mọi domain
+  // Bật CORS cho frontend
   app.enableCors({
-    origin: '*',
+    origin: ['http://localhost:3001'], // Có thể lấy từ biến môi trường nếu cần
     credentials: true,
   });
 
@@ -90,6 +90,11 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, documentBuilder);
   SwaggerModule.setup('api/v1/documentation', app, document);
 
+  // Log đường dẫn Swagger UI
+  console.log(`\n==============================`);
+  console.log(`Swagger UI is available at: http://${appConfig.host}:${appConfig.port}/api/v1/documentation`);
+  console.log(`==============================\n`);
+
   // Serve static files from frontend build
   app.use(express.static(join(__dirname, '..', '..', 'admin-portal', 'dist')));
 
@@ -103,6 +108,13 @@ async function bootstrap() {
   });
 
   await app.listen(appConfig.port, appConfig.host);
+
+  // Log server information
+  console.log(`==========================================================`);
+  console.log(`Http Server running on ${await app.getUrl()} Example System`);
+  console.log(`==========================================================`);
+  console.log(`Documentation: http://localhost:${appConfig.port}/api/v1/documentation`);
+  console.log(`==========================================================`);
 
   return app;
 }

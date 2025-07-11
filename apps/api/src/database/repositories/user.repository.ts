@@ -156,4 +156,9 @@ export class UserRepository {
       },
     });
   }
+
+  // Xóa hoàn toàn user khỏi database (dùng cho đăng ký thất bại)
+  async remove(id: string): Promise<void> {
+    await this.drizzle.db.delete(users).where(eq(users.id, id));
+  }
 }
