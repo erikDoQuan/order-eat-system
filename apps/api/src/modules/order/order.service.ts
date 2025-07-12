@@ -6,6 +6,7 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { DishRepository } from '~/database/repositories/dish.repository';
 import { DishSnapshotRepository } from '~/database/repositories/dish_snapshot.repository';
+import { UserRepository } from '~/database/repositories/user.repository';
 
 
 @Injectable()
@@ -14,11 +15,36 @@ export class OrderService {
     private readonly orderRepository: OrderRepository,
     private readonly dishRepository: DishRepository,
     private readonly dishSnapshotRepository: DishSnapshotRepository, // thêm dòng này
+    private readonly userRepository: UserRepository,
   ) {}
 
   async findAll(dto: FetchOrdersDto) {
     const result = await this.orderRepository.find(dto);
-    return result;
+    const orders = result.data || [];
+
+    // Lấy tất cả id admin tạo/cập nhật
+    const adminIds = [
+      ...new Set([
+        ...orders.map((o: any) => o.createdBy).filter(Boolean),
+        ...orders.map((o: any) => o.updatedBy).filter(Boolean),
+      ]),
+    ];
+
+    // Lấy thông tin user
+    const users = adminIds.length > 0 ? await this.userRepository.findManyByIds(adminIds) : [];
+    const userMap = new Map(users.map(u => [u.id, `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email || u.id]));
+
+    // Thêm trường tên admin vào từng order
+    const ordersWithAdminName = orders.map((order: any) => ({
+      ...order,
+      createdByName: order.createdBy ? userMap.get(order.createdBy) : null,
+      updatedByName: order.updatedBy ? userMap.get(order.updatedBy) : null,
+    }));
+
+    return {
+      ...result,
+      data: ordersWithAdminName,
+    };
   }
 
   async findOne(id: string) {
@@ -229,6 +255,10 @@ export class OrderService {
       }
     }
 
+    // Lưu updatedBy nếu có
+    if (dto.updatedBy) {
+      order.updatedBy = dto.updatedBy;
+    }
     // Lưu lại order
     const updatedOrder = await this.orderRepository.update(id, order as UpdateOrderDto);
     return {

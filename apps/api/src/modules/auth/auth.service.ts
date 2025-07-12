@@ -170,7 +170,7 @@ export class AuthService {
     const secret = process.env.EMAIL_VERIFICATION_SECRET || 'email-secret';
     const token = jwt.sign(payload, secret, { expiresIn: '1h' });
     const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/reset-password?token=${token}`;
-    await this.verificationService.emailService.sendResetPasswordEmail(user.email, resetLink, `${user.firstName} ${user.lastName}`);
+    await this.verificationService.sendResetPasswordEmail(user.email, resetLink, `${user.firstName} ${user.lastName}`);
     return { success: true, message: 'Reset password email sent' };
   }
 

@@ -146,4 +146,9 @@ export class VerificationService {
   async cleanupExpiredTokens(): Promise<void> {
     await this.emailVerificationRepository.deleteExpiredTokens();
   }
+
+  // Thêm phương thức public gửi email reset password
+  public async sendResetPasswordEmail(email: string, link: string, name: string): Promise<void> {
+    await this.emailService.sendResetPasswordEmail(email, link, name);
+  }
 } 

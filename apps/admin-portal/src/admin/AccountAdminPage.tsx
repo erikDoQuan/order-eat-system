@@ -22,9 +22,11 @@ export default function AccountAdminPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar />
-      <div className="flex-1 p-6">
+    <div className="admin-layout bg-gray-50">
+      <div className="admin-sidebar-fixed">
+        <AdminSidebar />
+      </div>
+      <div className="admin-main-content">
         <div className="relative mb-8 flex items-center justify-end gap-3">
           <div className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-[#C92A15] bg-[#e6f4ed] text-[#C92A15]">
             <User size={20} />

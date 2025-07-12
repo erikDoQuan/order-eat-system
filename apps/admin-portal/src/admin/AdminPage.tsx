@@ -182,6 +182,7 @@ export default function AdminPage() {
                 icon: '📊',
                 bg: 'bg-yellow-100',
                 color: 'text-yellow-600',
+                onClick: () => navigate('/admin/revenue-reports'),
               },
               {
                 title: 'Settings',

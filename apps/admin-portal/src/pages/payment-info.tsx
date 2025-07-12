@@ -111,9 +111,26 @@ const PaymentInfoPage: React.FC = () => {
   }
   const deliveryAddress = [state?.address, state?.street, state?.ward, state?.district, state?.province, state?.detail].filter(Boolean).join(', ');
 
+  const [paymentMethod, setPaymentMethod] = React.useState('cod');
+
   // 1. Thêm hàm handleOrder để gọi createOrder với deliveryAddress là object
   const handleOrder = async () => {
-    const orderType = state?.orderType || 'pickup';
+    if (paymentMethod === 'zalopay') {
+      // Điều hướng sang trang ZaloPayPaymentPage, truyền thông tin đơn hàng
+      navigate('/zalo-pay-payment', {
+        state: {
+          items,
+          customer,
+          store,
+          orderType,
+          shippingFee,
+          deliveryAddress,
+          subtotal: computedSubtotal,
+          totalAmount: totalAmountDisplay,
+        },
+      });
+      return;
+    }
     let deliveryAddressObj;
     if (orderType === 'delivery') {
       deliveryAddressObj = {
@@ -178,19 +195,104 @@ const PaymentInfoPage: React.FC = () => {
             </div>
             <div className="payment-info-block">
               <div className="payment-info-title">Phương thức thanh toán</div>
-              <div className="payment-info-text">
-                <div className="payment-info-label">Phương thức thanh toán <span className="payment-info-required">*</span></div>
-                <div className="payment-info-options">
-                  <label className="payment-info-option">
-                    <input type="radio" name="payment" defaultChecked />
-                    <span className="payment-info-option-text">Thanh toán khi nhận hàng</span>
-                    <span className="payment-info-option-subtext">Trả bằng tiền mặt - đơn hàng dưới 1.000.000đ</span>
-                  </label>
-                  <label className="payment-info-option">
-                    <input type="radio" name="payment" />
-                    <span className="payment-info-option-text">ZaloPay</span>
-                    <span className="payment-info-option-subtext">Thanh toán qua ví ZaloPay hoặc ứng dụng ngân hàng</span>
-                  </label>
+              <div className="payment-info-options" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div
+                  className={`payment-method-box${paymentMethod === 'cod' ? ' selected' : ''}`}
+                  style={{
+                    border: paymentMethod === 'cod' ? '2px solid #22c55e' : '1px solid #ddd',
+                    borderRadius: 12,
+                    padding: 0,
+                    cursor: 'pointer',
+                    background: '#fff',
+                    transition: 'border 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    minHeight: 80,
+                    position: 'relative',
+                  }}
+                  onClick={() => setPaymentMethod('cod')}
+                >
+                  <div style={{ width: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: 16 }}>
+                    <span style={{ fontSize: 36 }}>💵</span>
+                  </div>
+                  <div style={{ flex: 1, padding: '20px 0 20px 16px' }}>
+                    <div style={{ fontWeight: 700, fontSize: 18 }}>Thanh toán khi nhận hàng</div>
+                    <div style={{ color: '#888', marginTop: 4 }}>Trả bằng tiền mặt - đơn hàng dưới 1.000.000đ</div>
+                  </div>
+                  <div style={{ width: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                    {paymentMethod === 'cod' ? (
+                      <span style={{
+                        display: 'inline-block',
+                        width: 24,
+                        height: 24,
+                        borderRadius: '50%',
+                        background: '#22c55e',
+                        border: '2px solid #22c55e',
+                        color: '#fff',
+                        fontSize: 18,
+                        textAlign: 'center',
+                        lineHeight: '22px',
+                      }}>✔</span>
+                    ) : (
+                      <span style={{
+                        display: 'inline-block',
+                        width: 24,
+                        height: 24,
+                        borderRadius: '50%',
+                        border: '2px solid #22c55e',
+                        background: '#fff',
+                      }} />
+                    )}
+                  </div>
+                </div>
+                <div
+                  className={`payment-method-box${paymentMethod === 'zalopay' ? ' selected' : ''}`}
+                  style={{
+                    border: paymentMethod === 'zalopay' ? '2px solid #22c55e' : '1px solid #ddd',
+                    borderRadius: 12,
+                    padding: 0,
+                    cursor: 'pointer',
+                    background: '#fff',
+                    transition: 'border 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    minHeight: 80,
+                    position: 'relative',
+                  }}
+                  onClick={() => setPaymentMethod('zalopay')}
+                >
+                  <div style={{ width: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: 16 }}>
+                    <img src="https://upload.wikimedia.org/wikipedia/vi/thumb/3/3a/ZaloPay_logo.svg/1200px-ZaloPay_logo.svg.png" alt="ZaloPay" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+                  </div>
+                  <div style={{ flex: 1, padding: '20px 0 20px 16px' }}>
+                    <div style={{ fontWeight: 700, fontSize: 18 }}>ZaloPay</div>
+                    <div style={{ color: '#888', marginTop: 4 }}>Thanh toán qua ví ZaloPay hoặc ứng dụng ngân hàng</div>
+                  </div>
+                  <div style={{ width: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                    {paymentMethod === 'zalopay' ? (
+                      <span style={{
+                        display: 'inline-block',
+                        width: 24,
+                        height: 24,
+                        borderRadius: '50%',
+                        background: '#22c55e',
+                        border: '2px solid #22c55e',
+                        color: '#fff',
+                        fontSize: 18,
+                        textAlign: 'center',
+                        lineHeight: '22px',
+                      }}>✔</span>
+                    ) : (
+                      <span style={{
+                        display: 'inline-block',
+                        width: 24,
+                        height: 24,
+                        borderRadius: '50%',
+                        border: '2px solid #22c55e',
+                        background: '#fff',
+                      }} />
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

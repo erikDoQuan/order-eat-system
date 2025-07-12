@@ -165,4 +165,12 @@ export class UserRepository {
   async remove(id: string): Promise<void> {
     await this.drizzle.db.delete(users).where(eq(users.id, id));
   }
+
+  async findManyByIds(ids: string[]): Promise<UserWithoutPassword[]> {
+    if (!ids || ids.length === 0) return [];
+    return this.drizzle.db.query.users.findMany({
+      where: inArray(users.id, ids),
+      columns: { password: false },
+    });
+  }
 }

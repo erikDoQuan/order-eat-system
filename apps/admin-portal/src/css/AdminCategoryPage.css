@@ -1,3 +1,31 @@
+/* Đảm bảo layout chính chia 2 phần: sidebar cố định + nội dung cuộn được */
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* Sidebar cố định bên trái */
+.admin-sidebar-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 240px; /* hoặc chiều rộng sidebar của bạn */
+  height: 100vh;
+  background-color: #fff;
+  border-right: 1px solid #e5e7eb;
+  z-index: 10;
+}
+
+/* Phần nội dung chính */
+.admin-main-content {
+  margin-left: 240px; /* khớp với width của sidebar */
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  height: 100vh;
+}
+
 /* Table styles */
 .table-admin-category {
   min-width: 100%;

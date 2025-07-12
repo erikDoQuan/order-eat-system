@@ -5,10 +5,11 @@ import { EmailVerificationRepository } from './email-verification.repository';
 import { FileRepository } from './files.repository';
 import { RefreshTokenRepository } from './refresh-token.repository';
 import { UserRepository } from './user.repository';
+import { OrderRepository } from './order.repository';
 
 @Module({
   imports: [DrizzleModule],
-  providers: [FileRepository, UserRepository, RefreshTokenRepository, EmailVerificationRepository],
-  exports: [FileRepository, UserRepository, RefreshTokenRepository, EmailVerificationRepository],
+  providers: [FileRepository, UserRepository, RefreshTokenRepository, EmailVerificationRepository, OrderRepository],
+  exports: [FileRepository, UserRepository, RefreshTokenRepository, EmailVerificationRepository, OrderRepository],
 })
 export class RepositoriesModule {}

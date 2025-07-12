@@ -16,6 +16,7 @@ import { UsersModule } from './modules/user/users.module';
 import { LoggerModule } from './shared-modules/logger/logger.module';
 import { MiddlewareModule } from './shared-modules/middleware/middleware.module';
 import { DishOptionModule } from './modules/dish_option/dish-option.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -41,7 +42,8 @@ import { DishOptionModule } from './modules/dish_option/dish-option.module';
     CategoryModule,
     OrderModule,
     ReviewModule,
-    DishOptionModule
+    DishOptionModule,
+    ReportsModule,
   ],
   controllers: [],
   exports: [],

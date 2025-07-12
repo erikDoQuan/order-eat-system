@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { User as UserIcon, Edit, Trash2 } from 'lucide-react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
+import { User as UserIcon, Edit, Trash2, LogOut } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
 import '../css/OrderAdminPage.css';
 import axios from 'axios';
@@ -7,6 +7,8 @@ import { getAllUsers, User } from '../services/user.api';
 import { getAllDishes } from '../services/dish.api';
 import { Dish } from '../types/dish.type';
 import { updateOrder, deleteOrder } from '../services/order.api';
+import { AuthContext } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function OrderAdminPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -18,6 +20,10 @@ export default function OrderAdminPage() {
   const [showEdit, setShowEdit] = useState(false);
   const [editingOrder, setEditingOrder] = useState<any>(null);
   const [saving, setSaving] = useState(false);
+  const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const fetchOrders = () => {
     setLoading(true);
@@ -45,6 +51,16 @@ export default function OrderAdminPage() {
 
   useEffect(() => {
     fetchOrders();
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const getUserName = (userId: string) => {
@@ -94,10 +110,12 @@ export default function OrderAdminPage() {
 
   // Thêm mapping cho status
   const statusLabel: Record<string, string> = {
-    pending: 'Pending',
-    confirmed: 'Confirmed',
-    completed: 'Completed',
-    cancelled: 'Cancelled',
+    pending: 'Chờ xác nhận',
+    confirmed: 'Đã xác nhận',
+    preparing: 'Đang chuẩn bị',
+    delivering: 'Đang giao',
+    completed: 'Hoàn thành',
+    cancelled: 'Đã hủy',
   };
 
   const handleDelete = async (id: string) => {
@@ -183,14 +201,48 @@ export default function OrderAdminPage() {
     setSaving(false);
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/admin/login');
+  };
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar />
-      <div className="flex-1 p-6">
+    <div className="admin-layout bg-gray-50">
+      <div className="admin-sidebar-fixed">
+        <AdminSidebar />
+      </div>
+      <div className="admin-main-content">
+        {/* User info and dropdown */}
         <div className="relative mb-8 flex items-center justify-end gap-3">
-          <div className="relative flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#C92A15] bg-[#e6f4ed] text-[#C92A15]">
+          <div
+            className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-[#C92A15] bg-[#e6f4ed] text-[#C92A15]"
+            onClick={() => setShowMenu(v => !v)}
+            ref={menuRef}
+          >
             <UserIcon size={20} />
+            {user && showMenu && (
+              <div className="absolute right-0 top-12 z-50 min-w-[180px] rounded-xl border bg-white py-2 shadow-xl">
+                <button
+                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  onClick={() => {
+                    setShowMenu(false);
+                    navigate('/admin/profile');
+                  }}
+                >
+                  <UserIcon size={18} className="text-gray-500" />
+                  Tài khoản
+                </button>
+                <button className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100" onClick={handleLogout}>
+                  <LogOut size={18} className="text-red-400" />
+                  Đăng xuất
+                </button>
+              </div>
+            )}
           </div>
+          <span className="ml-2 text-base font-semibold text-black underline underline-offset-2 hover:text-blue-700" style={{ cursor: 'pointer' }}>
+            {user?.firstName || ''} {user?.lastName || ''}
+            {!(user?.firstName || user?.lastName) && user?.email}
+          </span>
         </div>
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-[#C92A15]">Order Management</h1>
@@ -211,20 +263,18 @@ export default function OrderAdminPage() {
             <table className="table-admin-user">
               <thead>
                 <tr className="bg-gray-100 text-gray-700">
-                  {/* <th className="py-2 px-3 border-b">STT</th> */}
-                  <th className="py-2 px-3 border-b">Order Code</th>
+                  <th className="py-2 px-3 border-b">Order ID</th>
                   <th className="py-2 px-3 border-b">Order Date</th>
                   <th className="py-2 px-3 border-b">Customer</th>
-                  <th className="py-2 px-3 border-b">Admin Created/Updated</th>
-                  <th className="py-2 px-3 border-b">Dish Details</th>
+                  <th className="py-2 px-3 border-b">Items</th>
                   <th className="py-2 px-3 border-b">Quantity</th>
-                  <th className="py-2 px-3 border-b">Total Amount</th>
+                  <th className="py-2 px-3 border-b">Total</th>
                   <th className="py-2 px-3 border-b">Status</th>
                   <th className="py-2 px-3 border-b">Type</th>
                   <th className="py-2 px-3 border-b">Pickup Time</th>
                   <th className="py-2 px-3 border-b">Address</th>
                   <th className="py-2 px-3 border-b">Note</th>
-                  <th className="py-2 px-3 border-b">Action</th>
+                  <th className="py-2 px-3 border-b">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -233,11 +283,9 @@ export default function OrderAdminPage() {
                   const maxItems = Math.max(1, items.length);
                   return items.length === 0 ? (
                     <tr key={order.id} className="hover:bg-gray-50 transition">
-                      {/* <td className="py-2 px-3 border-b text-xs text-gray-500">{idx + 1}</td> */}
                       <td className="py-2 px-3 border-b font-medium">{order.order_number || order.orderNumber ? `#${order.order_number || order.orderNumber}` : '-'}</td>
                       <td className="py-2 px-3 border-b">{formatDate(order.createdAt)}</td>
                       <td className="py-2 px-3 border-b">{getUserName(order.userId)}</td>
-                      <td className="py-2 px-3 border-b">{getUserName(order.createdBy) || getUserName(order.updatedBy)}</td>
                       <td className="py-2 px-3 border-b"></td>
                       <td className="py-2 px-3 border-b"></td>
                       <td className="py-2 px-3 border-b">{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
@@ -256,11 +304,9 @@ export default function OrderAdminPage() {
                       <tr key={order.id + '-' + i} className="hover:bg-gray-50 transition">
                         {i === 0 && (
                           <>
-                            {/* <td className="py-2 px-3 border-b text-xs text-gray-500" rowSpan={maxItems}>{idx + 1}</td> */}
                             <td className="py-2 px-3 border-b font-medium" rowSpan={maxItems}>{order.order_number || order.orderNumber ? `#${order.order_number || order.orderNumber}` : '-'}</td>
                             <td className="py-2 px-3 border-b" rowSpan={maxItems}>{formatDate(order.createdAt)}</td>
                             <td className="py-2 px-3 border-b" rowSpan={maxItems}>{getUserName(order.userId)}</td>
-                            <td className="py-2 px-3 border-b" rowSpan={maxItems}>{getUserName(order.createdBy) || getUserName(order.updatedBy)}</td>
                           </>
                         )}
                         <td className="py-2 px-3 border-b">
@@ -378,7 +424,7 @@ export default function OrderAdminPage() {
                 />
               </div>
               <div className="mb-3">
-                <label className="block text-sm font-medium">Total Amount</label>
+                <label className="block text-sm font-medium">Total</label>
                 <input
                   type="number"
                   className="w-full border rounded px-2 py-1"

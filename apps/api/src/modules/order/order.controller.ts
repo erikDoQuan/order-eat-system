@@ -61,8 +61,9 @@ export class OrderController {
     description: 'Cập nhật thông tin đơn hàng bao gồm sản phẩm, trạng thái và tổng tiền.',
   })
   @Response({ message: 'Cập nhật đơn hàng thành công' })
-  update(@Param('id') id: string, @Body() dto: UpdateOrderDto) {
-    return this.orderService.update(id, dto);
+  update(@Param('id') id: string, @Body() dto: UpdateOrderDto, @Req() req: Request) {
+    const adminId = (req as any).user?.id;
+    return this.orderService.update(id, { ...dto, updatedBy: adminId });
   }
 
   @Delete(':id')

@@ -165,9 +165,11 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar />
-      <div className="flex-1 p-6">
+    <div className="admin-layout bg-gray-50">
+      <div className="admin-sidebar-fixed">
+        <AdminSidebar />
+      </div>
+      <div className="admin-main-content">
         {/* User info and dropdown */}
         <div className="relative mb-8 flex items-center justify-end gap-3">
           <div

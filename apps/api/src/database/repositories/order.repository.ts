@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { and, count, desc, eq, ilike, inArray, sql, SQL } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, inArray, sql, SQL, between } from 'drizzle-orm';
 
 import { removeDiacritics } from '~/common/utils/diacritics.utils';
 import { DrizzleService } from '../drizzle/drizzle.service';
@@ -98,6 +98,22 @@ export class OrderRepository {
     return (ordersList as unknown as Order[]).find(order =>
       ((order.orderItems as { items: any[] })?.items || []).some((item: any) => item.id === orderItemId)
     ) || null;
+  }
+
+  async findCompletedInRange(from: string, to: string, statusList: string[] = ['completed']): Promise<Order[]> {
+    // Luôn lấy từ đầu ngày from đến cuối ngày to
+    const fromDate = new Date(from + 'T00:00:00.000Z');
+    const toDate = new Date(to + 'T23:59:59.999Z');
+    // Ép kiểu statusList về đúng union type
+    const statusTyped = statusList as (typeof orderStatusEnum.enumValues[number])[];
+    const results = await this.drizzle.db.query.orders.findMany({
+      where: and(
+        inArray(orders.status, statusTyped),
+        between(orders.createdAt, fromDate, toDate)
+      ),
+      orderBy: desc(orders.createdAt),
+    });
+    return results as Order[];
   }
 
   async hardDelete(id: string): Promise<void> {
