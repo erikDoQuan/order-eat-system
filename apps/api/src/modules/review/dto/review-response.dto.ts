@@ -10,7 +10,7 @@ export class ReviewResponseDto {
   userId: string;
 
   @ApiProperty()
-  dishId: string;
+  orderId: string;
 
   @ApiProperty()
   rating: number;

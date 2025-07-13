@@ -21,6 +21,7 @@ import OrderInfoPage from './pages/OrderInfoPage';
 import PaymentInfoPage from './pages/payment-info';
 import OrderSuccessPage from './pages/OrderSuccessPage';
 import OrderAdminPage from './admin/OrderAdminPage';
+import ReviewAdminPage from './admin/ReviewAdminPage';
 import { LanguageProvider } from './context/LanguageContext';
 import './i18n';
 import DeliveryOrderPage from './pages/DeliveryOrderPage';
@@ -136,6 +137,7 @@ function AppWithCartProvider() {
         <Route path="/admin/dishes/add" element={<AdminRoute><AdminDishPage showAddForm={true} /></AdminRoute>} />
         <Route path="/admin/customers" element={<AdminRoute><AdminUserPage /></AdminRoute>} />
         <Route path="/admin/orders" element={<AdminRoute><OrderAdminPage /></AdminRoute>} />
+        <Route path="/admin/reviews" element={<AdminRoute><ReviewAdminPage /></AdminRoute>} />
         <Route path="/admin/revenue-reports" element={<RevenueReportsPage />} />
         {/* Các route không dùng layout */}
         <Route path="/login" element={<LoginPage />} />

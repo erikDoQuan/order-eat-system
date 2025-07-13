@@ -4,7 +4,7 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { FetchReviewsDto } from './dto/fetch-reviews.dto';
 import { ReviewRepository } from '~/database/repositories/review.repository';
-import { CreateReviewInput } from './review.types';
+import { User } from '~/database/schema';
 
 @Injectable()
 export class ReviewService {
@@ -18,12 +18,12 @@ export class ReviewService {
     return this.reviewRepo.findOne(id);
   }
 
-  create(data: CreateReviewInput) {
+  create(data: CreateReviewDto) {
     return this.reviewRepo.create(data);
   }
 
-  update(id: string, data: UpdateReviewDto) {
-    return this.reviewRepo.update(id, data);
+  update(id: string, data: UpdateReviewDto, user: User) {
+    return this.reviewRepo.update(id, data, user);
   }
 
   delete(id: string) {

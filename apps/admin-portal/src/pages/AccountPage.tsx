@@ -7,8 +7,11 @@ import { updateUser } from '../services/user.api';
 import { fetchMe } from '../services/me.api';
 import { getOrdersByUserId } from '../services/order.api';
 import { getAllDishes } from '../services/dish.api';
+import { createReview, getReviewsByUserId } from '../services/review.api';
 import { Dish } from '../types/dish.type';
 import '../css/AccountPage.css';
+import ReviewForm from '../components/ReviewForm';
+import axios from '../services/axios';
 
 export default function AccountPage() {
   const { user, setUser } = useContext(AuthContext);
@@ -44,6 +47,18 @@ export default function AccountPage() {
   const displayedOrders = paginatedOrders.slice((currentPage - 1) * ORDERS_PER_PAGE, currentPage * ORDERS_PER_PAGE);
   const { t } = useTranslation();
   const [showNewOrderNotification, setShowNewOrderNotification] = useState(false);
+  const [showThankYou, setShowThankYou] = useState(false);
+  const [thankYouOrderId, setThankYouOrderId] = useState<string | null>(null);
+
+  // Debug: Kiểm tra user và token
+  useEffect(() => {
+    console.log('🔍 Debug - User:', user);
+    const token = localStorage.getItem('order-eat-access-token');
+    console.log('🔍 Debug - Token exists:', !!token);
+    if (token) {
+      console.log('🔍 Debug - Token:', token.substring(0, 20) + '...');
+    }
+  }, [user]);
 
   useEffect(() => {
     setForm({
@@ -269,22 +284,61 @@ export default function AccountPage() {
                         else if (order.status === 'pending') statusText = t('order_pending');
                         else if (order.status === 'delivering') statusText = 'Đang giao hàng';
                         else statusText = order.status;
+                        const isCompleted = ["completed", "hoàn thành"].includes((order.status || "").toLowerCase());
                         return (
-                          <tr key={order.id}>
-                            <td>
-                              <Link to={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>{orderNumber}</Link>
-                            </td>
-                            <td style={{whiteSpace:'pre-line'}}>{dishNames}</td>
-                            <td className="order-date">{dateStr}</td>
-                            <td>{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
-                            <td className={
-                              order.status === 'cancelled' ? 'order-status-cancelled' :
-                              order.status === 'completed' ? 'order-status-completed' :
-                              order.status === 'confirmed' ? 'order-status-confirmed' :
-                              order.status === 'delivering' ? 'order-status-delivering' :
-                              order.status === 'pending' ? 'order-status-pending' : ''
-                            }>{statusText}</td>
-                          </tr>
+                          <React.Fragment key={order.id}>
+                            <tr>
+                              <td>
+                                <Link to={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>{orderNumber}</Link>
+                              </td>
+                              <td style={{whiteSpace:'pre-line'}}>{dishNames}</td>
+                              <td className="order-date">{dateStr}</td>
+                              <td>{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
+                              <td className={
+                                order.status === 'cancelled' ? 'order-status-cancelled' :
+                                order.status === 'completed' ? 'order-status-completed' :
+                                order.status === 'confirmed' ? 'order-status-confirmed' :
+                                order.status === 'delivering' ? 'order-status-delivering' :
+                                order.status === 'pending' ? 'order-status-pending' : ''
+                              }>{statusText}</td>
+                            </tr>
+                            {isCompleted && (!order.reviews || order.reviews.length === 0) && (
+                              <tr>
+                                <td colSpan={5}>
+                                  <ReviewForm
+                                    orderId={order.id}
+                                    existingReview={order.reviews?.[0]}
+                                    onSubmit={async ({ orderId, rating, comment }) => {
+                                      await createReview({ 
+                                        orderId, 
+                                        rating, 
+                                        comment,
+                                        userId: user?.id // Thêm userId nếu user đã đăng nhập
+                                      });
+                                    }}
+                                    onSuccess={async () => {
+                                      setShowThankYou(true);
+                                      setThankYouOrderId(order.id);
+                                      // Reload lại review cho order này
+                                      if (user?.id) {
+                                        const updatedOrders = await getOrdersByUserId(user.id);
+                                        setRecentOrders(updatedOrders);
+                                      }
+                                      setTimeout(() => {
+                                        setShowThankYou(false);
+                                        setThankYouOrderId(null);
+                                      }, 2000);
+                                    }}
+                                  />
+                                  {showThankYou && thankYouOrderId === order.id && (
+                                    <div style={{marginTop:8, color:'#17823c', fontWeight:600, fontSize:16, background:'#e8f5e9', borderRadius:8, padding:'8px 16px', display:'inline-block'}}>
+                                      Cảm ơn bạn đã đánh giá!
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
                         );
                       })}
                     </tbody>

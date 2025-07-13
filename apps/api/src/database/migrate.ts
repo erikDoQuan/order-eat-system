@@ -12,21 +12,22 @@ const main = async () => {
     connectionString: process.env.DB_URL,
   });
 
-  // Test connection
-  const client = await pool.connect();
-  client.release();
-
-  // Try to get migration meta info
   try {
-    const metaResult = await pool.query(`SELECT * FROM "public"."drizzle_migrations" LIMIT 1`);
-  } catch (e) {
-  }
+    // Test connection
+    const client = await pool.connect();
+    client.release();
 
-  try {
+    // Optional: log nếu cần kiểm tra bảng drizzle_migrations
+    try {
+      const metaResult = await pool.query(`SELECT * FROM "public"."drizzle_migrations" LIMIT 1`);
+      console.log('✅ drizzle_migrations table exists');
+    } catch (e) {
+      console.warn('⚠️ drizzle_migrations table not found or cannot be queried');
+    }
+
     const db = drizzle(pool);
     await pool.query('BEGIN');
 
-    // Set specific options for migration
     await migrate(db, {
       migrationsFolder: 'src/database/migrations',
       migrationsSchema: 'public',
@@ -34,8 +35,9 @@ const main = async () => {
     });
 
     await pool.query('COMMIT');
-
+    console.log('✅ Migrations complete');
   } catch (err) {
+    console.error('❌ Migration failed:', err);
     await pool.query('ROLLBACK');
     process.exit(1);
   } finally {
@@ -44,5 +46,6 @@ const main = async () => {
 };
 
 main().catch(err => {
+  console.error('❌ Uncaught migration error:', err);
   process.exit(1);
 });

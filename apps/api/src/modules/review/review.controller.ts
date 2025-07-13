@@ -1,6 +1,6 @@
 // src/modules/review/review.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
 import { ReviewService } from './review.service';
 import { CreateReviewDto } from './dto/create-review.dto';
@@ -9,6 +9,8 @@ import { FetchReviewsDto } from './dto/fetch-reviews.dto';
 import { Response } from '~/common/decorators/response.decorator';
 import { RequireUser } from '~/common/decorators/require-user.decorator';
 import { GetUser } from '~/common/decorators/get-user.decorator';
+import { User } from '~/database/schema';
+import { AccessTokenGuard } from '~/common/guards/access-token.guard';
 
 @ApiTags('Reviews')
 @Controller('reviews')
@@ -16,7 +18,10 @@ export class ReviewController {
   constructor(private readonly reviewService: ReviewService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Lấy danh sách đánh giá' })
+  @ApiOperation({
+    summary: 'Lấy danh sách đánh giá',
+    description: 'Trả về danh sách tất cả các đánh giá có thể lọc theo orderId, userId, rating, ...',
+  })
   @Response({ message: 'Lấy danh sách đánh giá thành công' })
   findAll(@Query() query: FetchReviewsDto) {
     return this.reviewService.findAll(query);
@@ -30,18 +35,19 @@ export class ReviewController {
   }
 
   @Post()
-  @RequireUser()
   @ApiOperation({ summary: 'Tạo đánh giá mới' })
   @Response({ message: 'Tạo đánh giá thành công' })
-  create(@Body() body: CreateReviewDto, @GetUser('id') userId: string) {
-    return this.reviewService.create({ ...body, userId });
+  create(@Body() body: CreateReviewDto) {
+    return this.reviewService.create(body);
   }
 
   @Patch(':id')
+  @UseGuards(AccessTokenGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Cập nhật đánh giá theo ID' })
   @Response({ message: 'Cập nhật đánh giá thành công' })
-  update(@Param('id') id: string, @Body() body: UpdateReviewDto) {
-    return this.reviewService.update(id, body);
+  update(@Param('id') id: string, @Body() body: UpdateReviewDto, @GetUser() user: User) {
+    return this.reviewService.update(id, body, user);
   }
 
   @Delete(':id')

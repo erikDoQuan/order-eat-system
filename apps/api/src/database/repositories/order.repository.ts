@@ -51,6 +51,9 @@ export class OrderRepository {
       limit,
       offset,
       orderBy: desc(orders.createdAt),
+      with: {
+        reviews: true,
+      },
     });
 
     const countQuery = await this.drizzle.db
@@ -71,6 +74,9 @@ export class OrderRepository {
   async findOne(id: string): Promise<Order | null> {
     return this.drizzle.db.query.orders.findFirst({
       where: eq(orders.id, id),
+      with: {
+        reviews: true,
+      },
     });
   }
 
@@ -93,7 +99,11 @@ export class OrderRepository {
   }
 
   async findOrderByItemId(orderItemId: string): Promise<Order | null> {
-    const ordersList = await this.drizzle.db.query.orders.findMany({});
+    const ordersList = await this.drizzle.db.query.orders.findMany({
+      with: {
+        reviews: true,
+      },
+    });
     // Đảm bảo chỉ trả về object đúng kiểu Order
     return (ordersList as unknown as Order[]).find(order =>
       ((order.orderItems as { items: any[] })?.items || []).some((item: any) => item.id === orderItemId)
@@ -112,6 +122,9 @@ export class OrderRepository {
         between(orders.createdAt, fromDate, toDate)
       ),
       orderBy: desc(orders.createdAt),
+      with: {
+        reviews: true,
+      },
     });
     return results as Order[];
   }

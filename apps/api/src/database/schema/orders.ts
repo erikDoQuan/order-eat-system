@@ -11,6 +11,7 @@ import {
 
 import { baseColumns } from './_base';
 import { users } from './users';
+import { reviews } from './reviews';
 
 // Enum trạng thái đơn hàng
 export const orderStatusEnum = pgEnum('order_status', [
@@ -51,11 +52,12 @@ export const orders = pgTable('orders', {
   orderNumber: serial('order_number'),
 });
 
-export const ordersRelations = relations(orders, ({ one }) => ({
+export const ordersRelations = relations(orders, ({ one, many }) => ({
   user: one(users, {
     fields: [orders.userId],
     references: [users.id],
   }),
+  reviews: many(reviews),
 }));
 
 export type Order = InferSelectModel<typeof orders>;
