@@ -60,6 +60,12 @@ const CheckoutPage: React.FC = () => {
     (sum, item) => sum + getItemPrice(item) * (item.quantity || 1),
     0,
   );
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const getImageUrl = (imageUrl: string | undefined | null) => {
+    if (!imageUrl) return '/default-image.png';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    return `${API_URL}/api/v1/files/public/${imageUrl}`;
+  };
   return (
     <div style={{ background: '#fff', minHeight: '100vh' }}>
       <Navbar />
@@ -97,7 +103,7 @@ const CheckoutPage: React.FC = () => {
                       {/* Hình ảnh món */}
                       {dish?.imageUrl ? (
                         <img
-                          src={dish.imageUrl}
+                          src={getImageUrl(dish.imageUrl)}
                           alt={dish?.name || ''}
                           style={{
                             width: 80,

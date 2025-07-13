@@ -132,14 +132,12 @@ function DishDetailModal({ dish, onClose, categoryName, categories, dishes }: { 
       <div className="relative flex w-full max-w-4xl flex-col rounded-2xl bg-white p-8 shadow-2xl md:flex-row">
         {/* Hình & giá */}
         <div className="flex flex-1 flex-col items-center justify-center p-4">
-          {dish.imageUrl && (
-            <img
-              src={dish.imageUrl}
-              alt={dishName}
-              className="dish-card-img"
-              style={{ objectFit: 'contain', width: '100%', height: '13rem', borderRadius: '1rem' }}
-            />
-          )}
+          <img
+            src={getImageUrl(dish.imageUrl)}
+            alt={dishName}
+            className="dish-card-img"
+            style={{ objectFit: 'contain', width: '100%', height: '13rem', borderRadius: '1rem' }}
+          />
           <div className="mt-6 text-3xl font-bold text-[#C92A15]">{getPrice()}</div>
         </div>
 
@@ -320,7 +318,7 @@ export default function DishCard({ dish, categoryName }: { dish: Dish, categoryN
         {/* Hình ảnh */}
         {dish.imageUrl ? (
           <img
-            src={dish.imageUrl}
+            src={getImageUrl(dish.imageUrl)}
             alt={dishName}
             className="dish-card-img mb-5"
             style={{ objectFit: 'contain', width: '100%', height: '13rem', borderRadius: '1rem' }}
@@ -366,3 +364,11 @@ export default function DishCard({ dish, categoryName }: { dish: Dish, categoryN
     </>
   );
 }
+
+// Thêm hàm tiện ích ở đầu file hoặc gần đầu component
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const getImageUrl = (imageUrl: string | undefined | null) => {
+  if (!imageUrl) return '/default-image.png';
+  if (imageUrl.startsWith('http')) return imageUrl;
+  return `${API_URL}/api/v1/files/public/${imageUrl}`;
+};

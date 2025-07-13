@@ -47,6 +47,13 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
   const getDish = (dishId: string) => dishes.find(d => d.id === dishId);
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const getImageUrl = (imageUrl: string | undefined | null) => {
+    if (!imageUrl) return '/default-image.png';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    return `${API_URL}/api/v1/files/public/${imageUrl}`;
+  };
+
   // Hàm tính giá đúng cho từng item
   const getItemPrice = (item: any) => {
     const dish = getDish(item.dishId);
@@ -98,7 +105,7 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               return (
                 <div key={`${item.dishId}-${item.size || ''}-${item.base || ''}-${item.note || ''}-${idx}`} style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
                   {dish.imageUrl && (
-                    <img src={dish.imageUrl} alt={dish.name} style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, marginRight: 12 }} />
+                    <img src={getImageUrl(dish.imageUrl)} alt={dish.name} style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, marginRight: 12 }} />
                   )}
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 600, fontSize: 16 }}>{dish.name}</div>

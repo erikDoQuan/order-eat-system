@@ -28,7 +28,16 @@ export default function AdminPage() {
 
   useEffect(() => {
     getAllDishes().then(dishes => setDishCount(dishes.length));
-    getAllUsers().then(res => setUserCount(res.users.filter(u => u.isActive !== false).length));
+    getAllUsers(1, 1000).then(res => {
+      console.log('All users:', res.users); // Kiểm tra dữ liệu thực tế trả về
+      // Lọc user có role là 'user' và isActive hoặc is_active là true
+      const filteredUsers = res.users.filter(
+        u =>
+          (u.role === 'user' || u.role === 'USER') &&
+          (u.isActive === true || u.is_active === true)
+      );
+      setUserCount(filteredUsers.length);
+    });
     getAllOrders().then(orders => {
       const today = new Date();
       const isToday = (dateStr: string) => {

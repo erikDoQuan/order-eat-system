@@ -7,6 +7,7 @@ import { AuthContext } from '../context/AuthContext';
 import { LogOut, User, Edit, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getAllUsers, User as UserType } from '../services/user.api';
+import axios from 'axios';
 
 type AdminDishPageProps = { showAddForm?: boolean };
 const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
@@ -275,109 +276,197 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
           </div>
         )}
         {showForm && (
-          <div className="modal-admin">
-            <div className="modal-content-admin">
-              <button className="modal-close-admin" onClick={() => setShowForm(false)} type="button">×</button>
-              <h2 className="text-lg font-semibold mb-4">{editing ? 'Edit Dish' : 'Add Dish'}</h2>
-              <form onSubmit={handleSubmit}>
-                <div className="mb-4">
-                  <label className="block mb-1 font-medium">Dish Name</label>
-                  <input
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    required
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block mb-1 font-medium">Description</label>
-                  <input
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block mb-1 font-medium">Price</label>
-                  <input
-                    value={basePrice}
-                    onChange={e => setBasePrice(e.target.value)}
-                    required
-                    type="number"
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block mb-1 font-medium">Status</label>
-                  <select
-                    value={status}
-                    onChange={e => setStatus(e.target.value)}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
-                  >
-                    <option value="available">Available</option>
-                    <option value="unavailable">Unavailable</option>
-                  </select>
-                </div>
-                <div className="mb-4">
-                  <label className="block mb-1 font-medium">Category</label>
-                  <select
-                    value={categoryId}
-                    onChange={e => setCategoryId(e.target.value)}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
-                  >
-                    {categories.filter(cat => cat.isActive !== false).map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="mb-4">
-                  <label className="block mb-1 font-medium">Image (URL)</label>
-                  <input
-                    value={imageUrl}
-                    onChange={e => setImageUrl(e.target.value)}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
-                  />
-                </div>
-                {showSize && (
+          <div
+            className="modal-admin"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.2)',
+              zIndex: 1000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <div
+              className="modal-content-admin"
+              style={{
+                background: '#fff',
+                borderRadius: 16,
+                maxWidth: 420,
+                width: '100%',
+                maxHeight: '80vh',
+                boxShadow: '0 8px 32px #0002',
+                padding: 24,
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'relative',
+              }}
+            >
+              <button
+                className="modal-close-admin"
+                onClick={() => setShowForm(false)}
+                type="button"
+                style={{
+                  position: 'absolute',
+                  top: 12,
+                  right: 16,
+                  zIndex: 2,
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 28,
+                  color: '#888',
+                  cursor: 'pointer',
+                  lineHeight: 1,
+                }}
+                aria-label="Đóng"
+              >
+                ×
+              </button>
+              <div
+                style={{
+                  overflowY: 'auto',
+                  flex: 1,
+                  minHeight: 0,
+                  paddingRight: 8,
+                  maxHeight: '70vh',
+                }}
+              >
+                <h2 className="text-lg font-semibold mb-4">{editing ? 'Edit Dish' : 'Add Dish'}</h2>
+                <form onSubmit={handleSubmit}>
                   <div className="mb-4">
-                    <label className="block mb-1 font-medium">Size</label>
+                    <label className="block mb-1 font-medium">Dish Name</label>
+                    <input
+                      value={name}
+                      onChange={e => setName(e.target.value)}
+                      required
+                      className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block mb-1 font-medium">Description</label>
+                    <input
+                      value={description}
+                      onChange={e => setDescription(e.target.value)}
+                      className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block mb-1 font-medium">Price</label>
+                    <input
+                      value={basePrice}
+                      onChange={e => setBasePrice(e.target.value)}
+                      required
+                      type="number"
+                      className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block mb-1 font-medium">Status</label>
                     <select
-                      value={size}
-                      onChange={e => setSize(e.target.value as any)}
+                      value={status}
+                      onChange={e => setStatus(e.target.value)}
                       className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
                     >
-                      <option value="">Select size</option>
-                      <option value="small">Small</option>
-                      <option value="medium">Medium</option>
-                      <option value="large">Large</option>
+                      <option value="available">Available</option>
+                      <option value="unavailable">Unavailable</option>
                     </select>
                   </div>
-                )}
-                <div className="mb-4">
-                  <label className="block mb-1 font-medium">Type (typeName)</label>
-                  <input
-                    value={typeName}
-                    onChange={e => setTypeName(e.target.value)}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
-                  />
-                </div>
-                <div className="flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowForm(false)}
-                    className="px-4 py-2 rounded border border-gray-300 bg-gray-100 hover:bg-gray-200 transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="px-4 py-2 rounded bg-[#C92A15] text-white hover:bg-[#a81f0f] transition disabled:opacity-50"
-                  >
-                    {saving ? 'Saving...' : 'Save'}
-                  </button>
-                </div>
-              </form>
+                  <div className="mb-4">
+                    <label className="block mb-1 font-medium">Category</label>
+                    <select
+                      value={categoryId}
+                      onChange={e => setCategoryId(e.target.value)}
+                      className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                    >
+                      {categories.filter(cat => cat.isActive !== false).map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="mb-4">
+                    <label className="block mb-1 font-medium">Image</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const formData = new FormData();
+                          formData.append('files', file);
+                          try {
+                            const res = await axios.post('/api/v1/files/upload', formData, {
+                              headers: { 'Content-Type': 'multipart/form-data' },
+                            });
+                            const data = res.data;
+                            if (Array.isArray(data) && data[0]?.uniqueName) {
+                              setImageUrl(data[0].uniqueName);
+                            } else if (data?.data && Array.isArray(data.data) && data.data[0]?.uniqueName) {
+                              setImageUrl(data.data[0].uniqueName);
+                            } else {
+                              alert('Upload failed!');
+                            }
+                          } catch (err) {
+                            alert('Upload failed!');
+                          }
+                        }
+                      }}
+                    />
+                    {imageUrl && (
+                      <div className="mt-2">
+                        <img
+                          src={`/api/v1/files/public/${imageUrl}`}
+                          alt="Preview"
+                          style={{ maxWidth: 180, maxHeight: 180, borderRadius: 8, border: '1px solid #eee' }}
+                        />
+                        <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
+                          Ảnh hiện tại: {imageUrl}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {showSize && (
+                    <div className="mb-4">
+                      <label className="block mb-1 font-medium">Size</label>
+                      <select
+                        value={size}
+                        onChange={e => setSize(e.target.value as any)}
+                        className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                      >
+                        <option value="">Select size</option>
+                        <option value="small">Small</option>
+                        <option value="medium">Medium</option>
+                        <option value="large">Large</option>
+                      </select>
+                    </div>
+                  )}
+                  <div className="mb-4">
+                    <label className="block mb-1 font-medium">Type (typeName)</label>
+                    <input
+                      value={typeName}
+                      onChange={e => setTypeName(e.target.value)}
+                      className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowForm(false)}
+                      className="px-4 py-2 rounded border border-gray-300 bg-gray-100 hover:bg-gray-200 transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="px-4 py-2 rounded bg-[#C92A15] text-white hover:bg-[#a81f0f] transition disabled:opacity-50"
+                    >
+                      {saving ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         )}

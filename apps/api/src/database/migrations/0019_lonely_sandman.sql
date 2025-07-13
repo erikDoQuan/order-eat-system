@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "reviews_order_id_unique" ON "reviews" USING btree ("order_id");

@@ -1,5 +1,6 @@
-import { DeleteObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client, S3ClientConfig } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client, S3ClientConfig, GetObjectCommand } from '@aws-sdk/client-s3';
 import { Injectable } from '@nestjs/common';
+import { Readable } from 'stream';
 
 import { AppConfigsService } from '~/config/config.service';
 import { PutObjectRequest } from './interfaces/aws.interface';
@@ -76,5 +77,15 @@ export class AwsS3Service {
     } catch (error) {
       return false;
     }
+  }
+
+  async getObjectStream(key: string): Promise<Readable> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+    });
+    const data = await this.s3Client.send(command);
+    // @ts-ignore
+    return data.Body as Readable;
   }
 }
