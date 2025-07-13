@@ -21,12 +21,38 @@ export default function HomePage() {
   const [visibleChickenCount, setVisibleChickenCount] = useState(3);
   const [filterPizzaType, setFilterPizzaType] = useState<string>('Tất cả');
   const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const selectedCategory = queryParams.get('category');
   const [showCart, setShowCart] = useState(false);
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [cartLoading, setCartLoading] = useState(false);
   const { user } = useContext(AuthContext);
   const { t } = useTranslation();
   const [visibleAppetizerCount, setVisibleAppetizerCount] = useState(3);
+  const typeParam = queryParams.get('type');
+
+  const pizzaTypeTitle = () => {
+    if (typeParam === 'seafood') return t('seafood_pizza');
+    if (typeParam === 'combo') return t('combo_pizza');
+    if (typeParam === 'traditional') return t('traditional_pizza');
+    if (typeParam === 'vegetarian') return t('vegetarian_pizza');
+    return t('pizza');
+  };
+  const chickenTypeTitle = () => {
+    if (typeParam === 'bbq') return t('bbq_chicken');
+    if (typeParam === 'korean') return t('korean_chicken');
+    return t('chicken');
+  };
+  const spaghettiTypeTitle = () => {
+    if (typeParam === 'seafood') return t('seafood_spaghetti');
+    if (typeParam === 'bolognese') return t('bolognese_spaghetti');
+    return t('spaghetti');
+  };
+  const appetizerTypeTitle = () => {
+    if (typeParam === 'salad') return t('salad');
+    if (typeParam === 'soup') return t('soup');
+    return t('appetizer');
+  };
 
   useEffect(() => {
     getAllDishes().then(d => setDishes(d || []));
@@ -59,12 +85,40 @@ export default function HomePage() {
 
   // Lọc pizza theo filter
   const filteredPizzaDishes = pizzaDishes.filter(dish => {
-    if (filterPizzaType === 'Tất cả') return true;
-    if (filterPizzaType === 'Pizza Hải Sản') return dish.typeName?.trim().toLowerCase() === 'hải sản';
-    if (filterPizzaType === 'Pizza Thập Cẩm') return dish.typeName?.trim().toLowerCase() === 'thập cẩm';
-    if (filterPizzaType === 'Pizza Truyền Thống') return dish.typeName?.trim().toLowerCase() === 'truyền thống';
+    if (!typeParam || typeParam === 'all') return true;
+    const typeName = dish.typeName?.trim().toLowerCase();
+    if (typeParam === 'seafood') return typeName === 'hải sản';
+    if (typeParam === 'combo') return typeName === 'thập cẩm';
+    if (typeParam === 'traditional') return typeName === 'truyền thống';
+    if (typeParam === 'vegetarian') return typeName === 'chay' || typeName === 'vegetarian';
     return true;
   });
+
+  const filteredChickenDishes = chickenDishes.filter(dish => {
+    if (!typeParam) return true;
+    const typeName = dish.typeName?.trim().toLowerCase();
+    if (typeParam === 'bbq') return typeName === 'bbq' || typeName === 'bbq chicken';
+    if (typeParam === 'korean') return typeName === 'korean' || typeName === 'korean chicken';
+    return true;
+  });
+  const filteredSpaghettiDishes = spaghettiDishes.filter(dish => {
+    if (!typeParam) return true;
+    const typeName = dish.typeName?.trim().toLowerCase();
+    if (typeParam === 'seafood') return typeName === 'hải sản' || typeName === 'seafood';
+    if (typeParam === 'bolognese') return typeName === 'bolognese';
+    return true;
+  });
+  const filteredAppetizerDishes = appetizerDishes.filter(dish => {
+    if (!typeParam) return true;
+    const typeName = dish.typeName?.trim().toLowerCase();
+    if (typeParam === 'salad') return typeName === 'salad';
+    if (typeParam === 'soup') return typeName === 'soup';
+    return true;
+  });
+  // Nếu không tìm thấy theo 'khai vị', thử 'appetizer'
+  const filteredAppetizerDishesFallback = appetizerDishesFallback.filter(
+    d => d.status === 'available' && d.categoryId && categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('appetizer') && cat.id === d.categoryId)
+  );
 
   const handleOpenCart = () => {
     if (user?.id) {
@@ -85,39 +139,43 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-black/30" />
         </div>
       </div>
-      {pizzaDishes.length > 0 && (
+      {/* Nếu có selectedCategory thì chỉ render đúng 1 category đó */}
+      {selectedCategory === 'pizza' && filteredPizzaDishes.length > 0 && (
         <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
           <div className="mb-6 flex items-center gap-4">
-            <h2 className="flex-shrink-0 text-3xl font-extrabold text-black drop-shadow-lg">{t('pizza')}</h2>
-            <div className="ml-4 flex flex-1 flex-wrap justify-end gap-2">
-              <button
-                className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
+            <h2 className="flex-shrink-0 text-3xl font-extrabold text-black drop-shadow-lg">{pizzaTypeTitle()}</h2>
+            {/* Nếu không có typeParam thì mới hiển thị các button filter */}
+            {!typeParam && (
+              <div className="ml-4 flex flex-1 flex-wrap justify-end gap-2">
+                <button
+                  className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
                   ${filterPizzaType === 'Tất cả' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
-                onClick={() => setFilterPizzaType('Tất cả')}
-              >{t('all')}</button>
-              <button
-                className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
+                  onClick={() => setFilterPizzaType('Tất cả')}
+                >{t('all')}</button>
+                <button
+                  className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
                   ${filterPizzaType === 'Pizza Hải Sản' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
-                onClick={() => setFilterPizzaType('Pizza Hải Sản')}
-              >{t('seafood_pizza')}</button>
-              <button
-                className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
+                  onClick={() => setFilterPizzaType('Pizza Hải Sản')}
+                >{t('seafood_pizza')}</button>
+                <button
+                  className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
                   ${filterPizzaType === 'Pizza Truyền Thống' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
-                onClick={() => setFilterPizzaType('Pizza Truyền Thống')}
-              >{t('traditional_pizza')}</button>
-              <button
-                className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
+                  onClick={() => setFilterPizzaType('Pizza Truyền Thống')}
+                >{t('traditional_pizza')}</button>
+                <button
+                  className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
                   ${filterPizzaType === 'Pizza Thập Cẩm' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
-                onClick={() => setFilterPizzaType('Pizza Thập Cẩm')}
-              >{t('combo_pizza')}</button>
-            </div>
+                  onClick={() => setFilterPizzaType('Pizza Thập Cẩm')}
+                >{t('combo_pizza')}</button>
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
             {filteredPizzaDishes.slice(0, visiblePizzaCount).map(dish => (
               <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
             ))}
           </div>
-          {visiblePizzaCount < pizzaDishes.length && (
+          {visiblePizzaCount < filteredPizzaDishes.length && !typeParam && (
             <div className="mb-12 mt-4 flex justify-center">
               <a
                 className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
@@ -131,15 +189,15 @@ export default function HomePage() {
           )}
         </div>
       )}
-      {chickenDishes.length > 0 && (
+      {selectedCategory === 'chicken' && filteredChickenDishes.length > 0 && (
         <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
-          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('chicken')}</h2>
+          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{chickenTypeTitle()}</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-            {chickenDishes.slice(0, visibleChickenCount).map(dish => (
+            {filteredChickenDishes.slice(0, visibleChickenCount).map(dish => (
               <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
             ))}
           </div>
-          {visibleChickenCount < chickenDishes.length && (
+          {visibleChickenCount < filteredChickenDishes.length && !typeParam && (
             <div className="mb-12 mt-4 flex justify-center">
               <a
                 className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
@@ -153,27 +211,25 @@ export default function HomePage() {
           )}
         </div>
       )}
-      {spaghettiDishes.length > 0 && (
+      {selectedCategory === 'spaghetti' && filteredSpaghettiDishes.length > 0 && (
         <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
-          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('spaghetti')}</h2>
+          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{spaghettiTypeTitle()}</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-            {spaghettiDishes.map(dish => (
+            {filteredSpaghettiDishes.map(dish => (
               <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
             ))}
           </div>
         </div>
       )}
-      {(appetizerDishes.length > 0 || appetizerDishesFallback.length > 0) && (
+      {selectedCategory === 'appetizer' && filteredAppetizerDishes.length > 0 && (
         <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
-          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('appetizer')}</h2>
+          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{appetizerTypeTitle()}</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-            {(appetizerDishes.length > 0 ? appetizerDishes : appetizerDishesFallback)
-              .slice(0, visibleAppetizerCount)
-              .map(dish => (
-                <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+            {filteredAppetizerDishes.slice(0, visibleAppetizerCount).map(dish => (
+              <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
             ))}
           </div>
-          {(visibleAppetizerCount < (appetizerDishes.length > 0 ? appetizerDishes.length : appetizerDishesFallback.length)) && (
+          {visibleAppetizerCount < filteredAppetizerDishes.length && !typeParam && (
             <div className="mb-12 mt-4 flex justify-center">
               <a
                 className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
@@ -187,6 +243,102 @@ export default function HomePage() {
           )}
         </div>
       )}
+      {/* Nếu không có selectedCategory thì render tất cả như cũ */}
+      {!selectedCategory && (
+        <>
+          {pizzaDishes.length > 0 && (
+            <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+              <div className="mb-6 flex items-center gap-4">
+                <h2 className="flex-shrink-0 text-3xl font-extrabold text-black drop-shadow-lg">{t('pizza')}</h2>
+                <div className="ml-4 flex flex-1 flex-wrap justify-end gap-2">
+                  <button
+                    className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
+                      ${filterPizzaType === 'Tất cả' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
+                    onClick={() => setFilterPizzaType('Tất cả')}
+                  >{t('all')}</button>
+                  <button
+                    className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
+                      ${filterPizzaType === 'Pizza Hải Sản' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
+                    onClick={() => setFilterPizzaType('Pizza Hải Sản')}
+                  >{t('seafood_pizza')}</button>
+                  <button
+                    className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
+                      ${filterPizzaType === 'Pizza Truyền Thống' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
+                    onClick={() => setFilterPizzaType('Pizza Truyền Thống')}
+                  >{t('traditional_pizza')}</button>
+                  <button
+                    className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
+                      ${filterPizzaType === 'Pizza Thập Cẩm' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
+                    onClick={() => setFilterPizzaType('Pizza Thập Cẩm')}
+                  >{t('combo_pizza')}</button>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+                {filteredPizzaDishes.slice(0, visiblePizzaCount).map(dish => (
+                  <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                ))}
+              </div>
+            </div>
+          )}
+          {chickenDishes.length > 0 && (
+            <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+              <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('chicken')}</h2>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+                {chickenDishes.slice(0, visibleChickenCount).map(dish => (
+                  <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                ))}
+              </div>
+              {visibleChickenCount < chickenDishes.length && (
+                <div className="mb-12 mt-4 flex justify-center">
+                  <a
+                    className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                    style={{ textDecoration: 'none' }}
+                    onClick={() => setVisibleChickenCount(prev => prev + 3)}
+                  >
+                    {t('view_more')}
+                    <em className="ri-add-line" />
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+          {spaghettiDishes.length > 0 && (
+            <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+              <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('spaghetti')}</h2>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+                {spaghettiDishes.map(dish => (
+                  <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                ))}
+              </div>
+            </div>
+          )}
+          {(appetizerDishes.length > 0 || appetizerDishesFallback.length > 0) && (
+            <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+              <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('appetizer')}</h2>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+                {(appetizerDishes.length > 0 ? appetizerDishes : appetizerDishesFallback)
+                  .slice(0, visibleAppetizerCount)
+                  .map(dish => (
+                    <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                ))}
+              </div>
+              {(visibleAppetizerCount < (appetizerDishes.length > 0 ? appetizerDishes.length : appetizerDishesFallback.length)) && (
+                <div className="mb-12 mt-4 flex justify-center">
+                  <a
+                    className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                    style={{ textDecoration: 'none' }}
+                    onClick={() => setVisibleAppetizerCount(prev => prev + 3)}
+                  >
+                    {t('view_more')}
+                    <em className="ri-add-line" />
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+      {/* CartPopup và overlay luôn render ngoài cùng */}
       {showCart && (
         <>
           <div
@@ -201,9 +353,7 @@ export default function HomePage() {
             }}
             onClick={handleCloseCart}
           />
-          <CartPopup
-            onClose={handleCloseCart}
-          />
+          <CartPopup onClose={handleCloseCart} />
         </>
       )}
       <Footer />

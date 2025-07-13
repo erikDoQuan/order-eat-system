@@ -140,27 +140,42 @@ export default function Navbar() {
   const navItems = [
     {
       label: t('pizza'),
-      path: '/',
+      path: '/?category=pizza',
       dropdown: [
-        { label: t('seafood_pizza'), path: '/dishes' },
-        { label: t('traditional_pizza'), path: '/dishes/new' },
-        { label: t('vegetarian_pizza'), path: '/dishes/new' },
-        { label: t('combo_pizza'), path: '/dishes/new' },
+        { label: t('seafood_pizza'), path: '/?category=pizza&type=seafood' },
+        { label: t('traditional_pizza'), path: '/?category=pizza&type=traditional' },
+        { label: t('vegetarian_pizza'), path: '/?category=pizza&type=vegetarian' },
+        { label: t('combo_pizza'), path: '/?category=pizza&type=combo' },
       ],
     },
-    { label: t('spaghetti'), path: '/categories' },
-    { label: t('baked_macaroni'), path: '/orders' },
+    {
+      label: t('spaghetti'),
+      path: '/?category=spaghetti',
+    },
+    {
+      label: t('baked_macaroni'),
+      path: '/?category=baked_macaroni',
+    },
     {
       label: t('chicken'),
-      path: '/Gà',
+      path: '/?category=chicken',
       dropdown: [
-        { label: t('bbq_chicken'), path: '/dishes' },
-        { label: t('korean_chicken'), path: '/dishes/new' },
+        { label: t('bbq_chicken'), path: '/?category=bbq_chicken' },
+        { label: t('korean_chicken'), path: '/?category=korean_chicken' },
       ],
     },
-    { label: t('appetizer'), path: '/orders' },
-    { label: t('salad'), path: '/orders' },
-    { label: t('drink'), path: '/orders' },
+    {
+      label: t('appetizer'),
+      path: '/?category=appetizer',
+    },
+    {
+      label: t('salad'),
+      path: '/?category=salad',
+    },
+    {
+      label: t('drink'),
+      path: '/?category=drink',
+    },
   ];
 
   return (
@@ -260,8 +275,8 @@ export default function Navbar() {
                     </svg>
                   </button>
                   <ul
-                    className="pointer-events-none absolute left-0 z-20 mt-2 w-48 rounded-xl border bg-white opacity-0 shadow-xl transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-1 group-hover:opacity-100"
-                    style={{ borderColor: '#C92A15' }}
+                    className="absolute left-0 z-20 w-48 rounded-xl border bg-white opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto shadow-xl transition-all duration-200"
+                    style={{ borderColor: '#C92A15', top: '100%' }}
                   >
                     {item.dropdown.map(drop => (
                       <li key={drop.path + '-' + drop.label}>
