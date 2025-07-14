@@ -9,7 +9,7 @@ import { Dish } from '../types/dish.type';
 import { updateOrder, deleteOrder } from '../services/order.api';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import ReactStars from 'react-rating-stars-component';
+import RatingStars from '../components/RatingStars';
 
 function ReviewForm({ dishId, existingReview, onSubmit }) {
   const [rating, setRating] = React.useState(existingReview?.rating || 5);
@@ -25,14 +25,11 @@ function ReviewForm({ dishId, existingReview, onSubmit }) {
     <form onSubmit={handleSubmit} className="rounded-lg bg-white p-4 shadow flex flex-col gap-3 max-w-md mt-2 border border-gray-200">
       <div className="flex items-center gap-2">
         <span className="font-semibold text-gray-700">Đánh giá:</span>
-        <ReactStars
-          count={5}
+        <RatingStars
           value={rating}
           onChange={setRating}
           size={28}
-          activeColor="#ffd700"
-          isHalf={false}
-          edit={!existingReview}
+          readOnly={!!existingReview}
         />
       </div>
       <textarea

@@ -29,7 +29,7 @@ async function bootstrap() {
 
   // Bật CORS cho frontend
   app.enableCors({
-    origin: ['http://localhost:3001'], // Có thể lấy từ biến môi trường nếu cần
+    origin: ['http://localhost:3001', 'http://localhost:3002'], // Cho phép cả 3001 và 3002
     credentials: true,
   });
 

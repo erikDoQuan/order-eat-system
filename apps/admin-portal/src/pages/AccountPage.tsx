@@ -38,6 +38,7 @@ export default function AccountPage() {
   });
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [dishes, setDishes] = useState<Dish[]>([]);
+  const [dishesLoading, setDishesLoading] = useState(true);
   const [searchValue, setSearchValue] = useState('');
   const [searchResult, setSearchResult] = useState<any[]|null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -69,7 +70,11 @@ export default function AccountPage() {
   }, [user]);
 
   useEffect(() => {
-    getAllDishes().then(setDishes);
+    setDishesLoading(true);
+    getAllDishes().then(data => {
+      setDishes(data);
+      setDishesLoading(false);
+    });
   }, []);
 
   useEffect(() => {
@@ -86,11 +91,17 @@ export default function AccountPage() {
     const checkOrderNotification = async () => {
       if (!user?.id) return;
       const orders = await getOrdersByUserId(user.id);
-      // Lọc ra các đơn đã xác nhận hoặc hoàn thành
-      const validOrders = orders.filter((o: any) => o.status === 'confirmed' || o.status === 'completed');
-      if (validOrders.length > 0) {
+      // Lấy danh sách id các đơn hàng đã xác nhận
+      const confirmedOrderIds = orders.filter((o: any) => o.status === 'confirmed').map((o: any) => o.id);
+      // Lấy danh sách id đã thông báo từ localStorage
+      const notifiedOrderIds = JSON.parse(localStorage.getItem('notified-confirmed-orders') || '[]');
+      // Tìm id mới được xác nhận
+      const newConfirmedIds = confirmedOrderIds.filter((id: string) => !notifiedOrderIds.includes(id));
+      if (newConfirmedIds.length > 0) {
         setShowNewOrderNotification(true);
-        timeout = setTimeout(() => setShowNewOrderNotification(false), 5000);
+        timeout = setTimeout(() => setShowNewOrderNotification(false), 10000); // 10s
+        // Cập nhật lại localStorage
+        localStorage.setItem('notified-confirmed-orders', JSON.stringify([...notifiedOrderIds, ...newConfirmedIds]));
       }
     };
     checkOrderNotification();
@@ -174,8 +185,9 @@ export default function AccountPage() {
   };
 
   const getDishName = (dishId: string) => {
+    if (dishesLoading) return 'Đang tải...';
     const dish = dishes.find(d => d.id === dishId);
-    return dish ? dish.name : dishId;
+    return dish ? dish.name : '';
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -201,6 +213,38 @@ export default function AccountPage() {
 
   return (
     <>
+      {showNewOrderNotification && (
+        <div style={{
+          position: 'fixed',
+          top: 24,
+          right: 24,
+          background: '#fffbe6',
+          color: '#ad6800',
+          border: '1px solid #ffe58f',
+          borderRadius: 8,
+          padding: '16px 32px 16px 20px',
+          boxShadow: '0 2px 8px #00000022',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          minWidth: 320,
+          fontSize: 17,
+          fontWeight: 500
+        }}>
+          <FaBell style={{marginRight: 12, fontSize: 22}} />
+          <span>Bạn có đơn hàng vừa được xác nhận!</span>
+          <button onClick={() => setShowNewOrderNotification(false)} style={{
+            background: 'none',
+            border: 'none',
+            color: '#ad6800',
+            fontSize: 22,
+            marginLeft: 18,
+            cursor: 'pointer',
+            fontWeight: 700,
+            lineHeight: 1
+          }} title="Đóng">×</button>
+        </div>
+      )}
       <div className="account-container">
         <div className="account-sidebar">
           <div className="account-title">
@@ -660,29 +704,6 @@ export default function AccountPage() {
           )}
         </div>
       </div>
-      {showNewOrderNotification && (
-        <div style={{
-          position: 'fixed',
-          top: 24,
-          right: 32,
-          background: '#fff',
-          color: '#16a34a',
-          border: '1.5px solid #16a34a',
-          borderRadius: 12,
-          boxShadow: '0 4px 24px #0002',
-          padding: '16px 28px 16px 20px',
-          fontWeight: 700,
-          fontSize: 18,
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          animation: 'fadeInOut 5s',
-        }}>
-          <FaBell size={22} style={{ color: '#16a34a', marginRight: 6 }} />
-          Bạn có 1 thông báo mới
-        </div>
-      )}
     </>
   );
 }

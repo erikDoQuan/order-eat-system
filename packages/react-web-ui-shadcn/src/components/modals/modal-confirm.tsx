@@ -26,6 +26,8 @@ export const ModalConfirm: FC<ModalConfirmProps> = ({ visible = false, title, me
   return (
     <AlertDialog open={visible}>
       <AlertDialogContent>
+        {/* Đường kẻ đỏ dài sát mép trên, margin ngang -24px như ban đầu, cao 16px */}
+        <div style={{ height: 16, background: '#dc2626', borderRadius: 0, margin: '-24px -24px 0 -24px' }} />
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{message}</AlertDialogDescription>

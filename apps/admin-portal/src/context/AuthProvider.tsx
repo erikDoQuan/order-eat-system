@@ -15,15 +15,20 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const setUser = (u: AuthUser | null) => {
     setUserState(u);
     if (u) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
-      if (u.id) {
-        Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('order-eat-cart-') && !key.endsWith(String(u.id))) {
-            localStorage.removeItem(key);
-          }
-        });
+      if (u.role !== 'admin') {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
+        if (u.id) {
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('order-eat-cart-') && !key.endsWith(String(u.id))) {
+              localStorage.removeItem(key);
+            }
+          });
+        }
+        localStorage.removeItem('order-eat-cart-guest');
+      } else {
+        // Nếu là admin, không lưu vào localStorage
+        localStorage.removeItem(STORAGE_KEY);
       }
-      localStorage.removeItem('order-eat-cart-guest');
     }
     else {
       localStorage.removeItem(STORAGE_KEY);
@@ -65,18 +70,22 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             address: me.address,
             role: me.role,
           });
-          localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify({
-              id: me.id,
-              email: me.email,
-              firstName: me.firstName,
-              lastName: me.lastName,
-              phoneNumber: me.phoneNumber,
-              address: me.address,
-              role: me.role,
-            }),
-          );
+          if (me.role !== 'admin') {
+            localStorage.setItem(
+              STORAGE_KEY,
+              JSON.stringify({
+                id: me.id,
+                email: me.email,
+                firstName: me.firstName,
+                lastName: me.lastName,
+                phoneNumber: me.phoneNumber,
+                address: me.address,
+                role: me.role,
+              }),
+            );
+          } else {
+            localStorage.removeItem(STORAGE_KEY);
+          }
           setLoading(false);
         } else {
           if (retry < 2) {

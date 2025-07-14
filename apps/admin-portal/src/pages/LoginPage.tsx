@@ -128,6 +128,12 @@ export default function LoginPage() {
               </Link>
             </div>
           </form>
+          <div style={{ marginTop: 16, textAlign: 'center', fontSize: 15 }}>
+            Bạn chưa có tài khoản?{' '}
+            <Link to="/register" style={{ color: '#C92A15', textDecoration: 'underline', fontWeight: 500 }}>
+              Tạo tài khoản
+            </Link>
+          </div>
           {message && (
             <div className={`login-message ${message.toLowerCase().includes('thành công') ? 'success' : 'error'}`}>{message}</div>
           )}

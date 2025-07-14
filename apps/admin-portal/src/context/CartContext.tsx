@@ -133,11 +133,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const removeFromCart = async (itemToRemove: { dishId: string; size?: string; base?: string; note?: string }) => {
     if (!cart || !cart.orderItems || !Array.isArray(cart.orderItems.items)) return;
     const items: CartItem[] = [...cart.orderItems.items];
+    const normalize = (v: any) => (v === null || v === undefined || (typeof v === 'string' && v.trim() === '')) ? undefined : v;
     const filteredItems = items.filter(i => !(
       i.dishId === itemToRemove.dishId &&
-      i.size === itemToRemove.size &&
-      i.base === itemToRemove.base &&
-      i.note === itemToRemove.note
+      normalize(i.size) === normalize(itemToRemove.size) &&
+      normalize(i.base) === normalize(itemToRemove.base) &&
+      normalize(i.note) === normalize(itemToRemove.note)
     ));
     let totalAmount = 0;
     for (const item of filteredItems) {

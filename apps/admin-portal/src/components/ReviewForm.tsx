@@ -1,8 +1,8 @@
-import React from 'react';
-import ReactStars from 'react-rating-stars-component';
+import React, { useState } from 'react';
+import RatingStars from './RatingStars';
 
 export default function ReviewForm({ orderId, existingReview, onSubmit, onSuccess }) {
-  const [rating, setRating] = React.useState(existingReview?.rating ?? 0);
+  const [rating, setRating] = useState(existingReview?.rating || 0);
   const [comment, setComment] = React.useState(existingReview?.comment || '');
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState('');
@@ -35,17 +35,9 @@ export default function ReviewForm({ orderId, existingReview, onSubmit, onSucces
       className="rounded-lg bg-white p-4 shadow flex flex-col gap-3 w-full mt-2 border border-gray-200"
       style={{ width: '100%' }}
     >
-      <div className="flex items-center gap-2">
-        <span className="font-semibold text-gray-700">Đánh giá đơn hàng:</span>
-        <ReactStars
-          count={5}
-          value={rating}
-          onChange={setRating}
-          size={28}
-          activeColor="#ffd700"
-          isHalf={false}
-          edit={!existingReview}
-        />
+      <div style={{ margin: '16px 0' }}>
+        <label>Đánh giá:</label>
+        <RatingStars value={rating} onChange={setRating} />
       </div>
       <textarea
         className="border rounded p-2 w-full"

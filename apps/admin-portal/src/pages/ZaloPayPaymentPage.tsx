@@ -1,8 +1,10 @@
+/// <reference types="vite/client" />
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { getAllDishes } from '../services/dish.api';
 import '../css/payment-info.css';
+import { QRCodeCanvas } from 'qrcode.react';
 
 const ZaloPayPaymentPage: React.FC = () => {
   const location = useLocation();
@@ -21,7 +23,6 @@ const ZaloPayPaymentPage: React.FC = () => {
     getAllDishes().then(setDishes);
   }, []);
 
-  // Hàm tính giá từng món giống CheckoutPage
   const sizeOptions = [
     { value: 'small', price: 0 },
     { value: 'medium', price: 90000 },
@@ -38,16 +39,48 @@ const ZaloPayPaymentPage: React.FC = () => {
     return price;
   };
 
-  // Tính tổng tiền
   const subtotal = items.reduce((sum, item) => sum + getItemPrice(item) * (item.quantity || 1), 0);
-  const totalAmount = subtotal + shippingFee;
+  const totalAmount = typeof state.totalAmount === 'number' && state.totalAmount > 0 ? state.totalAmount : (subtotal + shippingFee);
+
+  const [zalopayInfo, setZaloPayInfo] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!totalAmount || totalAmount <= 0) return; // Không gọi API nếu amount không hợp lệ
+    // Luôn tạo orderId mới mỗi lần vào trang
+    const orderId = String(Date.now()) + Math.floor(Math.random() * 10000);
+    setLoading(true);
+    fetch(`/api/v1/zalopay/create-order?amount=${totalAmount}&orderId=${orderId}`)
+      .then(res => res.json())
+      .then(data => {
+        console.log('ZaloPay Info:', data);
+        setZaloPayInfo(data);
+        setLoading(false);
+        if (data?.qrcode && data?.return_code === 1) {
+          localStorage.setItem('last_zalopay_qr', data.qrcode);
+          localStorage.setItem('last_zalopay_amount', String(totalAmount));
+          localStorage.setItem('last_zalopay_orderId', orderId);
+        } else if (data?.order_url && data?.return_code === 1) {
+          localStorage.setItem('last_zalopay_order_url', data.order_url);
+          localStorage.setItem('last_zalopay_amount', String(totalAmount));
+          localStorage.setItem('last_zalopay_orderId', orderId);
+        }
+      })
+      .catch(err => {
+        setError('Không thể tạo đơn hàng ZaloPay.');
+        setLoading(false);
+      });
+  }, [totalAmount, state]);
+
+  const appId = import.meta.env.VITE_ZP_APP_ID || '2554';
 
   return (
     <div className="payment-info-root">
       <Navbar />
       <div className="payment-info-container">
         <div className="payment-info-grid">
-          {/* Left: Thông tin đơn hàng */}
+          {/* Left */}
           <div className="payment-info-left">
             <div className="payment-info-block">
               <div className="payment-info-title">Thông tin đơn hàng</div>
@@ -74,7 +107,6 @@ const ZaloPayPaymentPage: React.FC = () => {
                 <b>Số tiền thanh toán</b>
                 <span style={{ float: 'right', fontWeight: 700, fontSize: 18 }}>{totalAmount.toLocaleString('vi-VN')}đ</span>
               </div>
-              {/* Mã giao dịch, nội dung, mã khuyến mãi, đếm ngược: placeholder */}
               <div className="payment-info-text" style={{ marginTop: 16 }}>
                 <b>Mã giao dịch</b>
                 <div style={{ fontWeight: 600, fontSize: 16, margin: '4px 0' }}>[Chưa có]</div>
@@ -89,22 +121,44 @@ const ZaloPayPaymentPage: React.FC = () => {
                   <input placeholder="Nhập mã khuyến mãi" />
                   <button>Áp dụng</button>
                 </div>
-                <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>*Áp dụng khi quét QR bằng ứng dụng ngân hàng</div>
+                <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
+                  *Áp dụng khi quét QR bằng ứng dụng ngân hàng
+                </div>
               </div>
               <div style={{ marginTop: 12, fontSize: 15, color: '#555', background: '#f8f8f8', padding: 8, borderRadius: 8 }}>
                 Giao dịch kết thúc trong <span style={{ fontWeight: 600, color: '#C92A15', background: '#fff', padding: '2px 8px', borderRadius: 4 }}>14</span> : <span style={{ fontWeight: 600, color: '#C92A15', background: '#fff', padding: '2px 8px', borderRadius: 4 }}>40</span>
               </div>
             </div>
           </div>
-          {/* Right: QR và hướng dẫn */}
+
+          {/* Right */}
           <div className="payment-info-right">
             <div className="payment-info-block" style={{ textAlign: 'center' }}>
               <div className="payment-info-title" style={{ fontSize: 22, marginBottom: 16 }}>Quét QR để thanh toán</div>
               <div style={{ background: '#f4f7fb', borderRadius: 16, padding: 24, display: 'inline-block', minWidth: 320 }}>
-                {/* Placeholder QR */}
-                <div style={{ width: 200, height: 200, background: '#fff', border: '2px dashed #ccc', borderRadius: 12, margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, color: '#ccc' }}>
-                  QR
-                </div>
+                {loading ? (
+                  <div>Đang tạo mã QR ZaloPay...</div>
+                ) : zalopayInfo?.qrcode && zalopayInfo?.return_code === 1 ? (
+                  <img
+                    src={zalopayInfo.qrcode}
+                    alt="QR Code ZaloPay"
+                    style={{ width: 200, height: 200, margin: '0 auto 16px', display: 'block' }}
+                  />
+                ) : zalopayInfo?.order_url && zalopayInfo?.return_code === 1 ? (
+                  <QRCodeCanvas value={zalopayInfo.order_url} size={200} style={{ margin: '0 auto 16px', display: 'block' }} />
+                ) : zalopayInfo?.return_message ? (
+                  <div style={{ color: 'red', fontWeight: 600 }}>
+                    {zalopayInfo.return_message}
+                  </div>
+                ) : error ? (
+                  <div style={{ color: 'red', fontWeight: 600 }}>
+                    {error}
+                  </div>
+                ) : (
+                  <div style={{ color: 'red', fontWeight: 600 }}>
+                    Không thể tạo mã QR ZaloPay. Vui lòng thử lại hoặc chọn phương thức thanh toán khác.
+                  </div>
+                )}
                 <div style={{ marginTop: 8, fontWeight: 500, color: '#333' }}>
                   Ngân hàng thụ hưởng: VietCapitalBank<br />
                   <span style={{ fontWeight: 700 }}>ZLPDEMO</span><br />
@@ -151,4 +205,4 @@ const ZaloPayPaymentPage: React.FC = () => {
   );
 };
 
-export default ZaloPayPaymentPage; 
+export default ZaloPayPaymentPage;

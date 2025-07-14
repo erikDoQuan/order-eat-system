@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 import '../css/DishCard.css';
 
@@ -24,6 +25,8 @@ function getCategoryNameById(categoryId: string | undefined, categories: any[], 
 function DishDetailModal({ dish, onClose, categoryName, categories, dishes }: { dish: Dish; onClose: () => void; categoryName?: string; categories: any[]; dishes: Dish[] }) {
   const { addToCart } = useCart();
   const { t, i18n } = useTranslation();
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   /* ---------- tuỳ chọn cố định ---------- */
   const sizeOptions = [
@@ -238,6 +241,10 @@ function DishDetailModal({ dish, onClose, categoryName, categories, dishes }: { 
           <button
             className="mt-2 w-full rounded-lg bg-[#C92A15] px-6 py-3 text-lg font-bold text-white hover:bg-[#a81f10]"
             onClick={async () => {
+              if (!user) {
+                navigate('/login');
+                return;
+              }
               try {
                 if (isPizzaCategory && !isSpaghettiCategory && !isChickenCategory) {
                   await addToCart(dish.id, {
@@ -252,10 +259,8 @@ function DishDetailModal({ dish, onClose, categoryName, categories, dishes }: { 
                     note,
                   });
                 }
-                alert(t('add_to_cart_success'));
                 onClose();
               } catch (err) {
-                alert(t('add_to_cart_failed'));
                 console.error('Lỗi thêm vào giỏ hàng:', err);
               }
             }}

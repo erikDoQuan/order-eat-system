@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 import Navbar from '../components/Navbar';
 import { AuthContext } from '../context/AuthContext';
@@ -233,6 +233,13 @@ export default function RegisterPage() {
               <button type="submit" className="register-btn" disabled={loading} style={{width:'100%',background:'#c92a15',color:'#fff',border:'none',borderRadius:8,padding:14,fontWeight:700,fontSize:18,boxShadow:'0 1px 4px rgba(201,42,21,0.08)',cursor:'pointer'}}>
                 {loading ? 'Đang đăng ký...' : 'Đăng ký'}
               </button>
+              {/* Thêm dòng chuyển hướng đăng nhập */}
+              <div style={{ marginTop: 16, textAlign: 'center', fontSize: 15 }}>
+                Bạn đã có tài khoản?{' '}
+                <Link to="/login" style={{ color: '#C92A15', textDecoration: 'underline', fontWeight: 500 }}>
+                  Đăng nhập
+                </Link>
+              </div>
             </form>
           )}
           {/* Thông báo lỗi hoặc thành công */}

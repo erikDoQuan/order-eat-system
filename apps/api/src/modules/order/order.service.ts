@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { DishRepository } from '~/database/repositories/dish.repository';
 import { DishSnapshotRepository } from '~/database/repositories/dish_snapshot.repository';
 import { UserRepository } from '~/database/repositories/user.repository';
+import { NotificationGateway } from '../notification/notification.gateway';
 
 
 @Injectable()
@@ -16,6 +17,7 @@ export class OrderService {
     private readonly dishRepository: DishRepository,
     private readonly dishSnapshotRepository: DishSnapshotRepository, // thêm dòng này
     private readonly userRepository: UserRepository,
+    private notificationGateway: NotificationGateway,
   ) {}
 
   async findAll(dto: FetchOrdersDto) {
@@ -274,5 +276,15 @@ export class OrderService {
 
   async deleteHard(id: string) {
     return this.orderRepository.hardDelete(id);
+  }
+
+  async confirmOrder(orderId: string, userId: string) {
+    const order = await this.orderRepository.findOne(orderId);
+    if (!order) throw new NotFoundException('Đơn hàng không tồn tại');
+    order.status = 'confirmed';
+    order.updatedBy = userId;
+    const updatedOrder = await this.orderRepository.update(orderId, order as UpdateOrderDto);
+    this.notificationGateway.notifyOrderConfirmed(userId, { orderId });
+    return updatedOrder;
   }
 }

@@ -1,11 +1,11 @@
 import React from 'react';
 
 interface NotificationType {
-  orderId: number;
+  orderId: number | string;
   products: { name: string; quantity: number }[];
   date: string; // ISO string
   total: number;
-  status: 'Đã xác nhận' | 'Hoàn thành' | string;
+  status: string;
 }
 
 interface NotificationPopupProps {
@@ -14,7 +14,7 @@ interface NotificationPopupProps {
   className?: string;
 }
 
-export const NotificationPopup: React.FC<NotificationPopupProps> = ({ notifications, onClose, className }) => {
+const NotificationPopup: React.FC<NotificationPopupProps> = ({ notifications, onClose, className }) => {
   return (
     <div
       className={className}
@@ -106,4 +106,6 @@ export const NotificationPopup: React.FC<NotificationPopupProps> = ({ notificati
       </button>
     </div>
   );
-}; 
+};
+
+export default NotificationPopup; 

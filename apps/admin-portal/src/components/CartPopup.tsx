@@ -45,6 +45,11 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     };
   }, [orderItems]);
 
+  // Force update khi orderItems thay đổi để đảm bảo re-render
+  useEffect(() => {
+    setDishes(d => [...d]);
+  }, [orderItems]);
+
   const getDish = (dishId: string) => dishes.find(d => d.id === dishId);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -129,7 +134,10 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     )}
                   </div>
                   <button
-                    onClick={() => setConfirmRemove({ open: true, item })}
+                    onClick={e => {
+                      e.stopPropagation();
+                      setConfirmRemove({ open: true, item });
+                    }}
                     style={{
                       marginLeft: 8,
                       background: 'none',
@@ -189,14 +197,19 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         btnNo="Huỷ"
         onYes={async () => {
           if (confirmRemove.item) {
+            const { dishId, size, base, note } = confirmRemove.item;
             await removeFromCart({
-              dishId: confirmRemove.item.dishId,
-              size: confirmRemove.item.size,
-              base: confirmRemove.item.base,
-              note: confirmRemove.item.note,
+              dishId,
+              size: size || undefined,
+              base: base || undefined,
+              note: note ? note.trim() || undefined : undefined,
             });
           }
           setConfirmRemove({ open: false, item: null });
+          // Đóng popup nếu sau khi xóa không còn sản phẩm nào
+          setTimeout(() => {
+            if (orderItems.length === 1) onClose();
+          }, 100);
         }}
         onNo={() => setConfirmRemove({ open: false, item: null })}
         btnYesClassName="bg-[#dc2626] hover:bg-[#b91c1c] text-white border-none"

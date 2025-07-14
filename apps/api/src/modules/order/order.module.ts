@@ -6,9 +6,10 @@ import { OrderService } from './order.service';
 import { DishModule } from '../dish/dish.module';
 import { DishSnapshotRepository } from '~/database/repositories/dish_snapshot.repository';
 import { UserRepository } from '~/database/repositories/user.repository';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
-  imports: [DishModule],
+  imports: [NotificationModule, DishModule],
   controllers: [OrderController],
   providers: [OrderService, OrderRepository, DishSnapshotRepository, UserRepository],
   exports: [OrderService],

@@ -10,7 +10,7 @@ import { useCart } from '../context/CartContext';
 import { getAllDishes } from '../services/dish.api';
 import LanguageSwitcher from './LanguageSwitcher';
 import { FaBell } from 'react-icons/fa';
-import { NotificationPopup } from './NotificationPopup';
+import NotificationPopup from './NotificationPopup';
 import { getOrdersByUserId } from '../services/order.api';
 
 import '../css/Navbar.css';
@@ -36,6 +36,8 @@ export default function Navbar() {
   const ordersCache = useRef<{ data: any[]; timestamp: number } | null>(null);
   const dishesCache = useRef<{ data: any[]; timestamp: number } | null>(null);
   const CACHE_DURATION = 2 * 60 * 1000; // 2 phút
+  const [showToast, setShowToast] = useState(false);
+  const prevConfirmedOrderIds = useRef<string[]>([]);
 
   // Fetch latest order and dishes for notification
   const fetchLatestOrderNotification = async (force = false) => {
@@ -120,6 +122,19 @@ export default function Navbar() {
     const interval = setInterval(() => fetchLatestOrderNotification(true), CACHE_DURATION);
     return () => clearInterval(interval);
   }, [showNotificationPopup]);
+
+  useEffect(() => {
+    // Lấy danh sách id các đơn đã xác nhận (status === 'Đã xác nhận')
+    const confirmedOrders = notifications.filter((n: any) => n.status === 'Đã xác nhận');
+    const confirmedIds = confirmedOrders.map((n: any) => String(n.orderId));
+    // Nếu có id mới xuất hiện trong danh sách đã xác nhận thì hiện toast
+    const newConfirmed = confirmedIds.filter(id => !prevConfirmedOrderIds.current.includes(id));
+    if (newConfirmed.length > 0) {
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 10000);
+    }
+    prevConfirmedOrderIds.current = confirmedIds;
+  }, [notifications]);
 
   const handleLogout = () => {
     setUser(null);
@@ -233,29 +248,28 @@ export default function Navbar() {
               <LanguageSwitcher />
             </div>
           ) : (
-            !isAuthPage && (
-              <div className="flex items-center gap-1">
-                <NavLink
-                  to="/login"
-                  className="flex items-center gap-2 rounded-xl bg-transparent px-4 py-2 text-base font-semibold transition hover:bg-[#e6f4ed]"
-                  style={{ fontWeight: 500 }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: '50%', border: '2px solid #C92A15', background: '#e6f4ed', color: '#C92A15', marginRight: 8 }}>
-                    <UserIcon size={24} />
-                  </span>
-                  {t('login')}
-                </NavLink>
-                <NavLink
-                  to="/register"
-                  className="rounded-xl bg-transparent py-2 text-base font-semibold transition hover:bg-[#e6f4ed]"
-                  style={{ fontWeight: 500 }}
-                >
-                  {t('register')}
-                </NavLink>
-                <span style={{ margin: '0 8px', color: '#ccc', fontWeight: 600 }}>|</span>
-                <LanguageSwitcher />
-              </div>
-            )
+            // Luôn hiển thị cụm Đăng nhập | Tạo tài khoản | Language, kể cả ở trang login/register
+            <div className="flex items-center gap-1">
+              <NavLink
+                to="/login"
+                className="flex items-center gap-2 rounded-xl bg-transparent px-4 py-2 text-base font-semibold transition hover:bg-[#e6f4ed]"
+                style={{ fontWeight: 500 }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: '50%', border: '2px solid #C92A15', background: '#e6f4ed', color: '#C92A15', marginRight: 8 }}>
+                  <UserIcon size={24} />
+                </span>
+                {t('login')}
+              </NavLink>
+              <NavLink
+                to="/register"
+                className="rounded-xl bg-transparent py-2 text-base font-semibold transition hover:bg-[#e6f4ed]"
+                style={{ fontWeight: 500 }}
+              >
+                {t('register')}
+              </NavLink>
+              <span style={{ margin: '0 8px', color: '#ccc', fontWeight: 600 }}>|</span>
+              <LanguageSwitcher />
+            </div>
           )}
         </div>
       </div>
@@ -372,6 +386,25 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+      {showToast && (
+        <div style={{
+          position: 'fixed',
+          top: 24,
+          right: 32,
+          zIndex: 9999,
+          background: '#16a34a',
+          color: '#fff',
+          fontWeight: 700,
+          fontSize: 18,
+          borderRadius: 12,
+          padding: '16px 32px',
+          boxShadow: '0 4px 24px #0002',
+          letterSpacing: 0.5,
+          transition: 'opacity 0.3s',
+        }}>
+          Bạn có thông báo mới!
+        </div>
+      )}
     </nav>
   );
 }
