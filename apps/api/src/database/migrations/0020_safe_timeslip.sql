@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "app_trans_id" varchar(32);

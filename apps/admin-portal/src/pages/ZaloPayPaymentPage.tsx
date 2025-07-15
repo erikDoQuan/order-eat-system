@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { getAllDishes } from '../services/dish.api';
+import { getOrderDetail, getOrderDetailByNumber, createOrder, getOrderDetailByAppTransId } from '../services/order.api';
 import '../css/payment-info.css';
 import { QRCodeCanvas } from 'qrcode.react';
 
@@ -16,6 +17,13 @@ const ZaloPayPaymentPage: React.FC = () => {
   const orderType = state.orderType || 'pickup';
   const shippingFee = orderType === 'delivery' ? (state.shippingFee ?? 25000) : 0;
   const deliveryAddress = state.deliveryAddress || '';
+
+  // Debug: Log state và totalAmount khi vào trang
+  useEffect(() => {
+    console.log('ZaloPayPaymentPage state:', state);
+    console.log('ZaloPayPaymentPage items:', items);
+    console.log('ZaloPayPaymentPage totalAmount:', typeof state.totalAmount, state.totalAmount);
+  }, []);
 
   // Lấy danh sách món ăn
   const [dishes, setDishes] = useState<any[]>([]);
@@ -45,14 +53,26 @@ const ZaloPayPaymentPage: React.FC = () => {
   const [zalopayInfo, setZaloPayInfo] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [orderId, setOrderId] = useState<string>('');
+  const [countdown, setCountdown] = useState(15 * 60); // 15 phút tính bằng giây
 
   useEffect(() => {
-    if (!totalAmount || totalAmount <= 0) return; // Không gọi API nếu amount không hợp lệ
-    // Luôn tạo orderId mới mỗi lần vào trang
-    const orderId = String(Date.now()) + Math.floor(Math.random() * 10000);
+    if (!totalAmount || totalAmount <= 0) {
+      console.warn('Không có totalAmount hợp lệ, không gọi API ZaloPay', totalAmount);
+      return;
+    }
     setLoading(true);
-    fetch(`/api/v1/zalopay/create-order?amount=${totalAmount}&orderId=${orderId}`)
-      .then(res => res.json())
+    // Tạo orderId duy nhất cho giao dịch ZaloPay
+    const newOrderId = String(Date.now()) + Math.floor(Math.random() * 10000);
+    setOrderId(newOrderId);
+    console.log('Gọi API tạo đơn ZaloPay:', `/api/v1/zalopay/create-order?amount=${totalAmount}&orderId=${newOrderId}`);
+    fetch(`/api/v1/zalopay/create-order?amount=${totalAmount}&orderId=${newOrderId}`)
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('API trả về lỗi: ' + res.status);
+        }
+        return res.json();
+      })
       .then(data => {
         console.log('ZaloPay Info:', data);
         setZaloPayInfo(data);
@@ -60,18 +80,42 @@ const ZaloPayPaymentPage: React.FC = () => {
         if (data?.qrcode && data?.return_code === 1) {
           localStorage.setItem('last_zalopay_qr', data.qrcode);
           localStorage.setItem('last_zalopay_amount', String(totalAmount));
-          localStorage.setItem('last_zalopay_orderId', orderId);
+          localStorage.setItem('last_zalopay_orderId', newOrderId);
         } else if (data?.order_url && data?.return_code === 1) {
           localStorage.setItem('last_zalopay_order_url', data.order_url);
           localStorage.setItem('last_zalopay_amount', String(totalAmount));
-          localStorage.setItem('last_zalopay_orderId', orderId);
+          localStorage.setItem('last_zalopay_orderId', newOrderId);
         }
       })
       .catch(err => {
         setError('Không thể tạo đơn hàng ZaloPay.');
         setLoading(false);
+        console.error('Lỗi khi gọi API ZaloPay:', err);
       });
   }, [totalAmount, state]);
+
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setInterval(() => {
+      setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [countdown]);
+
+  useEffect(() => {
+    if (!orderId) return;
+    const interval = setInterval(() => {
+      
+      getOrderDetailByAppTransId(orderId).then(order => {
+        if (order && order.status === 'completed') {
+          clearInterval(interval);
+          navigate(`/ordersuccess?app_trans_id=${orderId}`);
+        }
+      });
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [orderId, navigate]);
 
   const appId = import.meta.env.VITE_ZP_APP_ID || '2554';
 
@@ -109,7 +153,7 @@ const ZaloPayPaymentPage: React.FC = () => {
               </div>
               <div className="payment-info-text" style={{ marginTop: 16 }}>
                 <b>Mã giao dịch</b>
-                <div style={{ fontWeight: 600, fontSize: 16, margin: '4px 0' }}>[Chưa có]</div>
+                <div style={{ fontWeight: 600, fontSize: 16, margin: '4px 0' }}>{zalopayInfo?.order_token || zalopayInfo?.zp_trans_token || '[Chưa có]'}</div>
               </div>
               <div className="payment-info-text">
                 <b>Nội dung</b>
@@ -126,7 +170,7 @@ const ZaloPayPaymentPage: React.FC = () => {
                 </div>
               </div>
               <div style={{ marginTop: 12, fontSize: 15, color: '#555', background: '#f8f8f8', padding: 8, borderRadius: 8 }}>
-                Giao dịch kết thúc trong <span style={{ fontWeight: 600, color: '#C92A15', background: '#fff', padding: '2px 8px', borderRadius: 4 }}>14</span> : <span style={{ fontWeight: 600, color: '#C92A15', background: '#fff', padding: '2px 8px', borderRadius: 4 }}>40</span>
+                Giao dịch kết thúc trong <span style={{ fontWeight: 600, color: '#C92A15', background: '#fff', padding: '2px 8px', borderRadius: 4 }}>{String(Math.floor(countdown / 60)).padStart(2, '0')}</span> : <span style={{ fontWeight: 600, color: '#C92A15', background: '#fff', padding: '2px 8px', borderRadius: 4 }}>{String(countdown % 60).padStart(2, '0')}</span>
               </div>
             </div>
           </div>

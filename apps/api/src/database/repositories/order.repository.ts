@@ -80,6 +80,15 @@ export class OrderRepository {
     });
   }
 
+  async findOneByOrderNumber(orderNumber: number): Promise<Order | null> {
+    return this.drizzle.db.query.orders.findFirst({
+      where: eq(orders.orderNumber, orderNumber),
+      with: {
+        reviews: true,
+      },
+    });
+  }
+
   async create(data: CreateOrderDto): Promise<Order> {
     // Luôn tạo đơn hàng mới, không kiểm tra đơn pending cũ
     const [created] = await this.drizzle.db

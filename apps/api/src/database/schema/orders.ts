@@ -49,6 +49,8 @@ export const orders = pgTable('orders', {
 
   pickupTime: varchar('pickup_time', { length: 20 }),
 
+  appTransId: varchar('app_trans_id', { length: 32 }),
+
   orderNumber: serial('order_number'),
 });
 

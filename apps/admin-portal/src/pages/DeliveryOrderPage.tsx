@@ -55,7 +55,33 @@ const districtData: Record<string, string[]> = {
   'Khánh Hòa': ['TP Nha Trang'],
 };
 const wardData: Record<string, string[]> = {
-  'TP Nha Trang': ['Phường Vĩnh Hòa', 'Phường Vĩnh Hải', 'Phường Phước Hải', 'Phường Xương Huân', 'Phường Vạn Thắng', 'Phường Phước Tân', 'Phường Lộc Thọ', 'Phường Tân Lập', 'Phường Phước Hòa', 'Phường Vĩnh Nguyên'],
+  'TP Nha Trang': [
+    // Phường
+    'Phường Vĩnh Hòa',
+    'Phường Vĩnh Hải',
+    'Phường Phước Hải',
+    'Phường Xương Huân',
+    'Phường Vạn Thắng',
+    'Phường Phước Tân',
+    'Phường Lộc Thọ',
+    'Phường Tân Lập',
+    'Phường Phước Hòa',
+    'Phường Vĩnh Nguyên',
+    'Phường Vĩnh Trường',
+    'Phường Vĩnh Thọ',
+    'Phường Ngọc Hiệp',
+    'Phường Phước Long',
+    'Phường Phước Tiến',
+    // Xã
+    'Xã Vĩnh Thạnh',
+    'Xã Vĩnh Phương',
+    'Xã Vĩnh Ngọc',
+    'Xã Vĩnh Lương',
+    'Xã Vĩnh Trung',
+    'Xã Phước Đồng',
+    'Xã Vĩnh Hiệp',
+    'Xã Vĩnh Thái',
+  ],
 };
 const allWardsInKhanhHoa = Object.values(wardData).reduce((acc, arr) => acc.concat(arr), []);
 
@@ -181,7 +207,7 @@ const DeliveryOrderPage: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!form.name || !form.phone || !form.province || !form.district || !form.ward || !form.address || !form.street) {
+    if (!form.name || !form.phone || !form.province || !form.district || !form.ward || !form.address) {
       alert('Vui lòng nhập đầy đủ thông tin giao hàng!');
       return;
     }
@@ -201,7 +227,6 @@ const DeliveryOrderPage: React.FC = () => {
       state: {
         orderType,
         address: form.address,
-        street: form.street,
         ward: form.ward,
         district: form.district,
         province: form.province,
@@ -215,6 +240,8 @@ const DeliveryOrderPage: React.FC = () => {
       }
     });
   };
+
+  const wardsInSelectedDistrict = wardData[form.district] || [];
 
   return (
     <div style={{ background: '#f6fff8', minHeight: '100vh' }}>
@@ -251,14 +278,8 @@ const DeliveryOrderPage: React.FC = () => {
               <option value="">Chọn Phường/ Xã</option>
               {allWardsInKhanhHoa.map(w => <option key={w} value={w}>{w}</option>)}
             </select>
-            <label>Số nhà: <span style={{color:'red'}}>*</span></label>
-            <input value={form.address || ''} onChange={e => setForm(f => ({...f, address: e.target.value}))} style={{width:'100%',marginTop:4,marginBottom:4,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}} />
-            <div style={{fontSize:13,color:'#b91c1c',marginBottom:4}}>* Lưu ý:</div>
-            <div style={{fontSize:13,marginBottom:4}}>- Nếu nhà không có số, vui lòng nhập: 1</div>
-            <div style={{fontSize:13,marginBottom:4}}>VD1: Nhà số 6 Hẻm hoặc Ngõ hoặc Kiệt 12 =&gt; Nhập: 12</div>
-            <div style={{fontSize:13,marginBottom:4}}>VD2: Nhà số 6A hoặc 6bis hoặc H6 hoặc L6 =&gt; Nhập: 6</div>
-            <label>Tên đường: <span style={{color:'red'}}>*</span></label>
-            <input value={form.street || ''} onChange={e => setForm(f => ({...f, street: e.target.value}))} style={{width:'100%',marginTop:4,marginBottom:12,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}} />
+            <label>Địa chỉ: <span style={{color:'red'}}>*</span></label>
+            <input value={form.address || ''} onChange={e => setForm(f => ({...f, address: e.target.value}))} style={{width:'100%',marginTop:4,marginBottom:12,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}} placeholder="Nhập số nhà, tên đường, hẻm, khu vực..." />
             <label>Thông tin chi tiết:</label>
             <input value={form.detail || ''} onChange={e => setForm(f => ({...f, detail: e.target.value}))} style={{width:'100%',marginTop:4,marginBottom:12,padding:'10px 12px',borderRadius:8,border:'1px solid #ccc',fontSize:16}} />
             <div style={{fontSize:13,marginBottom:4}}>Vui lòng nhập đủ Hẻm/ Ngõ/ Ngách/ Kiệt/ Thôn/ Ấp/ Chung Cư/ Khu Đô Thị/ Khu Dân Cư/ Số Căn Hộ cụ thể kèm những yêu cầu khác (nếu có) để hướng dẫn cho nhân viên giao hàng.</div>

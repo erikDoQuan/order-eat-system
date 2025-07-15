@@ -103,6 +103,13 @@ export class OrderService {
     return order;
   }
 
+  async findOneByOrderNumber(orderNumber: number) {
+    const order = await this.orderRepository.findOneByOrderNumber(orderNumber);
+    if (!order) throw new NotFoundException('Đơn hàng không tồn tại');
+    // Enrich từng item với thông tin sản phẩm (reuse logic từ findOne nếu muốn)
+    return order;
+  }
+
   async create(dto: CreateOrderDto) {
     // Validate type và deliveryAddress
     if (dto.type === 'delivery' && !dto.deliveryAddress) {

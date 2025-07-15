@@ -45,6 +45,16 @@ export class OrderController {
     return this.orderService.findOne(id);
   }
 
+  @Get('by-number/:orderNumber')
+  @ApiOperation({
+    summary: 'Lấy chi tiết đơn hàng theo orderNumber',
+    description: 'Trả về thông tin chi tiết của một đơn hàng dựa vào orderNumber (số đơn hàng).',
+  })
+  @Response({ message: 'Lấy chi tiết đơn hàng theo orderNumber thành công' })
+  findOneByOrderNumber(@Param('orderNumber') orderNumber: string) {
+    return this.orderService.findOneByOrderNumber(Number(orderNumber));
+  }
+
   @Post()
   @ApiOperation({
     summary: 'Tạo đơn hàng mới',

@@ -16,11 +16,18 @@ const OrderSuccessPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const order = location.state?.order;
   const orderId = location.state?.orderId;
+  // Lấy order_number từ app_trans_id trên URL nếu có (ZaloPay redirect)
+  const params = new URLSearchParams(location.search);
+  const appTransId = params.get('app_trans_id');
+  const orderNumberFromAppTransId = appTransId ? appTransId.split('_')[1] : undefined;
 
   useEffect(() => {
-    clearCart();
+    // Nếu có appTransId (redirect từ ZaloPay), clearCart luôn
+    if (appTransId) {
+      clearCart();
+    }
     // eslint-disable-next-line
-  }, []); // chỉ chạy 1 lần khi mount
+  }, [appTransId]); // clearCart khi mount hoặc khi appTransId thay đổi
 
   useEffect(() => {
     if (order) {
@@ -36,10 +43,12 @@ const OrderSuccessPage: React.FC = () => {
           setError('Không tìm thấy thông tin đơn hàng.');
         })
         .finally(() => setLoading(false));
+    } else if (orderNumberFromAppTransId) {
+      setOrderNumber(orderNumberFromAppTransId);
     } else {
       setError('Không có thông tin đơn hàng.');
     }
-  }, [order, orderId]);
+  }, [order, orderId, orderNumberFromAppTransId]);
 
   return (
     <div className="order-success-root">
