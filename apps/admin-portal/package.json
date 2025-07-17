@@ -124,7 +124,7 @@
     "cssnano": "^7.0.1",
     "eslint": "catalog:",
     "jsdom": "^24.1.1",
-    "knip": "^5.41.1",
+    "knip": "^5.61.3",
     "lint-staged": "^15.2.4",
     "msw": "^2.3.0",
     "patch-package": "^8.0.0",
