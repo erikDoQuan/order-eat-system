@@ -19,6 +19,7 @@ import { DishOptionModule } from './modules/dish_option/dish-option.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { UserTransactionModule } from './modules/user_transaction/user-transaction.module';
+import { BillModule } from './modules/bill/bill.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { UserTransactionModule } from './modules/user_transaction/user-transacti
     ReportsModule,
     PaymentModule,
     UserTransactionModule,
+    BillModule,
   ],
   controllers: [],
   exports: [],

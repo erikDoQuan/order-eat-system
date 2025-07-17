@@ -5,9 +5,10 @@ const MODEL_URL = 'https://teachablemachine.withgoogle.com/models/nh5IAvf-C/';
 
 interface TeachableMachineTestPageProps {
   onDishClick?: (dish: any) => void;
+  onClose?: () => void;
 }
 
-const TeachableMachineTestPage: React.FC<TeachableMachineTestPageProps> = ({ onDishClick }) => {
+const TeachableMachineTestPage: React.FC<TeachableMachineTestPageProps> = ({ onDishClick, onClose }) => {
   const [model, setModel] = useState<any>(null);
   const [maxPredictions, setMaxPredictions] = useState<number>(0);
   const [labels, setLabels] = useState<string[]>([]);
@@ -158,7 +159,7 @@ const TeachableMachineTestPage: React.FC<TeachableMachineTestPageProps> = ({ onD
         onMouseOver={e => (e.currentTarget.style.background = '#C92A15', e.currentTarget.style.color = '#fff')}
         onMouseOut={e => (e.currentTarget.style.background = '#fff', e.currentTarget.style.color = '#C92A15')}
       >
-        <span style={{ marginRight: 8 }}>📷</span> Chọn ảnh món ăn
+        <span className="tm-highlight-logo" style={{ marginRight: 12, fontSize: 26, width: 32, height: 32, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>📷</span> Chọn ảnh món ăn
         <input
           id="food-image-upload"
           type="file"
@@ -169,7 +170,7 @@ const TeachableMachineTestPage: React.FC<TeachableMachineTestPageProps> = ({ onD
         />
       </label>
       {imageUrl && (
-        <div style={{ margin: '16px 0' }}>
+        <div style={{ margin: '16px 0', display: 'flex', justifyContent: 'center' }}>
           <img
             ref={imageRef}
             src={imageUrl}
@@ -180,7 +181,7 @@ const TeachableMachineTestPage: React.FC<TeachableMachineTestPageProps> = ({ onD
           />
         </div>
       )}
-      {loading && <div>Đang tải model...</div>}
+      {loading && <div>Đang nhận diện món ăn...</div>}
       {error && <div style={{ color: 'red' }}>{error}</div>}
       <div style={{ marginTop: 12, fontWeight: 500, fontSize: 16 }}>
         {labels.map((label, idx) => {
@@ -200,7 +201,7 @@ const TeachableMachineTestPage: React.FC<TeachableMachineTestPageProps> = ({ onD
                   <a
                     href="#"
                     style={{ color: '#1976d2', textDecoration: 'underline', fontSize: 15 }}
-                    onClick={e => { e.preventDefault(); onDishClick && onDishClick(dish); }}
+                    onClick={e => { e.preventDefault(); onDishClick && onDishClick(dish); onClose && onClose(); }}
                   >
                     bạn có thể xem kỹ hơn tại đây
                   </a>

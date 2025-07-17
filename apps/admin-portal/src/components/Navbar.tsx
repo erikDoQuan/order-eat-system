@@ -241,8 +241,13 @@ export default function Navbar() {
                 )}
               </div>
               <span className="text-base font-semibold text-black" style={{ cursor: 'pointer' }}>
-                {user.firstName || ''} {user.lastName || ''}
-                {!(user.firstName || user.lastName) && user.email}
+                {user.firstName || user.lastName
+                  ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+                  : user.name
+                  ? user.name
+                  : user.email
+                  ? user.email
+                  : user.id || ''}
               </span>
               <span style={{ margin: '0 8px', color: '#ccc', fontWeight: 600 }}>|</span>
               <LanguageSwitcher />

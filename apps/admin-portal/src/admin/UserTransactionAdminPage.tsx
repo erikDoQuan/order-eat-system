@@ -1,7 +1,14 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import AdminSidebar from '../components/AdminSidebar';
 import { getAllUserTransactions } from '../services/user-transaction.api';
 import { AuthContext } from '../context/AuthContext';
+
+const STATUS_LABEL: Record<string, { label: string; color: string }> = {
+  pending: { label: 'Chờ xử lý', color: 'bg-yellow-100 text-yellow-800' },
+  success: { label: 'Thành công', color: 'bg-green-100 text-green-800' },
+  failed: { label: 'Thất bại', color: 'bg-red-100 text-red-800' },
+  cancelled: { label: 'Đã huỷ', color: 'bg-gray-100 text-gray-800' },
+};
 
 export default function UserTransactionAdminPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -13,7 +20,8 @@ export default function UserTransactionAdminPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(20);
-  const { user } = useContext(AuthContext); // Không destructuring logout
+  const { user } = useContext(AuthContext);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const fetchTransactions = () => {
     setLoading(true);
@@ -40,13 +48,6 @@ export default function UserTransactionAdminPage() {
     return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' ' + d.toLocaleDateString('vi-VN');
   };
 
-  const statusLabel: Record<string, string> = {
-    pending: 'Chờ xử lý',
-    success: 'Thành công',
-    failed: 'Thất bại',
-    cancelled: 'Đã hủy',
-  };
-
   const getUserName = (userId: string) => {
     if (!userId) return 'Không rõ';
     const user = users.find((u: any) => u.id === userId);
@@ -64,71 +65,92 @@ export default function UserTransactionAdminPage() {
     return order ? `#${order.orderNumber || order.id}` : orderId;
   };
 
-  // Không filter, luôn hiển thị toàn bộ transactions
-  const filteredTransactions = transactions;
+  // Filter/search thực sự hoạt động
+  const filteredTransactions = transactions
+    .filter(tran => {
+      const userName = (getUserName(tran.userId) || '').toLowerCase();
+      const orderLabel = (getOrderLabel(tran.orderId) || '').toLowerCase();
+      const desc = (tran.description || '').toLowerCase();
+      const code = (tran.transactionCode || '').toLowerCase();
+      return (
+        userName.includes(search.toLowerCase()) ||
+        orderLabel.includes(search.toLowerCase()) ||
+        desc.includes(search.toLowerCase()) ||
+        code.includes(search.toLowerCase())
+      );
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <div className="flex min-h-screen">
-      <AdminSidebar />
-      <div className="flex-1 p-6 bg-gray-50">
-        <h1 className="text-2xl font-bold mb-4">Quản lý giao dịch người dùng</h1>
-        <div className="mb-4 flex gap-2 items-center">
+    <div className="admin-layout bg-gray-50">
+      <div className="admin-sidebar-fixed">
+        <AdminSidebar />
+      </div>
+      <div className="admin-main-content">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-[#C92A15]">User Transaction Management</h1>
+        </div>
+        <div className="mb-4 flex justify-end">
           <input
+            ref={searchInputRef}
             type="text"
-            placeholder="Tìm kiếm theo user, order, mô tả..."
+            placeholder="Tìm kiếm theo user, order, mô tả, mã giao dịch..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="border rounded px-3 py-2 w-80"
+            className="w-full max-w-xs rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
           />
         </div>
-        {loading ? (
-          <div>Đang tải...</div>
-        ) : error ? (
-          <div className="text-red-600">{error}</div>
-        ) : (
+        {loading && <div>Loading...</div>}
+        {error && <div style={{ color: 'red' }}>{error}</div>}
+        {!loading && !error && (
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white border border-gray-200">
               <thead>
-                <tr>
-                  <th className="px-3 py-2 border">ID</th>
-                  <th className="px-3 py-2 border">User</th>
-                  <th className="px-3 py-2 border">User ID</th>
-                  <th className="px-3 py-2 border">Order</th>
-                  <th className="px-3 py-2 border">Order ID</th>
-                  <th className="px-3 py-2 border">Số tiền</th>
-                  <th className="px-3 py-2 border">Phương thức</th>
-                  <th className="px-3 py-2 border">Trạng thái</th>
-                  <th className="px-3 py-2 border">Thời gian giao dịch</th>
-                  <th className="px-3 py-2 border">Mã giao dịch</th>
-                  <th className="px-3 py-2 border">Mô tả</th>
-                  <th className="px-3 py-2 border">createdAt</th>
-                  <th className="px-3 py-2 border">updatedAt</th>
+                <tr className="bg-gray-100 text-gray-700">
+                  <th className="py-2 px-3 border-b">STT</th>
+                  <th className="py-2 px-3 border-b">User</th>
+                  <th className="py-2 px-3 border-b">Order</th>
+                  <th className="py-2 px-3 border-b">Amount</th>
+                  <th className="py-2 px-3 border-b">Method</th>
+                  <th className="py-2 px-3 border-b">Status</th>
+                  <th className="py-2 px-3 border-b">Transaction Time</th>
+                  <th className="py-2 px-3 border-b">Transaction Code</th>
+                  <th className="py-2 px-3 border-b">Description</th>
+                  <th className="py-2 px-3 border-b">Created At</th>
+                  <th className="py-2 px-3 border-b">Updated At</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredTransactions.map(tran => (
-                  <tr key={tran.id} className="hover:bg-gray-100">
-                    <td className="px-3 py-2 border">{tran.id}</td>
-                    <td className="px-3 py-2 border">{getUserName(tran.userId)}</td>
-                    <td className="px-3 py-2 border">{tran.userId}</td>
-                    <td className="px-3 py-2 border">{getOrderLabel(tran.orderId)}</td>
-                    <td className="px-3 py-2 border">{tran.orderId}</td>
-                    <td className="px-3 py-2 border text-right">{Number(tran.amount).toLocaleString('vi-VN')}₫</td>
-                    <td className="px-3 py-2 border">{tran.method}</td>
-                    <td className="px-3 py-2 border font-semibold">{statusLabel[tran.status] || tran.status}</td>
-                    <td className="px-3 py-2 border">{formatDate(tran.transTime)}</td>
-                    <td className="px-3 py-2 border">{tran.transactionCode || '-'}</td>
-                    <td className="px-3 py-2 border">{tran.description}</td>
-                    <td className="px-3 py-2 border">{formatDate(tran.createdAt)}</td>
-                    <td className="px-3 py-2 border">{formatDate(tran.updatedAt)}</td>
+                {filteredTransactions.length === 0 && (
+                  <tr>
+                    <td colSpan={11} className="p-4 text-gray-500 text-center">Không có giao dịch nào.</td>
+                  </tr>
+                )}
+                {filteredTransactions.map((tran, idx) => (
+                  <tr key={tran.id} className="hover:bg-gray-50 transition">
+                    <td className="py-2 px-3 border-b text-xs text-gray-500">{idx + 1}</td>
+                    <td className="py-2 px-3 border-b font-medium">{getUserName(tran.userId)}</td>
+                    <td className="py-2 px-3 border-b">{getOrderLabel(tran.orderId)}</td>
+                    <td className="py-2 px-3 border-b text-right">{Number(tran.amount).toLocaleString('vi-VN')}₫</td>
+                    <td className="py-2 px-3 border-b">{tran.method}</td>
+                    <td className="py-2 px-3 border-b">
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${STATUS_LABEL[tran.status]?.color || 'bg-gray-100 text-gray-800'}`}>
+                        {STATUS_LABEL[tran.status]?.label || tran.status}
+                      </span>
+                    </td>
+                    <td className="py-2 px-3 border-b">{formatDate(tran.transTime)}</td>
+                    <td className="py-2 px-3 border-b">{tran.transactionCode || '-'}</td>
+                    <td className="py-2 px-3 border-b">{tran.description}</td>
+                    <td className="py-2 px-3 border-b">{formatDate(tran.createdAt)}</td>
+                    <td className="py-2 px-3 border-b">{formatDate(tran.updatedAt)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {filteredTransactions.length === 0 && <div className="p-4 text-gray-500">Không có giao dịch nào.</div>}
-            <div className="flex gap-2 mt-4 items-center">
+            {/* PHÂN TRANG ĐƠN GIẢN */}
+            <div className="flex gap-2 mt-4 items-center justify-center">
               <button
                 className="px-3 py-1 border rounded disabled:opacity-50"
                 onClick={() => setPage(p => Math.max(1, p - 1))}

@@ -470,21 +470,21 @@ export default function HomePage() {
           style={{
             position: 'relative',
             cursor: 'pointer',
-            width: 64,
-            height: 64,
+            width: 68,
+            height: 68,
             borderRadius: '50%',
             background: '#fff',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'box-shadow 0.2s',
-            border: '2.5px solid #C92A15', // Thêm viền đỏ
+            transition: 'box-shadow 0.2s, transform 0.2s',
+            border: '4px solid #C92A15',
           }}
-          className="help-circle"
+          className="help-circle homepage-logo-float"
           onClick={() => setShowMiniChat(true)}
         >
-          <img src="/logo.png" alt="Logo" style={{ width: 36, height: 36, display: 'block', margin: '0 auto' }} />
+          <img src="/logo.png" alt="Logo" style={{ width: 48, height: 48, display: 'block', margin: '0 auto' }} />
           <span
             style={{
               position: 'absolute',
@@ -492,8 +492,9 @@ export default function HomePage() {
               left: 'auto',
               bottom: 80,
               transform: 'none',
-              minWidth: 180,
-              maxWidth: 260,
+              minWidth: 220,
+              maxWidth: 320,
+              padding: '8px 24px',
               textAlign: 'center',
               background: '#fff',
               color: '#222',
@@ -501,7 +502,6 @@ export default function HomePage() {
               fontSize: 16,
               borderRadius: 16,
               boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
-              padding: '8px 18px',
               whiteSpace: 'nowrap',
               transition: 'opacity 0.2s',
               zIndex: 9999,
@@ -536,7 +536,7 @@ export default function HomePage() {
             </div>
             <div style={{ flex: 1, minHeight: 80, margin: '8px 0', background: '#f8f8f8', borderRadius: 8, padding: 8 }}>
               <div style={{ color: '#888', marginBottom: 8 }}><i>Hãy tìm món ăn bằng hình ảnh hoặc upload ảnh để nhận diện món ăn.</i></div>
-              <TeachableMachineTestPage onDishClick={dish => setDishModal(dish)} />
+              <TeachableMachineTestPage onDishClick={dish => setDishModal(dish)} onClose={() => setShowMiniChat(false)} />
             </div>
           </div>
         )}

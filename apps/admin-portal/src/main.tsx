@@ -33,6 +33,8 @@ import ZaloPayPaymentPage from './pages/ZaloPayPaymentPage';
 import RevenueReportsPage from './admin/RevenueReportsPage';
 import UserTransactionAdminPage from './admin/UserTransactionAdminPage';
 import TeachableMachineTestPage from './pages/TeachableMachineTestPage';
+import BillPrintPage from './pages/BillPrintPage';
+import BillPreviewPage from './pages/BillPreviewPage';
 
 import './globals.scss';
 
@@ -43,6 +45,7 @@ declare global {
 }
 
 // Đảm bảo axios luôn gửi access token trong header Authorization mỗi lần app khởi động
+// Đảm bảo đăng xuất hết khi mở web từ đầu
 const accessToken = localStorage.getItem('order-eat-access-token');
 if (accessToken) {
   axios.defaults.headers.common['Authorization'] = 'Bearer ' + accessToken;
@@ -111,10 +114,11 @@ axios.interceptors.response.use(
 );
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user } = useContext(AuthContext);
-  if (!user || user.role !== 'admin') {
+  const { user, loading } = useContext(AuthContext);
+  if (!loading && (!user || user.role !== 'admin')) {
     return <Navigate to="/login" replace />;
   }
+  if (loading) return null;
   return <>{children}</>;
 }
 
@@ -152,6 +156,8 @@ function AppWithCartProvider() {
         <Route path="/payment-info" element={<PaymentInfoPage />} />
         <Route path="/order-success" element={<OrderSuccessPage />} />
         <Route path="/zalo-pay-payment" element={<ZaloPayPaymentPage />} />
+        <Route path="/bill/generate" element={<BillPrintPage />} />
+        <Route path="/bill/preview" element={<BillPreviewPage />} />
         {/* Route xác thực email */}
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />

@@ -1,12 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { OrderRepository } from '~/database/repositories/order.repository';
 import { UserRepository } from '~/database/repositories/user.repository';
+import { DrizzleService } from '~/database/drizzle/drizzle.service';
+import { userTransactions } from '~/database/schema/user_transactions';
+import { inArray } from 'drizzle-orm';
 
 @Injectable()
 export class ReportsService {
   constructor(
     private readonly orderRepository: OrderRepository,
     private readonly userRepository: UserRepository,
+    private readonly drizzleService: DrizzleService,
   ) {}
 
   async getRevenueReport(from: string, to: string) {
@@ -20,6 +24,16 @@ export class ReportsService {
     if (userIds.length > 0) {
       const users = await this.userRepository.findManyByIds(userIds);
       userMap = Object.fromEntries(users.map(u => [u.id, u]));
+    }
+    // Lấy payment method từ user_transactions
+    let paymentMap: Record<string, string> = {};
+    const orderIds = ordersCompleted.map(o => o.id).filter(Boolean);
+    if (orderIds.length > 0) {
+      const transactions = await this.drizzleService.db.select({
+        orderId: userTransactions.orderId,
+        method: userTransactions.method,
+      }).from(userTransactions).where(inArray(userTransactions.orderId, orderIds));
+      paymentMap = Object.fromEntries(transactions.map(t => [t.orderId, t.method]));
     }
     // Tổng hợp
     const totalRevenue = ordersCompleted.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
@@ -50,6 +64,7 @@ export class ReportsService {
         date: new Date(o.createdAt).toISOString().slice(0, 10),
         customer,
         total: Number(o.totalAmount || 0),
+        paymentMethod: paymentMap[o.id] || '-',
       };
     });
     return {

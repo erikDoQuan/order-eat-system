@@ -263,6 +263,9 @@ export class OrderService {
         const price = dish?.basePrice ? parseFloat(dish.basePrice as any) : 0;
         total += price * (item.quantity || 1);
       }
+      if (order.type === 'delivery') {
+        total += 25000;
+      }
       order.totalAmount = total.toString();
     }
 

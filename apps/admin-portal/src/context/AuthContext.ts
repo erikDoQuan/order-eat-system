@@ -15,9 +15,11 @@ export interface AuthUser {
 export interface AuthContextType {
   user: AuthUser | null;
   setUser: (user: AuthUser | null) => void;
+  loading: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   setUser: () => {},
+  loading: true,
 });

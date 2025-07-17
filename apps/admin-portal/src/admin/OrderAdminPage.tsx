@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext, useRef } from 'react';
-import { User as UserIcon, Edit, Trash2, LogOut } from 'lucide-react';
+import { User as UserIcon, Edit, Trash2, LogOut, Printer } from 'lucide-react';
 import AdminSidebar from '../components/AdminSidebar';
 import '../css/OrderAdminPage.css';
 import axios from 'axios';
@@ -10,6 +10,7 @@ import { updateOrder, deleteOrder } from '../services/order.api';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import RatingStars from '../components/RatingStars';
+import BillPreviewModal from '../components/BillPreviewModal';
 
 function ReviewForm({ dishId, existingReview, onSubmit }) {
   const [rating, setRating] = React.useState(existingReview?.rating || 5);
@@ -70,6 +71,7 @@ export default function OrderAdminPage() {
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [billUrl, setBillUrl] = useState<string | null>(null);
 
   const fetchOrders = () => {
     setLoading(true);
@@ -126,6 +128,11 @@ export default function OrderAdminPage() {
     return dish ? dish.name : dishId;
   };
 
+  const getDishNameById = (dishId) => {
+    const dish = dishes.find(d => d.id === dishId);
+    return dish ? dish.name : '';
+  };
+
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
     const d = new Date(dateStr);
@@ -144,6 +151,42 @@ export default function OrderAdminPage() {
       return str.trim();
     }
     return '';
+  };
+
+  const printBill = (order: any) => {
+    const items = (order.orderItems?.items || []).map(item => {
+      // Ưu tiên lấy base_price từ dish theo dishId
+      const dish = dishes.find(d => d.id === item.dishId);
+      const price = Number(dish?.basePrice) || Number(item.dishSnapshot?.price) || Number(item.dish?.price) || Number(item.price) || 0;
+      return {
+        name: getDishNameById(item.dishId) || item.dishSnapshot?.name || item.dish?.name || item.name || 'Không rõ tên món',
+        quantity: item.quantity,
+        price,
+        total: price * (Number(item.quantity) || 0),
+      };
+    });
+    // Nếu là đơn giao hàng, thêm phí ship
+    if (order.type === 'delivery') {
+      items.push({ name: 'Phí ship', quantity: '', price: 25000, total: 25000 });
+    }
+    const total = order.totalAmount || 0;
+    const customerName = getUserName(order.userId);
+    const customerAddress = order.deliveryAddress?.address || '';
+    const customerPhone = order.deliveryAddress?.phone || '';
+    const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString('vi-VN') : '';
+    // Lấy thông tin admin hoàn thành đơn
+    let adminName = '';
+    let adminEmail = '';
+    if (order.updatedBy) {
+      const admin = users.find(u => u.id === order.updatedBy);
+      if (admin) {
+        adminName = `${admin.firstName || ''} ${admin.lastName || ''}`.trim() || admin.email || admin.id;
+        adminEmail = admin.email || '';
+      }
+    }
+    const adminId = order.updatedBy || '';
+    const url = `/bill/preview?id=${order.id}&customer=${encodeURIComponent(customerName)}&items=${encodeURIComponent(JSON.stringify(items))}&total=${total}&customerAddress=${encodeURIComponent(customerAddress)}&customerPhone=${encodeURIComponent(customerPhone)}&date=${encodeURIComponent(date)}&order_number=${order.order_number || order.orderNumber || ''}&adminId=${encodeURIComponent(adminId)}`;
+    navigate(url);
   };
 
   // Filter theo tên người dùng nếu cần tìm kiếm
@@ -209,6 +252,10 @@ export default function OrderAdminPage() {
           : editingOrder.deliveryAddress,
         isActive: editingOrder.isActive,
       };
+      // Chỉ truyền updatedBy khi chuyển trạng thái sang completed
+      if (["completed", "hoàn thành"].includes((editingOrder.status || '').toLowerCase())) {
+        payload.updatedBy = user?.id;
+      }
       if (editingOrder.orderItems) payload.orderItems = editingOrder.orderItems;
       if (
         editingOrder.totalAmount !== undefined &&
@@ -249,7 +296,7 @@ export default function OrderAdminPage() {
 
   const handleLogout = () => {
     // logout(); // This line was removed as per the edit hint.
-    navigate('/admin/login');
+    navigate('/login');
   };
 
   return (
@@ -348,6 +395,15 @@ export default function OrderAdminPage() {
                           <td className="py-2 px-3 border-b">
                             <button className="mr-2 text-blue-600 hover:underline" onClick={() => handleEdit(order)}><Edit size={16} /></button>
                             <button className="text-red-600 hover:underline" onClick={() => handleDelete(order.id)} disabled={saving}><Trash2 size={16} /></button>
+                            {isCompleted && (
+                              <button
+                                className="ml-2 px-3 py-1 rounded bg-green-600 text-white flex items-center gap-1 hover:bg-green-700 transition border border-green-700 shadow"
+                                title="In hóa đơn PDF"
+                                onClick={() => printBill(order)}
+                              >
+                                <Printer size={16} /> In hóa đơn
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ) : (
@@ -396,6 +452,15 @@ export default function OrderAdminPage() {
                               <td className="py-2 px-3 border-b" rowSpan={maxItems}>
                                 <button className="mr-2 text-blue-600 hover:underline" onClick={() => handleEdit(order)}><Edit size={16} /></button>
                                 <button className="text-red-600 hover:underline" onClick={() => handleDelete(order.id)} disabled={saving}><Trash2 size={16} /></button>
+                                {isCompleted && (
+                                  <button
+                                    className="ml-2 px-3 py-1 rounded bg-green-600 text-white flex items-center gap-1 hover:bg-green-700 transition border border-green-700 shadow"
+                                    title="In hóa đơn PDF"
+                                    onClick={() => printBill(order)}
+                                  >
+                                    <Printer size={16} /> In hóa đơn
+                                  </button>
+                                )}
                               </td>
                             )}
                           </tr>
@@ -494,6 +559,7 @@ export default function OrderAdminPage() {
             </form>
           </div>
         )}
+        {billUrl && <BillPreviewModal url={billUrl} onClose={() => setBillUrl(null)} />}
       </div>
     </div>
   );

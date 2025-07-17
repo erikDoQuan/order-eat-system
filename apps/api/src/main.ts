@@ -29,7 +29,7 @@ async function bootstrap() {
 
   // Bật CORS cho frontend
   app.enableCors({
-    origin: ['http://localhost:3001', 'http://localhost:3002'], // Cho phép cả 3001 và 3002
+    origin: ['http://localhost:3001', 'http://localhost:3002'], 
     credentials: true,
   });
 
@@ -37,7 +37,16 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ClassSerializerInterceptor(reflector));
 
   app.enableShutdownHooks();
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+          "frame-ancestors": ["'self'", "http://localhost:3001"],
+        },
+      },
+    })
+  );
 
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
