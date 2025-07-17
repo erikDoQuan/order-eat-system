@@ -31,6 +31,8 @@ import ResetPasswordPage from './pages/reset-password';
 import ForgotPasswordPage from './pages/forgot-password';
 import ZaloPayPaymentPage from './pages/ZaloPayPaymentPage';
 import RevenueReportsPage from './admin/RevenueReportsPage';
+import UserTransactionAdminPage from './admin/UserTransactionAdminPage';
+import TeachableMachineTestPage from './pages/TeachableMachineTestPage';
 
 import './globals.scss';
 
@@ -139,6 +141,7 @@ function AppWithCartProvider() {
         <Route path="/admin/orders" element={<AdminRoute><OrderAdminPage /></AdminRoute>} />
         <Route path="/admin/reviews" element={<AdminRoute><ReviewAdminPage /></AdminRoute>} />
         <Route path="/admin/revenue-reports" element={<RevenueReportsPage />} />
+        <Route path="/admin/user-transaction" element={<AdminRoute><UserTransactionAdminPage /></AdminRoute>} />
         {/* Các route không dùng layout */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -153,6 +156,7 @@ function AppWithCartProvider() {
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/teachable-test" element={<TeachableMachineTestPage />} />
       </Routes>
     </CartProvider>
   );

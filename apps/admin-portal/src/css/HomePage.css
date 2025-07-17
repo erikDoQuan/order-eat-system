@@ -89,3 +89,12 @@
   position: absolute;
   inset: 0;
 }
+.help-circle:hover .help-note {
+  opacity: 1;
+  pointer-events: auto;
+}
+.help-note {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}

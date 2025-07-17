@@ -116,19 +116,49 @@ const PaymentInfoPage: React.FC = () => {
   // 1. Thêm hàm handleOrder để gọi createOrder với deliveryAddress là object
   const handleOrder = async () => {
     if (paymentMethod === 'zalopay') {
-      // Điều hướng sang trang ZaloPayPaymentPage, truyền thông tin đơn hàng
-      navigate('/zalo-pay-payment', {
-        state: {
-          items,
-          customer,
-          store,
-          orderType,
-          shippingFee,
-          deliveryAddress,
-          subtotal: computedSubtotal,
-          totalAmount: totalAmountDisplay,
-        },
-      });
+      // 1. Tạo đơn hàng trạng thái pending trước
+      let deliveryAddressObj;
+      if (orderType === 'delivery') {
+        deliveryAddressObj = {
+          address: [state?.address, state?.street, state?.ward, state?.district, state?.province, state?.detail].filter(Boolean).join(', '),
+        };
+      } else {
+        deliveryAddressObj = {
+          address: store.address || '',
+          storeName: store.name || '',
+        };
+      }
+      const payload = {
+        userId: user?.id,
+        orderItems: { items: items },
+        totalAmount: totalAmountDisplay,
+        type: orderType,
+        deliveryAddress: deliveryAddressObj,
+        note: '',
+        paymentMethod: 'zalopay',
+        status: 'pending',
+      };
+      try {
+        const orderRes = await createOrder(payload);
+        // 2. Điều hướng sang trang ZaloPayPaymentPage, truyền orderNumber thật
+        navigate('/zalo-pay-payment', {
+          state: {
+            items,
+            customer,
+            store,
+            orderType,
+            shippingFee,
+            deliveryAddress,
+            subtotal: computedSubtotal,
+            totalAmount: totalAmountDisplay,
+            userId: user?.id,
+            orderNumber: orderRes.orderNumber, // truyền orderNumber thật
+            orderId: orderRes.id, // truyền cả id nếu cần
+          },
+        });
+      } catch (err) {
+        alert('Có lỗi khi tạo đơn hàng, vui lòng thử lại!');
+      }
       return;
     }
     let deliveryAddressObj;

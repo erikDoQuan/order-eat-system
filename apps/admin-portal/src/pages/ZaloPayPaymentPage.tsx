@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { getAllDishes } from '../services/dish.api';
 import { getOrderDetail, getOrderDetailByNumber, createOrder, getOrderDetailByAppTransId } from '../services/order.api';
-import '../css/payment-info.css';
+import '../css/zalo-pay-payment-page.css';
 import { QRCodeCanvas } from 'qrcode.react';
 
 const ZaloPayPaymentPage: React.FC = () => {
@@ -55,44 +55,48 @@ const ZaloPayPaymentPage: React.FC = () => {
   const [error, setError] = useState('');
   const [orderId, setOrderId] = useState<string>('');
   const [countdown, setCountdown] = useState(15 * 60); // 15 phút tính bằng giây
+  const [orderCreated, setOrderCreated] = useState(false);
+  const [successOrder, setSuccessOrder] = useState<any>(null);
+
+  const orderNumber = state.orderNumber; // lấy orderNumber thật từ state
 
   useEffect(() => {
-    if (!totalAmount || totalAmount <= 0) {
-      console.warn('Không có totalAmount hợp lệ, không gọi API ZaloPay', totalAmount);
-      return;
+    if (!totalAmount || totalAmount <= 0) return;
+    let usedOrderId = '';
+    if (orderNumber) {
+      usedOrderId = String(orderNumber);
+    } else {
+      // fallback: sinh orderId random (không chuẩn, chỉ dùng khi test/demo)
+      usedOrderId = String(Date.now()) + Math.floor(Math.random() * 10000);
+      setError('⚠️ Không có orderNumber thực tế, mã QR sẽ không đối soát được đơn hàng!');
     }
+    setOrderId(usedOrderId);
     setLoading(true);
-    // Tạo orderId duy nhất cho giao dịch ZaloPay
-    const newOrderId = String(Date.now()) + Math.floor(Math.random() * 10000);
-    setOrderId(newOrderId);
-    console.log('Gọi API tạo đơn ZaloPay:', `/api/v1/zalopay/create-order?amount=${totalAmount}&orderId=${newOrderId}`);
-    fetch(`/api/v1/zalopay/create-order?amount=${totalAmount}&orderId=${newOrderId}`)
+    fetch(`/api/v1/zalopay/create-order?amount=${totalAmount}&orderId=${usedOrderId}`)
       .then(res => {
-        if (!res.ok) {
-          throw new Error('API trả về lỗi: ' + res.status);
-        }
+        if (!res.ok) throw new Error('API trả về lỗi: ' + res.status);
         return res.json();
       })
       .then(data => {
-        console.log('ZaloPay Info:', data);
         setZaloPayInfo(data);
         setLoading(false);
         if (data?.qrcode && data?.return_code === 1) {
           localStorage.setItem('last_zalopay_qr', data.qrcode);
           localStorage.setItem('last_zalopay_amount', String(totalAmount));
-          localStorage.setItem('last_zalopay_orderId', newOrderId);
+          localStorage.setItem('last_zalopay_orderId', usedOrderId);
         } else if (data?.order_url && data?.return_code === 1) {
           localStorage.setItem('last_zalopay_order_url', data.order_url);
           localStorage.setItem('last_zalopay_amount', String(totalAmount));
-          localStorage.setItem('last_zalopay_orderId', newOrderId);
+          localStorage.setItem('last_zalopay_orderId', usedOrderId);
+        } else {
+          setError(data?.return_message || 'Không thể tạo mã QR ZaloPay.');
         }
       })
       .catch(err => {
-        setError('Không thể tạo đơn hàng ZaloPay.');
+        setError('Không thể tạo mã QR ZaloPay: ' + (err?.message || err));
         setLoading(false);
-        console.error('Lỗi khi gọi API ZaloPay:', err);
       });
-  }, [totalAmount, state]);
+  }, [totalAmount, orderNumber]);
 
 
   useEffect(() => {
@@ -118,6 +122,28 @@ const ZaloPayPaymentPage: React.FC = () => {
   }, [orderId, navigate]);
 
   const appId = import.meta.env.VITE_ZP_APP_ID || '2554';
+
+  // Thêm hàm gọi tạo đơn hàng khi user xác nhận đã thanh toán
+  const handleCreateOrder = async () => {
+    const payload = {
+      userId: state.userId,
+      orderItems: { items },
+      totalAmount,
+      type: orderType,
+      deliveryAddress: orderType === 'delivery' ? { address: deliveryAddress } : { address: store.address, storeName: store.name },
+      note: '',
+      paymentMethod: 'zalopay',
+      status: 'completed', // hoặc truyền thêm trạng thái đã thanh toán nếu backend hỗ trợ
+    };
+    try {
+      const orderRes = await createOrder(payload);
+      setOrderCreated(true);
+      setSuccessOrder(orderRes);
+      navigate('/order-success', { state: { order: orderRes } });
+    } catch (err) {
+      setError('Có lỗi khi lưu đơn hàng sau thanh toán.');
+    }
+  };
 
   return (
     <div className="payment-info-root">
@@ -240,6 +266,25 @@ const ZaloPayPaymentPage: React.FC = () => {
                 }}
               >
                 Quay lại
+              </button>
+              <button
+                onClick={handleCreateOrder}
+                disabled={orderCreated}
+                style={{
+                  background: '#22c55e',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '10px 28px',
+                  fontSize: 16,
+                  fontWeight: 600,
+                  cursor: orderCreated ? 'not-allowed' : 'pointer',
+                  minWidth: 180,
+                  transition: 'all 0.2s',
+                  opacity: orderCreated ? 0.6 : 1,
+                }}
+              >
+                Tôi đã thanh toán
               </button>
             </div>
           </div>

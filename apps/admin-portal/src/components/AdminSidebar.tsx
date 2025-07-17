@@ -10,6 +10,7 @@ const adminMenu = [
   { label: 'Dish Management', path: '/admin/dishes' },
   { label: 'User Management', path: '/admin/customers' },
   { label: 'Order Management', path: '/admin/orders' },
+  { label: 'User Transaction Management', path: '/admin/user-transaction' },
   { label: 'Review Management', path: '/admin/reviews' },
   { label: 'Revenue Reports', path: '/admin/revenue-reports' },
   { label: 'Settings', path: '/admin/settings' },

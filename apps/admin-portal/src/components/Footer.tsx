@@ -42,7 +42,7 @@ const Footer: React.FC = () => {
           <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>Chi nhánh</h3>
           <ul style={{ fontSize: 15, lineHeight: 1.8, listStyle: 'none', padding: 0 }}>
             <li>📍 296/29 Lương Định Của, Nha Trang</li>
-            <li>📍 01 Vũ Lăng, P. Phước Hải, Nha Trang, Khánh Hòa</li>
+            <li>📍 01 Nguyễn Trãi, P. Phước Hải, Nha Trang, Khánh Hòa</li>
           </ul>
         </div>
 

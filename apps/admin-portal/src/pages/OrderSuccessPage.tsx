@@ -22,12 +22,9 @@ const OrderSuccessPage: React.FC = () => {
   const orderNumberFromAppTransId = appTransId ? appTransId.split('_')[1] : undefined;
 
   useEffect(() => {
-    // Nếu có appTransId (redirect từ ZaloPay), clearCart luôn
-    if (appTransId) {
-      clearCart();
-    }
+    clearCart();
     // eslint-disable-next-line
-  }, [appTransId]); // clearCart khi mount hoặc khi appTransId thay đổi
+  }, []);
 
   useEffect(() => {
     if (order) {

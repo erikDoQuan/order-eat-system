@@ -55,6 +55,16 @@ export class OrderController {
     return this.orderService.findOneByOrderNumber(Number(orderNumber));
   }
 
+  @Get('by-zalopay/:orderNumber')
+  @ApiOperation({
+    summary: 'Lấy chi tiết đơn hàng cho ZaloPay theo orderNumber',
+    description: 'Trả về thông tin chi tiết của một đơn hàng dựa vào orderNumber (dùng cho ZaloPay).',
+  })
+  @Response({ message: 'Lấy chi tiết đơn hàng theo orderNumber cho ZaloPay thành công' })
+  getOrderByZaloPay(@Param('orderNumber') orderNumber: string) {
+    return this.orderService.findOneByOrderNumber(Number(orderNumber));
+  }
+
   @Post()
   @ApiOperation({
     summary: 'Tạo đơn hàng mới',

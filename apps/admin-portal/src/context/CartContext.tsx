@@ -95,25 +95,31 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let items: CartItem[] = cart && cart.orderItems && Array.isArray(cart.orderItems.items)
       ? [...cart.orderItems.items]
       : [];
+    const normalize = (v: any) =>
+      v === undefined || v === null || (typeof v === 'string' && v.trim() === '') ? '' : v;
     const idx = items.findIndex(i =>
       i.dishId === dishId &&
-      (i.size ?? null) === (size ?? null) &&
-      (i.base ?? null) === (base ?? null) &&
-      (i.note ?? null) === (note ?? null)
+      normalize(i.size) === normalize(size) &&
+      normalize(i.base) === normalize(base) &&
+      normalize(i.note) === normalize(note)
     );
     if (idx > -1) {
       items[idx].quantity += quantity;
     } else {
-      const newItem: CartItem = { dishId, quantity };
-      if (size) newItem.size = size;
-      if (base) newItem.base = base;
-      if (note) newItem.note = note;
-      items = [newItem, ...items];
+      const newItem: CartItem = {
+        dishId,
+        quantity,
+        size: normalize(size),
+        base: normalize(base),
+        note: normalize(note),
+      };
+      items = [...items, newItem];
     }
     const filteredItems = items.filter(i => i.quantity > 0);
     let totalAmount = 0;
     for (const item of filteredItems) {
-      const dish = dishes.find(d => d.id === item.dishId);
+      if (!item || !item.dishId || !Array.isArray(dishes)) continue;
+      const dish = dishes.find(d => d && d.id === item.dishId);
       if (!dish || typeof dish.basePrice === 'undefined' || dish.basePrice === null) continue;
       const price = Number(dish.basePrice);
       if (isNaN(price) || price <= 0) continue;
@@ -142,7 +148,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ));
     let totalAmount = 0;
     for (const item of filteredItems) {
-      const dish = dishes.find(d => d.id === item.dishId);
+      if (!item || !item.dishId || !Array.isArray(dishes)) continue;
+      const dish = dishes.find(d => d && d.id === item.dishId);
       if (!dish || typeof dish.basePrice === 'undefined' || dish.basePrice === null) continue;
       const price = Number(dish.basePrice);
       if (isNaN(price) || price <= 0) continue;

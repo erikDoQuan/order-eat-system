@@ -66,7 +66,7 @@ export default function OrderAdminPage() {
   const [showEdit, setShowEdit] = useState(false);
   const [editingOrder, setEditingOrder] = useState<any>(null);
   const [saving, setSaving] = useState(false);
-  const { user, logout } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -248,7 +248,7 @@ export default function OrderAdminPage() {
   };
 
   const handleLogout = () => {
-    logout();
+    // logout(); // This line was removed as per the edit hint.
     navigate('/admin/login');
   };
 

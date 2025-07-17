@@ -9,10 +9,13 @@ import type { Dish } from '../types/dish.type';
 import { getAllCategories } from '../services/category.api';
 import { getAllDishes } from '../services/dish.api';
 import DishCard from './DishCard';
+import { DishDetailModal } from './DishCard';
 import { CartPopup } from '../components/CartPopup';
 import { getOrderItemsByUserId } from '../services/user.api';
 import { AuthContext } from '../context/AuthContext';
 import Footer from '../components/Footer';
+import logo from '../assets/images/logo.svg';
+import TeachableMachineTestPage from './TeachableMachineTestPage';
 
 export default function HomePage() {
   const [dishes, setDishes] = useState<Dish[]>([]);
@@ -29,7 +32,12 @@ export default function HomePage() {
   const { user } = useContext(AuthContext);
   const { t } = useTranslation();
   const [visibleAppetizerCount, setVisibleAppetizerCount] = useState(3);
+  const [visibleSaladCount, setVisibleSaladCount] = useState(3);
+  const [visibleDrinkCount, setVisibleDrinkCount] = useState(3);
+  const [visibleSpaghettiCount, setVisibleSpaghettiCount] = useState(3);
   const typeParam = queryParams.get('type');
+  const [showMiniChat, setShowMiniChat] = useState(false);
+  const [dishModal, setDishModal] = useState<any | null>(null);
 
   const pizzaTypeTitle = () => {
     if (typeParam === 'seafood') return t('seafood_pizza');
@@ -120,6 +128,18 @@ export default function HomePage() {
     d => d.status === 'available' && d.categoryId && categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('appetizer') && cat.id === d.categoryId)
   );
 
+  // Thêm lọc salad và drink
+  const saladDishes = dishes.filter(
+    d => d.status === 'available' && d.categoryId && categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('salad') && cat.id === d.categoryId)
+  );
+  const drinkDishes = dishes.filter(
+    d => d.status === 'available' && d.categoryId && (
+      categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('drink') && cat.id === d.categoryId) ||
+      categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('thức uống') && cat.id === d.categoryId) ||
+      categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('beverage') && cat.id === d.categoryId)
+    )
+  );
+
   const handleOpenCart = () => {
     if (user?.id) {
       setCartLoading(true);
@@ -182,8 +202,7 @@ export default function HomePage() {
                 style={{ textDecoration: 'none' }}
                 onClick={() => setVisiblePizzaCount(prev => prev + 3)}
               >
-                {t('view_more')}
-                <em className="ri-add-line" />
+                Xem thêm
               </a>
             </div>
           )}
@@ -215,10 +234,21 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
           <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{spaghettiTypeTitle()}</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-            {filteredSpaghettiDishes.map(dish => (
+            {filteredSpaghettiDishes.slice(0, visibleSpaghettiCount).map(dish => (
               <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
             ))}
           </div>
+          {filteredSpaghettiDishes.length > 3 && visibleSpaghettiCount < filteredSpaghettiDishes.length && (
+            <div className="mb-12 mt-4 flex justify-center">
+              <a
+                className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                style={{ textDecoration: 'none' }}
+                onClick={() => setVisibleSpaghettiCount(prev => prev + 3)}
+              >
+                Xem thêm
+              </a>
+            </div>
+          )}
         </div>
       )}
       {selectedCategory === 'appetizer' && filteredAppetizerDishes.length > 0 && (
@@ -278,6 +308,17 @@ export default function HomePage() {
                   <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
                 ))}
               </div>
+              {visiblePizzaCount < filteredPizzaDishes.length && (
+                <div className="mb-12 mt-4 flex justify-center">
+                  <a
+                    className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                    style={{ textDecoration: 'none' }}
+                    onClick={() => setVisiblePizzaCount(prev => prev + 3)}
+                  >
+                    Xem thêm
+                  </a>
+                </div>
+              )}
             </div>
           )}
           {chickenDishes.length > 0 && (
@@ -306,10 +347,21 @@ export default function HomePage() {
             <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
               <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('spaghetti')}</h2>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-                {spaghettiDishes.map(dish => (
+                {spaghettiDishes.slice(0, visibleSpaghettiCount).map(dish => (
                   <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
                 ))}
               </div>
+              {spaghettiDishes.length > 3 && visibleSpaghettiCount < spaghettiDishes.length && (
+                <div className="mb-12 mt-4 flex justify-center">
+                  <a
+                    className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                    style={{ textDecoration: 'none' }}
+                    onClick={() => setVisibleSpaghettiCount(prev => prev + 3)}
+                  >
+                    Xem thêm
+                  </a>
+                </div>
+              )}
             </div>
           )}
           {(appetizerDishes.length > 0 || appetizerDishesFallback.length > 0) && (
@@ -322,17 +374,62 @@ export default function HomePage() {
                     <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
                 ))}
               </div>
-              {(visibleAppetizerCount < (appetizerDishes.length > 0 ? appetizerDishes.length : appetizerDishesFallback.length)) && (
+              {/* Thêm nút Xem thêm cho Khai vị */}
+              {(appetizerDishes.length > 3 || (appetizerDishes.length === 0 && appetizerDishesFallback.length > 3)) &&
+                visibleAppetizerCount < (appetizerDishes.length > 0 ? appetizerDishes.length : appetizerDishesFallback.length) && (
                 <div className="mb-12 mt-4 flex justify-center">
                   <a
                     className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
                     style={{ textDecoration: 'none' }}
                     onClick={() => setVisibleAppetizerCount(prev => prev + 3)}
                   >
-                    {t('view_more')}
-                    <em className="ri-add-line" />
+                    Xem thêm
                   </a>
                 </div>
+              )}
+              {/* Thêm phần hiển thị salad nếu có */}
+              {saladDishes.length > 0 && (
+                <>
+                  <h3 className="mt-8 mb-4 text-2xl font-bold text-black">{t('salad') || 'Salad'}</h3>
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+                    {saladDishes.slice(0, visibleSaladCount).map(dish => (
+                      <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                    ))}
+                  </div>
+                  {saladDishes.length > 3 && visibleSaladCount < saladDishes.length && (
+                    <div className="mb-6 mt-4 flex justify-center">
+                      <a
+                        className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                        style={{ textDecoration: 'none' }}
+                        onClick={() => setVisibleSaladCount(prev => prev + 3)}
+                      >
+                        Xem thêm
+                      </a>
+                    </div>
+                  )}
+                </>
+              )}
+              {/* Thêm phần hiển thị thức uống nếu có */}
+              {drinkDishes.length > 0 && (
+                <>
+                  <h3 className="mt-8 mb-4 text-2xl font-bold text-black">{t('drink') || 'Thức uống'}</h3>
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+                    {drinkDishes.slice(0, visibleDrinkCount).map(dish => (
+                      <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                    ))}
+                  </div>
+                  {drinkDishes.length > 3 && visibleDrinkCount < drinkDishes.length && (
+                    <div className="mb-6 mt-4 flex justify-center">
+                      <a
+                        className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                        style={{ textDecoration: 'none' }}
+                        onClick={() => setVisibleDrinkCount(prev => prev + 3)}
+                      >
+                        Xem thêm
+                      </a>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -357,6 +454,103 @@ export default function HomePage() {
         </>
       )}
       <Footer />
+      {/* Nút hỗ trợ nổi góc phải cuối màn hình */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 40,
+          right: 60,
+          zIndex: 100,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+        }}
+      >
+        <div
+          style={{
+            position: 'relative',
+            cursor: 'pointer',
+            width: 64,
+            height: 64,
+            borderRadius: '50%',
+            background: '#fff',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'box-shadow 0.2s',
+            border: '2.5px solid #C92A15', // Thêm viền đỏ
+          }}
+          className="help-circle"
+          onClick={() => setShowMiniChat(true)}
+        >
+          <img src="/logo.png" alt="Logo" style={{ width: 36, height: 36, display: 'block', margin: '0 auto' }} />
+          <span
+            style={{
+              position: 'absolute',
+              right: 0,
+              left: 'auto',
+              bottom: 80,
+              transform: 'none',
+              minWidth: 180,
+              maxWidth: 260,
+              textAlign: 'center',
+              background: '#fff',
+              color: '#222',
+              fontWeight: 600,
+              fontSize: 16,
+              borderRadius: 16,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+              padding: '8px 18px',
+              whiteSpace: 'nowrap',
+              transition: 'opacity 0.2s',
+              zIndex: 9999,
+              display: showMiniChat ? 'none' : 'block',
+            }}
+            className="help-note"
+          >
+            Nhận diện món ăn bằng hình ảnh
+          </span>
+        </div>
+        {/* Popup minichat */}
+        {showMiniChat && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 80,
+              right: 0,
+              width: 340,
+              background: '#fff',
+              borderRadius: 16,
+              boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+              padding: 16,
+              zIndex: 200,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <b>Trợ lý món ăn thông minh</b>
+              <button onClick={() => setShowMiniChat(false)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>&times;</button>
+            </div>
+            <div style={{ flex: 1, minHeight: 80, margin: '8px 0', background: '#f8f8f8', borderRadius: 8, padding: 8 }}>
+              <div style={{ color: '#888', marginBottom: 8 }}><i>Hãy tìm món ăn bằng hình ảnh hoặc upload ảnh để nhận diện món ăn.</i></div>
+              <TeachableMachineTestPage onDishClick={dish => setDishModal(dish)} />
+            </div>
+          </div>
+        )}
+      </div>
+      {/* Modal DishCard khi click từ minichat */}
+      {dishModal && (
+        <DishDetailModal
+          dish={dishModal}
+          onClose={() => setDishModal(null)}
+          categoryName={categories.find(cat => cat.id === dishModal.categoryId)?.name || ''}
+          categories={categories}
+          dishes={dishes}
+        />
+      )}
     </div>
   );
 }

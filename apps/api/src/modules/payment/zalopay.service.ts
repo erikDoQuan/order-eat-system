@@ -9,12 +9,13 @@ export class ZaloPayService {
   private key2 = process.env.ZP_KEY2 || '';
   private endpoint = process.env.ZP_CREATE_ORDER || '';
 
-  async createOrder(amount: number, orderId: string, description: string) {
-    const embed_data = {};
+  async createOrder(amount: number, orderId: string, description: string, embed_data: any = {}) {
     const items: any[] = [];
 
     const now = moment();
-    const app_trans_id = `${now.format('YYMMDD')}_${orderId}`;
+    // Đảm bảo app_trans_id luôn duy nhất bằng cách thêm số random 4 chữ số
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000); // 4 chữ số
+    const app_trans_id = `${now.format('YYMMDD')}_${orderId}${randomSuffix}`;
 
     const order = {
       app_id: this.app_id,

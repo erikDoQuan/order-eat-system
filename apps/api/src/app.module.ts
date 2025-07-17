@@ -18,6 +18,7 @@ import { MiddlewareModule } from './shared-modules/middleware/middleware.module'
 import { DishOptionModule } from './modules/dish_option/dish-option.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { PaymentModule } from './modules/payment/payment.module';
+import { UserTransactionModule } from './modules/user_transaction/user-transaction.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { PaymentModule } from './modules/payment/payment.module';
     DishOptionModule,
     ReportsModule,
     PaymentModule,
+    UserTransactionModule,
   ],
   controllers: [],
   exports: [],

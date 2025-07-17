@@ -88,4 +88,13 @@ export class CreateOrderDto {
   })
   @IsOptional()
   pickupTime?: string;
+
+  @ApiProperty({
+    description: 'Phương thức thanh toán',
+    enum: ['cash', 'zalopay'],
+    example: 'cash',
+    required: false,
+  })
+  @IsOptional()
+  paymentMethod?: 'cash' | 'zalopay';
 }

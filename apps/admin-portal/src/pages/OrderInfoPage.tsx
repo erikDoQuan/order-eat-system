@@ -16,8 +16,8 @@ const stores = [
   },
   {
     id: 2,
-    name: 'BẾP CỦA MẸ VŨ LĂNG - TP NHA TRANG',
-    address: '01 Vũ Lăng, Phường Phước Hải, Nha Trang, Khánh Hòa',
+    name: 'BẾP CỦA MẸ NGUYỄN TRÃI - TP NHA TRANG',
+    address: '01 Nguyễn Trãi, Phường Phước Hải, Nha Trang, Khánh Hòa',
     hotline: '0337782571',
   },
 ];

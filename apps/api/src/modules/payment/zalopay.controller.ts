@@ -6,18 +6,27 @@ import { orders } from '../../database/schema/orders';
 import { DrizzleService } from '../../database/drizzle/drizzle.service';
 import { eq } from 'drizzle-orm';
 import { Request, Response } from 'express';
+import { UserTransactionService } from '../user_transaction/user-transaction.service';
+import { TransactionMethod, TransactionStatus } from '../user_transaction/dto/create-user-transaction.dto';
+import { OrderService } from '../order/order.service';
 
 @Controller('zalopay')
 export class ZaloPayController {
   private zaloPayService = new ZaloPayService();
-  constructor(private readonly drizzle: DrizzleService) {}
+  constructor(
+    private readonly drizzle: DrizzleService,
+    private readonly userTransactionService: UserTransactionService,
+    private readonly orderService: OrderService,
+  ) {}
   private logger = new Logger('ZaloPayCallback');
 
   @Get('create-order')
-  async createOrder(@Query('amount') amount: string, @Query('orderId') orderId: string) {
+  async createOrder(@Query('amount') amount: string, @Query('orderInfo') orderInfo: string) {
+    // orderInfo là JSON string chứa thông tin đơn hàng tạm (orderItems, userId, ...)
     const total = Math.round(Number(amount));
     try {
-      const result = await this.zaloPayService.createOrder(total, orderId, `Thanh toán đơn hàng #${orderId}`);
+      // Truyền orderInfo vào embed_data để callback lấy lại
+      const result = await this.zaloPayService.createOrder(total, Date.now().toString(), `Thanh toán đơn hàng`, orderInfo);
       return result; // Trả về URL QR và thông tin thanh toán
     } catch (err: any) {
       throw new BadRequestException(err.message || 'Tạo đơn hàng ZaloPay thất bại');
@@ -26,11 +35,66 @@ export class ZaloPayController {
 
   @Post('callback')
   @HttpCode(200) // trả về 200 OK
-  handleCallback(@Body() body: any) {
-    this.logger.log('📥 Nhận callback từ ZaloPay:');
-    this.logger.log(JSON.stringify(body, null, 2));
-    // Trả về mã thành công để ZaloPay không gọi lại
-    return { return_code: 1, return_message: 'OK' };
+  async handleCallback(@Body() body: any) {
+    try {
+      this.logger.log('📥 Nhận callback từ ZaloPay:');
+      this.logger.log(JSON.stringify(body, null, 2));
+
+      // Nếu body.data là JSON string, parse nó để lấy các trường thực sự
+      let data = body;
+      if (body.data && typeof body.data === 'string') {
+        try {
+          data = JSON.parse(body.data);
+        } catch (e) {
+          this.logger.error('Không parse được body.data:', e);
+          return { return_code: 1, return_message: 'Dữ liệu callback không hợp lệ' };
+        }
+      }
+
+      // Chỉ xử lý khi thanh toán thành công
+      if (body.return_code == 1) {
+        // Lấy thông tin đơn hàng từ embed_data
+        let orderInfo = {};
+        if (data.embed_data) {
+          try {
+            orderInfo = JSON.parse(data.embed_data);
+          } catch (e) {
+            this.logger.error('Không parse được embed_data:', e);
+          }
+        }
+        // Validate orderInfo (orderItems, userId, ...)
+        if (orderInfo && orderInfo['userId'] && orderInfo['orderItems'] && orderInfo['totalAmount']) {
+          // Tạo order
+          const order = await this.orderService.create({
+            userId: orderInfo['userId'],
+            orderItems: orderInfo['orderItems'],
+            totalAmount: orderInfo['totalAmount'],
+            type: orderInfo['type'],
+            deliveryAddress: orderInfo['deliveryAddress'],
+            note: orderInfo['note'] || '',
+            paymentMethod: 'zalopay',
+          });
+          // Tạo user_transaction với status SUCCESS
+          await this.userTransactionService.create({
+            userId: order.userId,
+            orderId: order.id,
+            amount: String(order.totalAmount),
+            method: TransactionMethod.ZALOPAY,
+            status: TransactionStatus.SUCCESS,
+            transTime: new Date().toISOString(),
+            transactionCode: data.zp_trans_token || data.order_token || '',
+            description: data.description || `Thanh toán đơn hàng #${order.orderNumber || order.id}`,
+          });
+        } else {
+          this.logger.error('orderInfo thiếu thông tin cần thiết');
+        }
+      }
+      // Trả về mã thành công để ZaloPay không gọi lại
+      return { return_code: 1, return_message: 'OK' };
+    } catch (err: any) {
+      this.logger.error('Lỗi callback ZaloPay:', err);
+      return { return_code: 1, return_message: 'Lỗi xử lý callback: ' + (err?.message || err) };
+    }
   }
 
   @Post('callback/express')

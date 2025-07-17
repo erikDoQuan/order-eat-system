@@ -8,6 +8,8 @@ import { DishRepository } from '~/database/repositories/dish.repository';
 import { DishSnapshotRepository } from '~/database/repositories/dish_snapshot.repository';
 import { UserRepository } from '~/database/repositories/user.repository';
 import { NotificationGateway } from '../notification/notification.gateway';
+import { UserTransactionService } from '../user_transaction/user-transaction.service';
+import { TransactionMethod, TransactionStatus } from '../user_transaction/dto/create-user-transaction.dto';
 
 
 @Injectable()
@@ -18,6 +20,7 @@ export class OrderService {
     private readonly dishSnapshotRepository: DishSnapshotRepository, // thêm dòng này
     private readonly userRepository: UserRepository,
     private notificationGateway: NotificationGateway,
+    private readonly userTransactionService: UserTransactionService, // thêm dòng này
   ) {}
 
   async findAll(dto: FetchOrdersDto) {
@@ -120,6 +123,9 @@ export class OrderService {
       dto.orderItems.items = await Promise.all(dto.orderItems.items.map(async item => {
         const dish = await this.dishRepository.findOne(item.dishId);
         // Tạo snapshot
+        const validSizes = ['small', 'medium', 'large'];
+        const validSize = item.size && validSizes.includes(item.size) ? item.size : null;
+        // Tạo snapshot
         const snapshot = await this.dishSnapshotRepository.create({
           dishId: dish.id,
           name: dish.name,
@@ -127,7 +133,7 @@ export class OrderService {
           description: dish.description,
           imageUrl: dish.imageUrl || dish.image, // tuỳ schema
           status: dish.status,
-          size: item.size,
+          size: validSize,
           typeName: dish.typeName,
           categoryId: dish.categoryId,
           createdBy: dish.createdBy,
@@ -194,6 +200,21 @@ export class OrderService {
     });
     // Lấy lại order từ DB để chắc chắn có trường orderNumber
     const orderFull = await this.orderRepository.findOne(order.id);
+
+    // Lưu user_transaction với status pending khi tạo đơn hàng
+    if (orderFull && dto.userId) {
+      await this.userTransactionService.create({
+        userId: dto.userId,
+        orderId: orderFull.id,
+        amount: String(orderFull.totalAmount),
+        method: dto.paymentMethod === 'zalopay' ? TransactionMethod.ZALOPAY : TransactionMethod.CASH,
+        status: TransactionStatus.PENDING,
+        transTime: new Date().toISOString(),
+        transactionCode: null,
+        description: `Tạo giao dịch cho đơn hàng #${orderFull.orderNumber || orderFull.id}`,
+      });
+    }
+
     return {
       ...orderFull,
       order_number: orderFull?.orderNumber || orderFull?.id,
@@ -270,6 +291,21 @@ export class OrderService {
     }
     // Lưu lại order
     const updatedOrder = await this.orderRepository.update(id, order as UpdateOrderDto);
+
+    // Nếu cập nhật status và có updatedBy (admin), thì update user_transaction
+    if (dto.status && dto.updatedBy && order.userId) {
+      // Xác định status mới cho transaction
+      let newStatus = TransactionStatus.PENDING;
+      if (dto.status === 'completed' || dto.status === 'confirmed') newStatus = TransactionStatus.SUCCESS;
+      if (dto.status === 'cancelled') newStatus = TransactionStatus.CANCELLED;
+      // Update user_transaction theo orderId
+      await this.userTransactionService.updateByOrderId(order.id, {
+        status: newStatus,
+        transTime: new Date().toISOString(),
+        description: `Admin cập nhật trạng thái đơn hàng #${order.orderNumber || order.id} sang ${dto.status}`,
+      });
+    }
+
     return {
       ...updatedOrder,
       order_number: updatedOrder?.orderNumber || updatedOrder?.id,

@@ -1,7 +1,7 @@
 // src/admin/AdminPage.tsx
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { LogOut, User } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 import AdminSidebar from '../components/AdminSidebar';
 import { AuthContext } from '../context/AuthContext';

@@ -36,7 +36,7 @@ export default function RegisterPage() {
   const commonStreets = [
     'Nguyễn Trãi', 'Trần Phú', 'Lý Tự Trọng', 'Thái Nguyên', 'Lê Lợi', 'Pasteur',
     'Yersin', 'Bạch Đằng', 'Tôn Đức Thắng', 'Võ Văn Tần', 'Nguyễn Thiện Thuật',
-    'Lương Định Của', 'Vũ Lăng', 'Phạm Văn Đồng', 'Nguyễn Tất Thành', 'Trần Hưng Đạo',
+    'Lương Định Của', 'Nguyễn Trãi', 'Phạm Văn Đồng', 'Nguyễn Tất Thành', 'Trần Hưng Đạo',
     'Lê Thánh Tôn', 'Nguyễn Huệ', 'Hùng Vương', 'Lê Hồng Phong', 'Nguyễn Du',
     'Trần Quang Khải', 'Nguyễn Bỉnh Khiêm', 'Lê Quý Đôn', 'Nguyễn Công Trứ',
     'Đường 2/4', 'Đường 23/10', 'Đường 3/2', 'Đường 16/4', 'Đường 19/8',

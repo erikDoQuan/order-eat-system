@@ -273,6 +273,8 @@ function DishDetailModal({ dish, onClose, categoryName, categories, dishes }: { 
   );
 }
 
+export { DishDetailModal };
+
 /* --------------------------------------------------
  *  Thẻ card món ăn – export mặc định
  * -------------------------------------------------- */
@@ -347,6 +349,9 @@ export default function DishCard({ dish, categoryName }: { dish: Dish, categoryN
             {dishName}
           </h3>
           <p className="dish-card-desc">{dishDesc}</p>
+
+          {/* Nút xem thêm */}
+          {/* Đã xóa nút 'Xem thêm' trong từng card để chỉ dùng nút ngoài cùng */}
 
           <div className="mt-auto flex w-full items-end justify-between">
             <div>
