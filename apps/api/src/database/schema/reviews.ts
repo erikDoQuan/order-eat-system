@@ -6,6 +6,7 @@ import {
   text,
   uuid,
   uniqueIndex,
+  varchar,
 } from 'drizzle-orm/pg-core';
 
 import { baseColumns } from './_base';
@@ -19,6 +20,7 @@ export const reviews = pgTable('reviews', {
   createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
   rating: smallint('rating').notNull(),
   comment: text('comment'),
+  adminReply: varchar('admin_reply', { length: 500 }), // phản hồi của admin
 }, (table) => ({
   orderIdUnique: uniqueIndex('reviews_order_id_unique').on(table.orderId),
 }));
@@ -40,4 +42,10 @@ export const reviewsRelations = relations(reviews, ({ one }) => ({
 
 export type Review = typeof reviews.$inferSelect;
 export type ReviewInsert = typeof reviews.$inferInsert;
-export type ReviewUpdate = Partial<ReviewInsert>;
+// Sửa lại type ReviewUpdate để có adminReply
+export type ReviewUpdate = {
+  rating?: number;
+  comment?: string;
+  updatedBy?: string;
+  adminReply?: string;
+};

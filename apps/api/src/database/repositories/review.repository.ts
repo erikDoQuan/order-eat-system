@@ -1,4 +1,5 @@
 
+
 import { Injectable, ConflictException, ForbiddenException } from '@nestjs/common';
 import { and, count, desc, eq, ilike, sql, SQL } from 'drizzle-orm';
 
@@ -109,6 +110,19 @@ export class ReviewRepository {
       .where(eq(reviews.id, id))
       .returning();
 
+    return updated || null;
+  }
+
+  async updateAdminReply(id: string, adminReply: string): Promise<Review | null> {
+    const existingReview = await this.findOne(id);
+    if (!existingReview) {
+      return null;
+    }
+    const [updated] = await this.drizzle.db
+      .update(reviews)
+      .set({ adminReply: adminReply } as any)
+      .where(eq(reviews.id, id))
+      .returning();
     return updated || null;
   }
 

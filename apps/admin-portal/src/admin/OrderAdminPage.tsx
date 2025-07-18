@@ -75,6 +75,8 @@ export default function OrderAdminPage() {
   // Thêm state cho modal chi tiết
   const [showDetail, setShowDetail] = useState(false);
   const [detailOrder, setDetailOrder] = useState<any>(null);
+  // Thêm state để lưu transactions
+  const [transactions, setTransactions] = useState<any[]>([]);
 
   useEffect(() => {
     if (!loading && (!user || user.role !== 'admin')) {
@@ -90,11 +92,13 @@ export default function OrderAdminPage() {
     Promise.all([
       axios.get('/api/v1/orders'),
       getAllUsers(1, 1000),
-      getAllDishes()
+      getAllDishes(),
+      axios.get('/api/v1/user-transaction'),
     ])
-      .then(([ordersRes, usersRes, dishesRes]) => {
+      .then(([ordersRes, usersRes, dishesRes, transactionsRes]) => {
         const ordersArr = Array.isArray(ordersRes.data?.data?.data) ? ordersRes.data.data.data : [];
         setOrders(ordersArr);
+        setTransactions(transactionsRes.data?.data || []);
         // Sắp xếp: active lên trên, sau đó theo createdAt mới nhất
         const sortedUsers = [...(usersRes.users || [])].sort((a, b) => {
           if ((b.isActive ? 1 : 0) !== (a.isActive ? 1 : 0)) {
@@ -166,6 +170,12 @@ export default function OrderAdminPage() {
   };
 
   const printBill = (order: any) => {
+    // Lấy paymentMethod từ user transaction nếu có
+    let paymentMethod = order.paymentMethod || '';
+    const txs = transactions.filter((t: any) => t.orderId === order.id);
+    const tx = txs.find((t: any) => (t.status === 'success' || t.status === 'pending'));
+    if (tx && tx.method) paymentMethod = String(tx.method).toLowerCase();
+    console.log('order.id:', order.id, 'paymentMethod:', paymentMethod, 'tx:', tx, 'allTx:', txs);
     const items = (order.orderItems?.items || []).map(item => {
       // Ưu tiên lấy base_price từ dish theo dishId
       const dish = dishes.find(d => d.id === item.dishId);
@@ -197,7 +207,7 @@ export default function OrderAdminPage() {
       }
     }
     const adminId = order.updatedBy || '';
-    const url = `/bill/preview?id=${order.id}&customer=${encodeURIComponent(customerName)}&items=${encodeURIComponent(JSON.stringify(items))}&total=${total}&customerAddress=${encodeURIComponent(customerAddress)}&customerPhone=${encodeURIComponent(customerPhone)}&date=${encodeURIComponent(date)}&order_number=${order.order_number || order.orderNumber || ''}&adminId=${encodeURIComponent(adminId)}`;
+    const url = `/bill/preview?id=${order.id}&customer=${encodeURIComponent(customerName)}&items=${encodeURIComponent(JSON.stringify(items))}&total=${total}&customerAddress=${encodeURIComponent(customerAddress)}&customerPhone=${encodeURIComponent(customerPhone)}&date=${encodeURIComponent(date)}&order_number=${order.order_number || order.orderNumber || ''}&adminId=${encodeURIComponent(adminId)}&paymentMethod=${paymentMethod}`;
     navigate(url);
   };
 
@@ -403,17 +413,43 @@ export default function OrderAdminPage() {
                           <td className="py-2 px-3 border-b">{formatDeliveryAddress(order.deliveryAddress)}</td>
                           <td className="py-2 px-3 border-b">{order.note}</td>
                           <td className="py-2 px-3 border-b">
-                            <button className="mr-2 text-blue-600 hover:underline" onClick={() => handleEdit(order)}><Edit size={16} /></button>
-                            <button className="text-red-600 hover:underline" onClick={() => handleDelete(order.id)} disabled={saving}><Trash2 size={16} /></button>
-                            {isCompleted && (
+                            <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'center', width: 120 }}>
                               <button
-                                className="ml-2 px-3 py-1 rounded bg-green-600 text-white flex items-center gap-1 hover:bg-green-700 transition border border-green-700 shadow"
-                                title="In hóa đơn PDF"
-                                onClick={() => printBill(order)}
+                                title="Sửa"
+                                onClick={() => handleEdit(order)}
+                                style={{
+                                  width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  border: 'none', background: 'none', color: '#2563eb', cursor: 'pointer', fontSize: 0
+                                }}
                               >
-                                <Printer size={16} /> In hóa đơn
+                                <Edit size={18} />
                               </button>
-                            )}
+                              <button
+                                title="Xóa"
+                                onClick={() => handleDelete(order.id)}
+                                disabled={saving}
+                                style={{
+                                  width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  border: 'none', background: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 0
+                                }}
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                              {isCompleted ? (
+                                <button
+                                  title="In hóa đơn"
+                                  onClick={() => printBill(order)}
+                                  style={{
+                                    width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    border: 'none', background: 'none', color: '#16a34a', cursor: 'pointer', fontSize: 0
+                                  }}
+                                >
+                                  <Printer size={18} />
+                                </button>
+                              ) : (
+                                <span style={{ width: 36, height: 36, display: 'inline-block' }}></span>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ) : (
@@ -437,17 +473,43 @@ export default function OrderAdminPage() {
                                 <td className="py-2 px-3 border-b" rowSpan={maxItems}>{formatDeliveryAddress(order.deliveryAddress)}</td>
                                 <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.note}</td>
                                 <td className="py-2 px-3 border-b" rowSpan={maxItems}>
-                                  <button className="mr-2 text-blue-600 hover:underline" onClick={() => handleEdit(order)}><Edit size={16} /></button>
-                                  <button className="text-red-600 hover:underline" onClick={() => handleDelete(order.id)} disabled={saving}><Trash2 size={16} /></button>
-                                  {isCompleted && (
+                                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'center', width: 120 }}>
                                     <button
-                                      className="ml-2 px-3 py-1 rounded bg-green-600 text-white flex items-center gap-1 hover:bg-green-700 transition border border-green-700 shadow"
-                                      title="In hóa đơn PDF"
-                                      onClick={() => printBill(order)}
+                                      title="Sửa"
+                                      onClick={() => handleEdit(order)}
+                                      style={{
+                                        width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        border: 'none', background: 'none', color: '#2563eb', cursor: 'pointer', fontSize: 0
+                                      }}
                                     >
-                                      <Printer size={16} /> In hóa đơn
+                                      <Edit size={18} />
                                     </button>
-                                  )}
+                                    <button
+                                      title="Xóa"
+                                      onClick={() => handleDelete(order.id)}
+                                      disabled={saving}
+                                      style={{
+                                        width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        border: 'none', background: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 0
+                                      }}
+                                    >
+                                      <Trash2 size={18} />
+                                    </button>
+                                    {isCompleted ? (
+                                      <button
+                                        title="In hóa đơn"
+                                        onClick={() => printBill(order)}
+                                        style={{
+                                          width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                          border: 'none', background: 'none', color: '#16a34a', cursor: 'pointer', fontSize: 0
+                                        }}
+                                      >
+                                        <Printer size={18} />
+                                      </button>
+                                    ) : (
+                                      <span style={{ width: 36, height: 36, display: 'inline-block' }}></span>
+                                    )}
+                                  </div>
                                 </td>
                               </>
                             )}

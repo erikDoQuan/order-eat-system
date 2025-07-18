@@ -12,4 +12,9 @@ export class UpdateReviewDto {
   @IsOptional()
   @IsString()
   comment?: string;
+
+  @ApiPropertyOptional({ description: 'Phản hồi của admin', example: 'Cảm ơn bạn đã góp ý, chúng tôi sẽ cải thiện.' })
+  @IsOptional()
+  @IsString()
+  adminReply?: string;
 }

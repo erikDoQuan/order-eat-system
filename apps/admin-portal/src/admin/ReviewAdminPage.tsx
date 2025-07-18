@@ -6,7 +6,7 @@ import axios from 'axios';
 import { getAllUsers, User } from '../services/user.api';
 import { getAllDishes } from '../services/dish.api';
 import { Dish } from '../types/dish.type';
-import { deleteReview, updateReview } from '../services/review.api';
+import { deleteReview, updateReview, respondReview } from '../services/review.api';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -43,6 +43,9 @@ export default function ReviewAdminPage() {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [starFilter, setStarFilter] = useState<number|null>(null);
+  // Thêm state để lưu review đang phản hồi
+  const [replyingReviewId, setReplyingReviewId] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState('');
 
   useEffect(() => {
     if (!loading && (!user || user.role !== 'admin')) {
@@ -201,6 +204,35 @@ export default function ReviewAdminPage() {
     navigate('/admin/login');
   };
 
+  // Gợi ý phản hồi admin theo số sao
+  const adminReplySuggestions: Record<number, string[]> = {
+    1: [
+      'Chúng tôi chân thành xin lỗi vì trải nghiệm không tốt của bạn. Chúng tôi sẽ kiểm tra lại và cải thiện dịch vụ sớm nhất.',
+      'Rất tiếc vì món ăn/dịch vụ không đạt kỳ vọng. Cảm ơn bạn đã phản hồi để chúng tôi phục vụ tốt hơn trong tương lai.',
+      'Xin lỗi bạn vì sự bất tiện vừa qua. Cửa hàng sẽ xem xét lại quy trình để không lặp lại điều này.',
+    ],
+    2: [
+      'Cảm ơn bạn đã phản hồi. Chúng tôi sẽ rà soát lại vấn đề và cố gắng nâng cao chất lượng món ăn.',
+      'Rất tiếc vì bạn chưa hài lòng. Chúng tôi sẽ nỗ lực cải thiện để phục vụ bạn tốt hơn trong những lần sau.',
+      'Chúng tôi trân trọng góp ý của bạn và đang xem xét để điều chỉnh hợp lý.',
+    ],
+    3: [
+      'Cảm ơn bạn đã góp ý. Chúng tôi hy vọng sẽ mang lại trải nghiệm tốt hơn ở lần đặt hàng tới.',
+      'Cửa hàng đã ghi nhận phản hồi của bạn và sẽ cải thiện thêm. Rất mong được phục vụ bạn lần sau.',
+      'Chúng tôi đang nỗ lực mỗi ngày để hoàn thiện. Cảm ơn bạn vì sự đóng góp.',
+    ],
+    4: [
+      'Cảm ơn bạn đã đánh giá tốt! Chúng tôi sẽ cố gắng hơn nữa để đạt 5 sao trong lần tới.',
+      'Rất vui khi nhận được phản hồi tích cực từ bạn. Cảm ơn bạn đã ủng hộ!',
+      'Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ. Mong được phục vụ bạn nhiều lần nữa!',
+    ],
+    5: [
+      'Cảm ơn bạn rất nhiều vì đánh giá tuyệt vời! Đó là nguồn động lực lớn với cửa hàng.',
+      'Thật vui khi bạn hài lòng với món ăn và dịch vụ. Hẹn gặp lại bạn sớm!',
+      'Cảm ơn bạn đã tin tưởng và ủng hộ. Chúc bạn một ngày tuyệt vời!',
+    ],
+  };
+
   return (
     <div className="admin-layout bg-gray-50">
       <div className="admin-sidebar-fixed">
@@ -296,39 +328,117 @@ export default function ReviewAdminPage() {
                 {filteredReviews.map((review, index) => {
                   const orderInfo = getOrderInfo(review.orderId);
                   return (
-                    <tr key={review.id} className="hover:bg-gray-50 transition">
-                      <td className="py-2 px-3 border-b font-medium">{index + 1}</td>
-                      <td className="py-2 px-3 border-b">{formatDate(review.createdAt)}</td>
-                      <td className="py-2 px-3 border-b">{getUserName(review.userId)}</td>
-                      <td className="py-2 px-3 border-b">
-                        <div>
-                          <div className="font-medium">{orderInfo.orderNumber ? `#${orderInfo.orderNumber}` : 'Unknown'}</div>
-                          <div className="text-xs text-gray-500">{orderInfo.status}</div>
-                          <div className="text-xs text-gray-700">{Number(orderInfo.totalAmount).toLocaleString('en-US')}đ</div>
-                        </div>
-                      </td>
-                      <td className="py-2 px-3 border-b">
-                        <StarRating rating={review.rating} />
-                      </td>
-                      <td className="py-2 px-3 border-b review-comment">
-                        {review.comment || 'No comment'}
-                      </td>
-                      <td className="py-2 px-3 border-b">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          review.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {review.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="py-2 px-3 border-b">
-                        <button className="mr-2 text-blue-600 hover:underline" onClick={() => handleEdit(review)}>
-                          <Edit size={16} />
-                        </button>
-                        <button className="text-red-600 hover:underline" onClick={() => handleDelete(review.id)} disabled={saving}>
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
-                    </tr>
+                    <React.Fragment key={review.id}>
+                      <tr className="hover:bg-gray-50 transition">
+                        <td className="py-2 px-3 border-b font-medium">{index + 1}</td>
+                        <td className="py-2 px-3 border-b">{formatDate(review.createdAt)}</td>
+                        <td className="py-2 px-3 border-b">{getUserName(review.userId)}</td>
+                        <td className="py-2 px-3 border-b">
+                          <div>
+                            <div className="font-medium">{orderInfo.orderNumber ? `#${orderInfo.orderNumber}` : 'Unknown'}</div>
+                            <div className="text-xs text-gray-500">{orderInfo.status}</div>
+                            <div className="text-xs text-gray-700">{Number(orderInfo.totalAmount).toLocaleString('en-US')}đ</div>
+                          </div>
+                        </td>
+                        <td className="py-2 px-3 border-b">
+                          <StarRating rating={review.rating} />
+                        </td>
+                        <td className="py-2 px-3 border-b review-comment">
+                          {review.comment || 'No comment'}
+                        </td>
+                        <td className="py-2 px-3 border-b">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            review.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            {review.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="py-2 px-3 border-b">
+                          <button
+                            style={{
+                              padding: '4px 12px',
+                              borderRadius: 6,
+                              border: 'none',
+                              background: '#2563eb',
+                              color: '#fff',
+                              fontWeight: 500,
+                              fontSize: 14,
+                              cursor: 'pointer',
+                              transition: 'background 0.2s',
+                            }}
+                            title="Phản hồi"
+                            onClick={() => {
+                              setReplyingReviewId(review.id);
+                              setReplyContent('');
+                            }}
+                          >
+                            Phản hồi
+                          </button>
+                        </td>
+                      </tr>
+                      {replyingReviewId === review.id && (
+                        <tr>
+                          <td colSpan={8} style={{ background: '#f3f4f6', padding: 16 }}>
+                            {/* Gợi ý phản hồi admin */}
+                            {adminReplySuggestions[review.rating] && (
+                              <div style={{ marginBottom: 8, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                {adminReplySuggestions[review.rating].map((suggestion, idx) => (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    style={{
+                                      background: '#fff',
+                                      border: '1px solid #2563eb',
+                                      color: '#2563eb',
+                                      borderRadius: 6,
+                                      padding: '4px 10px',
+                                      fontSize: 14,
+                                      cursor: 'pointer',
+                                      marginBottom: 4,
+                                      transition: 'background 0.2s',
+                                    }}
+                                    onClick={() => setReplyContent(suggestion)}
+                                  >
+                                    {suggestion}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            <textarea
+                              value={replyContent}
+                              onChange={e => setReplyContent(e.target.value)}
+                              placeholder="Nhập phản hồi..."
+                              style={{ width: '100%', minHeight: 60, borderRadius: 6, border: '1px solid #d1d5db', padding: 8, fontSize: 15 }}
+                            />
+                            <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                              <button
+                                style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 18px', fontWeight: 500, fontSize: 15, cursor: 'pointer' }}
+                                disabled={!replyContent.trim()}
+                                onClick={async () => {
+                                  if (!replyContent.trim()) return;
+                                  try {
+                                    await respondReview(review.id, replyContent);
+                                    setReplyingReviewId(null);
+                                    setReplyContent('');
+                                    if (typeof fetchReviews === 'function') fetchReviews();
+                                  } catch (err) {
+                                    alert('Gửi phản hồi thất bại!');
+                                  }
+                                }}
+                              >
+                                Gửi phản hồi
+                              </button>
+                              <button
+                                style={{ background: '#e5e7eb', color: '#111', border: 'none', borderRadius: 6, padding: '6px 18px', fontWeight: 500, fontSize: 15, cursor: 'pointer' }}
+                                onClick={() => setReplyingReviewId(null)}
+                              >
+                                Hủy
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>

@@ -94,4 +94,8 @@ export class UserTransactionService {
       throw err;
     }
   }
+
+  async findByOrderId(orderId: string) {
+    return this.drizzleService.db.select().from(userTransactions).where(eq(userTransactions.orderId, orderId));
+  }
 } 

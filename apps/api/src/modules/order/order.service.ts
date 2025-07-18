@@ -311,16 +311,31 @@ export class OrderService {
 
     // Nếu cập nhật status và có updatedBy (admin), thì update user_transaction
     if (dto.status && dto.updatedBy && order.userId) {
-      // Xác định status mới cho transaction
-      let newStatus = TransactionStatus.PENDING;
-      if (dto.status === 'completed' || dto.status === 'confirmed') newStatus = TransactionStatus.SUCCESS;
-      if (dto.status === 'cancelled') newStatus = TransactionStatus.CANCELLED;
-      // Update user_transaction theo orderId
-      await this.userTransactionService.updateByOrderId(order.id, {
-        status: newStatus,
-        transTime: new Date().toISOString(),
-        description: `Admin cập nhật trạng thái đơn hàng #${order.orderNumber || order.id} sang ${dto.status}`,
-      });
+      // Chỉ cập nhật transaction cash sang success khi order completed
+      if (dto.status === 'completed') {
+        // Lấy tất cả transaction của order
+        const transactions = await this.userTransactionService.findByOrderId(order.id);
+        for (const tx of transactions) {
+          if (tx.method === 'cash') {
+            await this.userTransactionService.updateByOrderId(order.id, {
+              status: TransactionStatus.SUCCESS,
+              transTime: new Date().toISOString(),
+              description: `Admin xác nhận hoàn thành đơn hàng #${order.orderNumber || order.id}`,
+            });
+          }
+        }
+      } else {
+        // Xác định status mới cho transaction
+        let newStatus = TransactionStatus.PENDING;
+        if (dto.status === 'confirmed') newStatus = TransactionStatus.SUCCESS;
+        if (dto.status === 'cancelled') newStatus = TransactionStatus.CANCELLED;
+        // Update user_transaction theo orderId
+        await this.userTransactionService.updateByOrderId(order.id, {
+          status: newStatus,
+          transTime: new Date().toISOString(),
+          description: `Admin cập nhật trạng thái đơn hàng #${order.orderNumber || order.id} sang ${dto.status}`,
+        });
+      }
     }
 
     return {

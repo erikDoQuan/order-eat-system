@@ -5,6 +5,8 @@ import { UpdateReviewDto } from './dto/update-review.dto';
 import { FetchReviewsDto } from './dto/fetch-reviews.dto';
 import { ReviewRepository } from '~/database/repositories/review.repository';
 import { User } from '~/database/schema';
+import { RespondReviewDto } from './dto/respond-review.dto';
+import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class ReviewService {
@@ -28,5 +30,15 @@ export class ReviewService {
 
   delete(id: string) {
     return this.reviewRepo.delete(id);
+  }
+
+  async respondToReview(dto: RespondReviewDto) {
+    const { reviewId, adminReply } = dto;
+    const review = await this.reviewRepo.findOne(reviewId);
+    if (!review) {
+      throw new NotFoundException('Review không tồn tại');
+    }
+    await this.reviewRepo.updateAdminReply(reviewId, adminReply);
+    return { message: 'Phản hồi thành công!' };
   }
 }

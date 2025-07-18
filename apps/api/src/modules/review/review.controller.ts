@@ -6,11 +6,13 @@ import { ReviewService } from './review.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { FetchReviewsDto } from './dto/fetch-reviews.dto';
+import { RespondReviewDto } from './dto/respond-review.dto';
 import { Response } from '~/common/decorators/response.decorator';
 import { RequireUser } from '~/common/decorators/require-user.decorator';
 import { GetUser } from '~/common/decorators/get-user.decorator';
 import { User } from '~/database/schema';
 import { AccessTokenGuard } from '~/common/guards/access-token.guard';
+import { AdminGuard } from '~/common/guards/admin.guard';
 
 @ApiTags('Reviews')
 @Controller('reviews')
@@ -48,6 +50,19 @@ export class ReviewController {
   @Response({ message: 'Cập nhật đánh giá thành công' })
   update(@Param('id') id: string, @Body() body: UpdateReviewDto, @GetUser() user: User) {
     return this.reviewService.update(id, body, user);
+  }
+
+  @Patch('admin/respond')
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: 'Phản hồi đánh giá theo ID' })
+  @Response({ message: 'Phản hồi đánh giá thành công' })
+  async respondToReview(@Body() dto: RespondReviewDto) {
+    // Nếu không có dữ liệu từ FE, dùng dữ liệu mẫu để test
+    const testDto = dto && dto.reviewId && dto.adminReply ? dto : {
+      reviewId: 'REPLACE_WITH_A_VALID_REVIEW_ID', // <-- Thay bằng 1 id review thực tế trong DB
+      adminReply: 'Phản hồi mẫu từ admin (test)'
+    };
+    return this.reviewService.respondToReview(testDto);
   }
 
   @Delete(':id')

@@ -33,4 +33,9 @@ export async function getReviewsByOrderId(orderId: string) {
 export async function getReviewDetail(reviewId: string) {
   const res = await axios.get(`/reviews/${reviewId}`);
   return res.data?.data || res.data;
+}
+
+export async function respondReview(reviewId: string, adminReply: string) {
+  const res = await axios.patch('/reviews/admin/respond', { reviewId, adminReply });
+  return res.data;
 } 

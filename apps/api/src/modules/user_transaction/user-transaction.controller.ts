@@ -15,4 +15,9 @@ export class UserTransactionController {
   async findAll(@Query('page') page = 1, @Query('limit') limit = 20) {
     return this.userTransactionService.findAllWithUserOrder(Number(page), Number(limit));
   }
+
+  @Get('all')
+  async findAllNoPaging() {
+    return this.userTransactionService.findAllWithUserOrder(1, 100000);
+  }
 } 
