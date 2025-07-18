@@ -61,20 +61,32 @@ export default function OrderAdminPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [dishes, setDishes] = useState<Dish[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [showEdit, setShowEdit] = useState(false);
   const [editingOrder, setEditingOrder] = useState<any>(null);
   const [saving, setSaving] = useState(false);
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [billUrl, setBillUrl] = useState<string | null>(null);
+  // Thêm state cho modal chi tiết
+  const [showDetail, setShowDetail] = useState(false);
+  const [detailOrder, setDetailOrder] = useState<any>(null);
+
+  useEffect(() => {
+    if (!loading && (!user || user.role !== 'admin')) {
+      navigate('/login', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) return null;
+  if (!user || user.role !== 'admin') return null;
 
   const fetchOrders = () => {
-    setLoading(true);
+    setPageLoading(true);
     Promise.all([
       axios.get('/api/v1/orders'),
       getAllUsers(1, 1000),
@@ -94,7 +106,7 @@ export default function OrderAdminPage() {
         setDishes(dishesRes);
       })
       .catch(() => setError('Không thể tải danh sách đơn hàng hoặc dữ liệu liên quan'))
-      .finally(() => setLoading(false));
+      .finally(() => setPageLoading(false));
   };
 
   useEffect(() => {
@@ -349,11 +361,11 @@ export default function OrderAdminPage() {
             className="w-full max-w-xs rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
           />
         </div>
-        {loading && <div>Loading...</div>}
+        {pageLoading && <div>Loading...</div>}
         {error && <div style={{ color: 'red' }}>{error}</div>}
-        {!loading && !error && (
-          <div className="overflow-x-auto">
-            <table className="table-admin-user">
+        {!pageLoading && !error && (
+          <div style={{ width: '100%', overflowX: 'auto' }}>
+            <table className="table-admin-user" style={{ minWidth: 1200 }}>
               <thead>
                 <tr className="bg-gray-100 text-gray-700">
                   <th className="py-2 px-3 border-b">Order ID</th>
@@ -374,11 +386,9 @@ export default function OrderAdminPage() {
                 {filteredOrders.map((order, idx) => {
                   const items = order.orderItems?.items || [];
                   const maxItems = Math.max(1, items.length);
-                  // Sửa điều kiện kiểm tra trạng thái hoàn thành
                   const isCompleted = ["completed", "hoàn thành"].includes((order.status || "").toLowerCase());
                   return (
                     <React.Fragment key={order.id}>
-                      {/* Render từng dòng món ăn như cũ */}
                       {items.length === 0 ? (
                         <tr className="hover:bg-gray-50 transition">
                           <td className="py-2 px-3 border-b font-medium">{order.order_number || order.orderNumber ? `#${order.order_number || order.orderNumber}` : '-'}</td>
@@ -407,7 +417,7 @@ export default function OrderAdminPage() {
                           </td>
                         </tr>
                       ) : (
-                        items.map((item: any, i: number) => (
+                        items.map((item, i) => (
                           <tr key={order.id + '-' + i} className="hover:bg-gray-50 transition">
                             {i === 0 && (
                               <>
@@ -416,52 +426,30 @@ export default function OrderAdminPage() {
                                 <td className="py-2 px-3 border-b" rowSpan={maxItems}>{getUserName(order.userId)}</td>
                               </>
                             )}
-                            <td className="py-2 px-3 border-b">
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                {item.dishSnapshot?.image && (
-                                  <img
-                                    src={item.dishSnapshot.image}
-                                    alt={item.dishSnapshot.name}
-                                    style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6 }}
-                                  />
-                                )}
-                                <div>
-                                  <div className="font-medium">{item.dishSnapshot?.name || getDishName(item.dishId)}</div>
-                                  {item.dishSnapshot?.description && (
-                                    <div className="text-xs text-gray-500">{item.dishSnapshot.description}</div>
-                                  )}
-                                  {item.dishSnapshot?.price !== undefined && (
-                                    <div className="text-xs text-gray-700">{item.dishSnapshot.price.toLocaleString('vi-VN')}đ</div>
-                                  )}
-                                </div>
-                              </div>
-                            </td>
+                            <td className="py-2 px-3 border-b">{item.name}</td>
                             <td className="py-2 px-3 border-b">{item.quantity}</td>
                             {i === 0 && (
                               <>
                                 <td className="py-2 px-3 border-b" rowSpan={maxItems}>{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
-                                <td className="py-2 px-3 border-b" rowSpan={maxItems}>{statusLabel[order.status] || order.status}</td>
+                                <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.status}</td>
                                 <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.type}</td>
                                 <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.pickupTime || ''}</td>
                                 <td className="py-2 px-3 border-b" rowSpan={maxItems}>{formatDeliveryAddress(order.deliveryAddress)}</td>
+                                <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.note}</td>
+                                <td className="py-2 px-3 border-b" rowSpan={maxItems}>
+                                  <button className="mr-2 text-blue-600 hover:underline" onClick={() => handleEdit(order)}><Edit size={16} /></button>
+                                  <button className="text-red-600 hover:underline" onClick={() => handleDelete(order.id)} disabled={saving}><Trash2 size={16} /></button>
+                                  {isCompleted && (
+                                    <button
+                                      className="ml-2 px-3 py-1 rounded bg-green-600 text-white flex items-center gap-1 hover:bg-green-700 transition border border-green-700 shadow"
+                                      title="In hóa đơn PDF"
+                                      onClick={() => printBill(order)}
+                                    >
+                                      <Printer size={16} /> In hóa đơn
+                                    </button>
+                                  )}
+                                </td>
                               </>
-                            )}
-                            {/* Ghi chú của từng món */}
-                            <td className="py-2 px-3 border-b">{item.note || ''}</td>
-                            {i === 0 && (
-                              <td className="py-2 px-3 border-b" rowSpan={maxItems}>
-                                <button className="mr-2 text-blue-600 hover:underline" onClick={() => handleEdit(order)}><Edit size={16} /></button>
-                                <button className="text-red-600 hover:underline" onClick={() => handleDelete(order.id)} disabled={saving}><Trash2 size={16} /></button>
-                                {isCompleted && (
-                                  <button
-                                    className="ml-2 px-3 py-1 rounded bg-green-600 text-white flex items-center gap-1 hover:bg-green-700 transition border border-green-700 shadow"
-                                    title="In hóa đơn PDF"
-                                    onClick={() => printBill(order)}
-                                  >
-                                    <Printer size={16} /> In hóa đơn
-                                  </button>
-                                )}
-                              </td>
                             )}
                           </tr>
                         ))
@@ -560,6 +548,28 @@ export default function OrderAdminPage() {
           </div>
         )}
         {billUrl && <BillPreviewModal url={billUrl} onClose={() => setBillUrl(null)} />}
+        {/* Modal chi tiết đơn hàng */}
+        {showDetail && detailOrder && (
+          <div className="modal-order-detail">
+            <div className="modal-content">
+              <h2>Chi tiết đơn #{detailOrder.order_number || detailOrder.orderNumber}</h2>
+              <div><b>Khách hàng:</b> {getUserName(detailOrder.userId)}</div>
+              <div><b>Địa chỉ:</b> {formatDeliveryAddress(detailOrder.deliveryAddress)}</div>
+              <div><b>Số điện thoại:</b> {detailOrder.deliveryAddress?.phone || '-'}</div>
+              <div><b>Thời gian đặt:</b> {formatDate(detailOrder.createdAt)}</div>
+              <div><b>Trạng thái:</b> {statusLabel[detailOrder.status] || detailOrder.status}</div>
+              <div><b>Ghi chú:</b> {detailOrder.note || '-'}</div>
+              <div><b>Sản phẩm:</b></div>
+              <ul>
+                {(detailOrder.orderItems?.items || []).map((item, i) => (
+                  <li key={i}>{item.name} x{item.quantity} - {(item.price || 0).toLocaleString('vi-VN')}đ</li>
+                ))}
+              </ul>
+              <div><b>Tổng tiền:</b> {Number(detailOrder.totalAmount).toLocaleString('vi-VN')}đ</div>
+              <button onClick={() => setShowDetail(false)} style={{ marginTop: 16, background: '#C92A15', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 24px', fontWeight: 600 }}>Đóng</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

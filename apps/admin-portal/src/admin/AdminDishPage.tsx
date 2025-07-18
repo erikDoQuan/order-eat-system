@@ -26,12 +26,21 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
   const [imageUrl, setImageUrl] = useState('');
   const [size, setSize] = useState<'small' | 'medium' | 'large' | ''>('');
   const [typeName, setTypeName] = useState('');
-  const { user, setUser } = useContext(AuthContext);
+  const { user, setUser, loading: authLoading } = useContext(AuthContext);
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState('');
   const [users, setUsers] = useState<UserType[]>([]);
+
+  useEffect(() => {
+    if (!authLoading && (!user || user.role !== 'admin')) {
+      navigate('/login', { replace: true });
+    }
+  }, [user, authLoading, navigate]);
+
+  if (authLoading) return null;
+  if (!user || user.role !== 'admin') return null;
 
   const fetchDishes = () => {
     setLoading(true);

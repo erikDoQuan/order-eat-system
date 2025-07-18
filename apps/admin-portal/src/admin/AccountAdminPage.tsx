@@ -8,9 +8,19 @@ import { AuthContext } from '../context/AuthContext';
 import '../css/AdminSidebar.css';
 
 export default function AccountAdminPage() {
-  const { user, setUser } = useContext(AuthContext);
+  const { user, setUser, loading } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [pageLoading, setPageLoading] = useState(false);
   const [phone, setPhone] = useState('---');
+
+  useEffect(() => {
+    if (!loading && (!user || user.role !== 'admin')) {
+      navigate('/login', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) return null;
+  if (!user || user.role !== 'admin') return null;
 
   useEffect(() => {
     setPhone(user?.phoneNumber || user?.phone_number || '---');

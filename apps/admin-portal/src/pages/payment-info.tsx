@@ -292,7 +292,7 @@ const PaymentInfoPage: React.FC = () => {
                   onClick={() => setPaymentMethod('zalopay')}
                 >
                   <div style={{ width: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: 16 }}>
-                    <img src="https://upload.wikimedia.org/wikipedia/vi/thumb/3/3a/ZaloPay_logo.svg/1200px-ZaloPay_logo.svg.png" alt="ZaloPay" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+                    <img src="/icons8-zalo.svg" alt="ZaloPay" style={{ width: 32, height: 32, objectFit: 'contain' }} />
                   </div>
                   <div style={{ flex: 1, padding: '20px 0 20px 16px' }}>
                     <div style={{ fontWeight: 700, fontSize: 18 }}>ZaloPay</div>

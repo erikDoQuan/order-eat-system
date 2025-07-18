@@ -33,11 +33,9 @@ instance.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 401) {
       console.log('🔍 Token expired, redirecting to login...');
-      
       // Xóa token và user cũ
       localStorage.removeItem('order-eat-access-token');
-      localStorage.removeItem('order-eat-user');
-      
+      // localStorage.removeItem('order-eat-user'); // Đã comment để giữ lại user
       // Redirect về trang login
       window.location.href = '/login';
     }

@@ -13,13 +13,13 @@ import {
 import '../css/AdminUserPage.css';
 
 const AdminUserPage: React.FC = () => {
-  const { user, setUser } = useContext(AuthContext);
+  const { user, setUser, loading } = useContext(AuthContext);
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const [users, setUsers] = useState<UserType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<UserType | null>(null);
@@ -30,6 +30,15 @@ const AdminUserPage: React.FC = () => {
   const pageSize = 1000;
   // const [totalUsers, setTotalUsers] = useState(0);
   // const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    if (!loading && (!user || user.role !== 'admin')) {
+      navigate('/login', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) return null;
+  if (!user || user.role !== 'admin') return null;
 
   // User dropdown logic
   const handleLogout = () => {
@@ -50,7 +59,7 @@ const AdminUserPage: React.FC = () => {
 
   // User logic
   const fetchUsers = () => {
-    setLoading(true);
+    setPageLoading(true);
     getAllUsers(page, pageSize, search)
       .then(({ users }) => {
         // Sắp xếp: active lên trên, sau đó theo createdAt mới nhất
@@ -63,7 +72,7 @@ const AdminUserPage: React.FC = () => {
         setUsers(sortedUsers);
       })
       .catch(() => setError('Không thể tải danh sách khách hàng'))
-      .finally(() => setLoading(false));
+      .finally(() => setPageLoading(false));
   };
 
   useEffect(() => {
@@ -186,9 +195,9 @@ const AdminUserPage: React.FC = () => {
             className="w-full max-w-xs rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
           />
         </div>
-        {loading && <div>Loading...</div>}
+        {pageLoading && <div>Loading...</div>}
         {error && <div style={{ color: 'red' }}>{error}</div>}
-        {!loading && !error && (
+        {!pageLoading && !error && (
           <div className="overflow-x-auto">
             <table className="table-admin-user">
               <thead>

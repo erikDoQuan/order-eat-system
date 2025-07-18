@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import '../css/HomePage.css';
@@ -29,7 +29,8 @@ export default function HomePage() {
   const [showCart, setShowCart] = useState(false);
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [cartLoading, setCartLoading] = useState(false);
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const [visibleAppetizerCount, setVisibleAppetizerCount] = useState(3);
   const [visibleSaladCount, setVisibleSaladCount] = useState(3);
@@ -38,6 +39,15 @@ export default function HomePage() {
   const typeParam = queryParams.get('type');
   const [showMiniChat, setShowMiniChat] = useState(false);
   const [dishModal, setDishModal] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (!loading && user && user.role === 'admin') {
+      navigate('/admin', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) return null;
+  if (user && user.role === 'admin') return null;
 
   const pizzaTypeTitle = () => {
     if (typeParam === 'seafood') return t('seafood_pizza');

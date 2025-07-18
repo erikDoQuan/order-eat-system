@@ -13,13 +13,13 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const AdminCategoryPage: React.FC = () => {
-  const { user, setUser } = useContext(AuthContext);
+  const { user, setUser, loading } = useContext(AuthContext);
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
@@ -45,15 +45,24 @@ const AdminCategoryPage: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!loading && (!user || user.role !== 'admin')) {
+      navigate('/login', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) return null;
+  if (!user || user.role !== 'admin') return null;
+
   const displayName = user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() || user?.email;
 
   // Category logic
   const fetchCategories = () => {
-    setLoading(true);
+    setPageLoading(true);
     getAllCategories()
       .then(setCategories)
       .catch(() => setError('Không thể tải danh mục'))
-      .finally(() => setLoading(false));
+      .finally(() => setPageLoading(false));
   };
 
   useEffect(() => {
@@ -174,9 +183,9 @@ const AdminCategoryPage: React.FC = () => {
             className="w-full max-w-xs rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
           />
         </div>
-        {loading && <div>Loading...</div>}
+        {pageLoading && <div>Loading...</div>}
         {error && <div style={{ color: 'red' }}>{error}</div>}
-        {!loading && !error && (
+        {!pageLoading && !error && (
           <div className="overflow-x-auto">
             <table className="table-admin-category">
               <thead>

@@ -54,6 +54,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { user } = useContext(AuthContext);
   const userId = user?.id || 'guest';
   const CART_KEY = `order-eat-cart-${userId}`;
+  const GUEST_CART_KEY = 'order-eat-cart-guest';
 
   const [cart, setCart] = useState<Cart | null>(null);
   const [orders, setOrders] = useState<Cart[]>([]);
@@ -63,6 +64,70 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     axios.get('/api/v1/dishes').then(res => setDishes(res.data.data || []));
   }, []);
+
+  // --- Đồng bộ giỏ hàng guest sang user khi đăng nhập ---
+  useEffect(() => {
+    if (userId !== 'guest') {
+      const guestCartRaw = localStorage.getItem(GUEST_CART_KEY);
+      const userCartRaw = localStorage.getItem(CART_KEY);
+      let guestCart: Cart | null = null;
+      let userCart: Cart | null = null;
+      try {
+        if (guestCartRaw) guestCart = JSON.parse(guestCartRaw);
+        if (userCartRaw) userCart = JSON.parse(userCartRaw);
+      } catch {}
+      // Nếu có guestCart và (chưa có userCart hoặc muốn merge)
+      if (guestCart && (!userCart || (guestCart.orderItems?.items?.length > 0))) {
+        // Merge items nếu userCart đã có
+        let mergedItems: CartItem[] = [];
+        const guestItems = guestCart.orderItems && Array.isArray(guestCart.orderItems.items) ? guestCart.orderItems.items : [];
+        if (userCart && userCart.orderItems?.items) {
+          // Gộp các món không trùng lặp (theo dishId, size, base, note)
+          const normalize = (v: any) => v === undefined || v === null || (typeof v === 'string' && v.trim() === '') ? '' : v;
+          mergedItems = [...userCart.orderItems.items];
+          guestItems.forEach(guestItem => {
+            const idx = mergedItems.findIndex(i =>
+              i.dishId === guestItem.dishId &&
+              normalize(i.size) === normalize(guestItem.size) &&
+              normalize(i.base) === normalize(guestItem.base) &&
+              normalize(i.note) === normalize(guestItem.note)
+            );
+            if (idx > -1) {
+              mergedItems[idx].quantity += guestItem.quantity;
+            } else {
+              mergedItems.push(guestItem);
+            }
+          });
+        } else {
+          mergedItems = [...guestItems];
+        }
+        // Tính lại totalAmount
+        let totalAmount = 0;
+        for (const item of mergedItems) {
+          if (!item || !item.dishId || !Array.isArray(dishes)) continue;
+          const dish = dishes.find(d => d && d.id === item.dishId);
+          if (!dish || typeof dish.basePrice === 'undefined' || dish.basePrice === null) continue;
+          const price = Number(dish.basePrice);
+          if (isNaN(price) || price <= 0) continue;
+          totalAmount += price * (item.quantity || 1);
+        }
+        const newCart: Cart = {
+          userId: userId,
+          orderItems: { items: mergedItems },
+          totalAmount,
+          status: 'pending',
+          createdBy: userId,
+          id: userCart?.id,
+        };
+        localStorage.setItem(CART_KEY, JSON.stringify(newCart));
+        setCart(newCart);
+        setOrderItems(newCart.orderItems?.items || []);
+        // Xoá guest cart sau khi chuyển
+        localStorage.removeItem(GUEST_CART_KEY);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, dishes]);
 
   const fetchCart = async () => {
     const raw = localStorage.getItem(CART_KEY);
@@ -138,7 +203,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const removeFromCart = async (itemToRemove: { dishId: string; size?: string; base?: string; note?: string }) => {
     if (!cart || !cart.orderItems || !Array.isArray(cart.orderItems.items)) return;
-    const items: CartItem[] = [...cart.orderItems.items];
+    const items: CartItem[] = cart && cart.orderItems && Array.isArray(cart.orderItems.items)
+      ? [...cart.orderItems.items]
+      : [];
     const normalize = (v: any) => (v === null || v === undefined || (typeof v === 'string' && v.trim() === '')) ? undefined : v;
     const filteredItems = items.filter(i => !(
       i.dishId === itemToRemove.dishId &&

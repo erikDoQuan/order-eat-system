@@ -32,20 +32,29 @@ export default function ReviewAdminPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [showEdit, setShowEdit] = useState(false);
   const [editingReview, setEditingReview] = useState<any>(null);
   const [saving, setSaving] = useState(false);
-  const { user, setUser } = useContext(AuthContext);
+  const { user, setUser, loading } = useContext(AuthContext);
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [starFilter, setStarFilter] = useState<number|null>(null);
 
+  useEffect(() => {
+    if (!loading && (!user || user.role !== 'admin')) {
+      navigate('/login', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) return null;
+  if (!user || user.role !== 'admin') return null;
+
   const fetchReviews = () => {
-    setLoading(true);
+    setPageLoading(true);
     Promise.all([
       axios.get('/api/v1/reviews'),
       getAllUsers(1, 1000),
@@ -69,7 +78,7 @@ export default function ReviewAdminPage() {
         setOrders(ordersArr);
       })
       .catch(() => setError('Cannot load reviews or related data'))
-      .finally(() => setLoading(false));
+      .finally(() => setPageLoading(false));
   };
 
   useEffect(() => {
@@ -265,10 +274,10 @@ export default function ReviewAdminPage() {
           </div>
         </div>
         
-        {loading && <div>Loading...</div>}
+        {pageLoading && <div>Loading...</div>}
         {error && <div style={{ color: 'red' }}>{error}</div>}
         
-        {!loading && !error && (
+        {!pageLoading && !error && (
           <div className="overflow-x-auto">
             <table className="review-admin-table">
               <thead>

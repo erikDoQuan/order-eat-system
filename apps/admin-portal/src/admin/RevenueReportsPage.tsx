@@ -38,13 +38,13 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function RevenueReportsPage() {
-  const { user, setUser } = useContext(AuthContext);
+  const { user, setUser, loading } = useContext(AuthContext);
   const navigate = useNavigate();
   const [from, setFrom] = useState(getTodayISO());
   const [to, setTo] = useState(getTodayISO());
   const [pendingFrom, setPendingFrom] = useState(getTodayISO());
   const [pendingTo, setPendingTo] = useState(getTodayISO());
-  const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(false);
   const [data, setData] = useState({
     totalRevenue: 0,
     totalOrders: 0,
@@ -56,10 +56,19 @@ export default function RevenueReportsPage() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setLoading(true);
+    if (!loading && (!user || user.role !== 'admin')) {
+      navigate('/login', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) return null;
+  if (!user || user.role !== 'admin') return null;
+
+  useEffect(() => {
+    setPageLoading(true);
     axios.get('/api/v1/reports/revenue', { params: { from, to } })
       .then(res => setData(res.data))
-      .finally(() => setLoading(false));
+      .finally(() => setPageLoading(false));
   }, [from, to]);
 
   useEffect(() => {
@@ -148,7 +157,7 @@ export default function RevenueReportsPage() {
             </div>
           </div>
         </div>
-        {loading ? (
+        {pageLoading ? (
           <div className="text-center py-12 text-lg">Loading...</div>
         ) : (
           <>

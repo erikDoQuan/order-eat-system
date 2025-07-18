@@ -5,6 +5,13 @@ import Navbar from '../components/Navbar';
 import { getOrderStatusText } from './orderStatus.utils';
 import './OrderDetailPage.css';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const getImageUrl = (imageUrl: string | undefined | null) => {
+  if (!imageUrl) return '/default-image.png';
+  if (imageUrl.startsWith('http')) return imageUrl;
+  return `${API_URL}/api/v1/files/public/${imageUrl}`;
+};
+
 export default function OrderDetailPage() {
   const { orderId } = useParams();
   const [order, setOrder] = useState<any>(null);
@@ -107,7 +114,7 @@ export default function OrderDetailPage() {
                     <div key={idx} className="order-detail-product-item">
                     {item.image && (
                       <img
-                        src={item.image}
+                        src={getImageUrl(item.image)}
                         alt={item.name}
                           className="order-detail-product-img"
                       />

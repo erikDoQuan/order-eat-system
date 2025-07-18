@@ -103,7 +103,21 @@ export class OrderService {
       );
       (order.orderItems as { items: any[] }).items = enrichedItems;
     }
-    return order;
+    // Bổ sung thông tin admin cập nhật đơn hàng
+    let updatedByInfo = null;
+    if (order.updatedBy) {
+      const admin = await this.userRepository.findOne(order.updatedBy);
+      if (admin) {
+        updatedByInfo = {
+          name: `${admin.firstName || ''} ${admin.lastName || ''}`.trim() || admin.email,
+          email: admin.email,
+        };
+      }
+    }
+    return {
+      ...order,
+      updatedByInfo,
+    };
   }
 
   async findOneByOrderNumber(orderNumber: number) {

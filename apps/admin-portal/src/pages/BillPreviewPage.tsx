@@ -30,20 +30,29 @@ export default function BillPreviewPage() {
   const adminEmail = params.get('adminEmail');
   const adminId = params.get('adminId');
   const [adminInfo, setAdminInfo] = useState<{name: string, email: string} | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
+
   useEffect(() => {
-    if (adminId) {
-      fetch(`/api/v1/users/${adminId}`)
+    // Ưu tiên lấy orderId từ query string nếu có
+    const idFromQuery = params.get('orderId');
+    if (idFromQuery) {
+      setOrderId(idFromQuery);
+      fetch(`/api/v1/orders/${idFromQuery}`)
         .then(res => res.json())
         .then(data => {
-          if (data && (data.firstName || data.lastName || data.email)) {
+          if (data && data.updatedByInfo) {
             setAdminInfo({
-              name: `${data.firstName || ''} ${data.lastName || ''}`.trim() || data.email || data.id,
-              email: data.email || '',
+              name: data.updatedByInfo.name,
+              email: data.updatedByInfo.email,
             });
+          } else {
+            setAdminInfo(null);
           }
         });
+    } else {
+      setAdminInfo(null);
     }
-  }, [adminId]);
+  }, []);
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8f8f8' }}>

@@ -44,12 +44,17 @@ declare global {
   }
 }
 
-// Đảm bảo axios luôn gửi access token trong header Authorization mỗi lần app khởi động
-// Đảm bảo đăng xuất hết khi mở web từ đầu
+// Đảm bảo axios luôn gửi accessToken trong header Authorization mỗi lần app khởi động
 const accessToken = localStorage.getItem('order-eat-access-token');
 if (accessToken) {
   axios.defaults.headers.common['Authorization'] = 'Bearer ' + accessToken;
 }
+
+// XÓA TOKEN KHI CHẠY DEV ĐỂ RESET ĐĂNG NHẬP TỰ ĐỘNG
+// if (import.meta.env.DEV) {
+//   localStorage.removeItem('order-eat-access-token');
+//   localStorage.removeItem('order-eat-refresh-token');
+// }
 
 let isRefreshing = false;
 let failedQueue: any[] = [];

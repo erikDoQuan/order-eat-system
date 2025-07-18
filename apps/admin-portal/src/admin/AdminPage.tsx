@@ -12,7 +12,7 @@ import { getAllOrders } from '../services/order.api';
 import '../css/AdminSidebar.css';
 
 export default function AdminPage() {
-  const { user, setUser } = useContext(AuthContext);
+  const { user, setUser, loading } = useContext(AuthContext);
   const navigate = useNavigate();
 
   /* -------------------- dropdown state & helpers -------------------- */
@@ -34,7 +34,7 @@ export default function AdminPage() {
       const filteredUsers = res.users.filter(
         u =>
           (u.role === 'user' || u.role === 'USER') &&
-          (u.isActive === true || u.is_active === true)
+          u.isActive === true
       );
       setUserCount(filteredUsers.length);
     });
@@ -53,6 +53,14 @@ export default function AdminPage() {
     });
     getAllDishes().then(setRecentDishes);
   }, []);
+
+  useEffect(() => {
+    if (!loading && (!user || user.role !== 'admin')) {
+      navigate('/login', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  if (loading || !user || user.role !== 'admin') return null;
 
   const handleLogout = () => {
     setUser(null);
