@@ -32,13 +32,28 @@ export class ReviewService {
     return this.reviewRepo.delete(id);
   }
 
-  async respondToReview(dto: RespondReviewDto) {
+  async respondToReview(dto: RespondReviewDto, admin?: User) {
     const { reviewId, adminReply } = dto;
     const review = await this.reviewRepo.findOne(reviewId);
     if (!review) {
       throw new NotFoundException('Review không tồn tại');
     }
-    await this.reviewRepo.updateAdminReply(reviewId, adminReply);
+    let updatedReview;
+    if (admin) {
+      updatedReview = await this.reviewRepo.updateAdminReplyWithAdmin(reviewId, adminReply, admin.id);
+    } else {
+      updatedReview = await this.reviewRepo.updateAdminReply(reviewId, adminReply);
+    }
+    return updatedReview;
+  }
+
+  async respondReview(adminId: string, dto: RespondReviewDto) {
+    const { reviewId, adminReply } = dto;
+    const review = await this.reviewRepo.findOne(reviewId);
+    if (!review) {
+      throw new NotFoundException('Review không tồn tại');
+    }
+    await this.reviewRepo.updateAdminReplyWithAdmin(reviewId, adminReply, adminId);
     return { message: 'Phản hồi thành công!' };
   }
 }

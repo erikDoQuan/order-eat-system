@@ -52,23 +52,17 @@ export class ReviewController {
     return this.reviewService.update(id, body, user);
   }
 
-  @Patch('admin/respond')
-  @UseGuards(AdminGuard)
-  @ApiOperation({ summary: 'Phản hồi đánh giá theo ID' })
-  @Response({ message: 'Phản hồi đánh giá thành công' })
-  async respondToReview(@Body() dto: RespondReviewDto) {
-    // Nếu không có dữ liệu từ FE, dùng dữ liệu mẫu để test
-    const testDto = dto && dto.reviewId && dto.adminReply ? dto : {
-      reviewId: 'REPLACE_WITH_A_VALID_REVIEW_ID', // <-- Thay bằng 1 id review thực tế trong DB
-      adminReply: 'Phản hồi mẫu từ admin (test)'
-    };
-    return this.reviewService.respondToReview(testDto);
-  }
-
   @Delete(':id')
   @ApiOperation({ summary: 'Xoá đánh giá theo ID' })
   @Response({ message: 'Xoá đánh giá thành công' })
   delete(@Param('id') id: string) {
     return this.reviewService.delete(id);
+  }
+
+  @Post('admin/respond')
+  @ApiOperation({ summary: 'Admin phản hồi đánh giá' })
+  @Response({ message: 'Phản hồi đánh giá thành công' })
+  respondToReview(@Body() body: RespondReviewDto) {
+    return this.reviewService.respondToReview(body);
   }
 }

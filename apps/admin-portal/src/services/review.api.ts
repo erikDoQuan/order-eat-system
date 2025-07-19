@@ -36,6 +36,6 @@ export async function getReviewDetail(reviewId: string) {
 }
 
 export async function respondReview(reviewId: string, adminReply: string) {
-  const res = await axios.patch('/reviews/admin/respond', { reviewId, adminReply });
+  const res = await axios.post('/reviews/admin/respond', { reviewId, adminReply });
   return res.data;
 } 

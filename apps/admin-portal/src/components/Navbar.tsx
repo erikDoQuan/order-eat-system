@@ -123,6 +123,13 @@ export default function Navbar() {
     return () => clearInterval(interval);
   }, [showNotificationPopup]);
 
+  // Poll for order status changes every 5s when user is logged in
+  useEffect(() => {
+    if (!user?.id) return;
+    const interval = setInterval(() => fetchLatestOrderNotification(true), 5000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
   useEffect(() => {
     // Lấy danh sách id các đơn đã xác nhận (status === 'Đã xác nhận')
     const confirmedOrders = notifications.filter((n: any) => n.status === 'Đã xác nhận');
@@ -131,7 +138,7 @@ export default function Navbar() {
     const newConfirmed = confirmedIds.filter(id => !prevConfirmedOrderIds.current.includes(id));
     if (newConfirmed.length > 0) {
       setShowToast(true);
-      setTimeout(() => setShowToast(false), 10000);
+      setTimeout(() => setShowToast(false), 5000);
     }
     prevConfirmedOrderIds.current = confirmedIds;
   }, [notifications]);
@@ -140,6 +147,8 @@ export default function Navbar() {
     setUser(null);
     localStorage.removeItem('order-eat-access-token');
     setShowMenu(false);
+    setShowNotificationPopup(false);
+    setNotifications([]);
     navigate('/', { replace: true });
   };
 

@@ -201,7 +201,7 @@ export default function ReviewAdminPage() {
     setUser(null);
     localStorage.removeItem('order-eat-access-token');
     localStorage.removeItem('order-eat-refresh-token');
-    navigate('/admin/login');
+    navigate('/login');
   };
 
   // Gợi ý phản hồi admin theo số sao
@@ -320,7 +320,6 @@ export default function ReviewAdminPage() {
                   <th className="py-2 px-3 border-b">Order</th>
                   <th className="py-2 px-3 border-b">Rating</th>
                   <th className="py-2 px-3 border-b">Comment</th>
-                  <th className="py-2 px-3 border-b">Status</th>
                   <th className="py-2 px-3 border-b">Actions</th>
                 </tr>
               </thead>
@@ -346,95 +345,147 @@ export default function ReviewAdminPage() {
                         <td className="py-2 px-3 border-b review-comment">
                           {review.comment || 'No comment'}
                         </td>
-                        <td className="py-2 px-3 border-b">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            review.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {review.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td className="py-2 px-3 border-b">
-                          <button
-                            style={{
-                              padding: '4px 12px',
-                              borderRadius: 6,
-                              border: 'none',
-                              background: '#2563eb',
-                              color: '#fff',
-                              fontWeight: 500,
-                              fontSize: 14,
-                              cursor: 'pointer',
-                              transition: 'background 0.2s',
-                            }}
-                            title="Phản hồi"
-                            onClick={() => {
-                              setReplyingReviewId(review.id);
-                              setReplyContent('');
-                            }}
-                          >
-                            Phản hồi
-                          </button>
-                        </td>
-                      </tr>
-                      {replyingReviewId === review.id && (
-                        <tr>
-                          <td colSpan={8} style={{ background: '#f3f4f6', padding: 16 }}>
-                            {/* Gợi ý phản hồi admin */}
-                            {adminReplySuggestions[review.rating] && (
-                              <div style={{ marginBottom: 8, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                                {adminReplySuggestions[review.rating].map((suggestion, idx) => (
-                                  <button
-                                    key={idx}
-                                    type="button"
-                                    style={{
-                                      background: '#fff',
-                                      border: '1px solid #2563eb',
-                                      color: '#2563eb',
-                                      borderRadius: 6,
-                                      padding: '4px 10px',
-                                      fontSize: 14,
-                                      cursor: 'pointer',
-                                      marginBottom: 4,
-                                      transition: 'background 0.2s',
-                                    }}
-                                    onClick={() => setReplyContent(suggestion)}
-                                  >
-                                    {suggestion}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                            <textarea
-                              value={replyContent}
-                              onChange={e => setReplyContent(e.target.value)}
-                              placeholder="Nhập phản hồi..."
-                              style={{ width: '100%', minHeight: 60, borderRadius: 6, border: '1px solid #d1d5db', padding: 8, fontSize: 15 }}
-                            />
-                            <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                        {review && (
+                          <td className="py-2 px-3 border-b">
+                            {review.adminReply ? (
                               <button
-                                style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 18px', fontWeight: 500, fontSize: 15, cursor: 'pointer' }}
-                                disabled={!replyContent.trim()}
-                                onClick={async () => {
-                                  if (!replyContent.trim()) return;
-                                  try {
-                                    await respondReview(review.id, replyContent);
-                                    setReplyingReviewId(null);
-                                    setReplyContent('');
-                                    if (typeof fetchReviews === 'function') fetchReviews();
-                                  } catch (err) {
-                                    alert('Gửi phản hồi thất bại!');
-                                  }
+                                style={{
+                                  width: '140px',
+                                  height: '40px',
+                                  borderRadius: '8px',
+                                  border: 'none',
+                                  background: '#22c55e',
+                                  color: '#fff',
+                                  fontWeight: 600,
+                                  fontSize: 16,
+                                  cursor: 'pointer',
+                                  boxShadow: '0 2px 8px rgba(34,197,94,0.08)',
+                                  transition: 'background 0.2s',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  margin: '0 auto',
+                                }}
+                                onClick={() => setReplyingReviewId(review.id)}
+                              >
+                                Xem phản hồi
+                              </button>
+                            ) : (
+                              <button
+                                style={{
+                                  width: '140px',
+                                  height: '40px',
+                                  borderRadius: '8px',
+                                  border: 'none',
+                                  background: '#2563eb',
+                                  color: '#fff',
+                                  fontWeight: 600,
+                                  fontSize: 16,
+                                  cursor: 'pointer',
+                                  boxShadow: '0 2px 8px rgba(37,99,235,0.08)',
+                                  transition: 'background 0.2s',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  margin: '0 auto',
+                                }}
+                                title="Phản hồi"
+                                onClick={() => {
+                                  setReplyingReviewId(review.id);
+                                  setReplyContent('');
                                 }}
                               >
-                                Gửi phản hồi
+                                Phản hồi
                               </button>
-                              <button
-                                style={{ background: '#e5e7eb', color: '#111', border: 'none', borderRadius: 6, padding: '6px 18px', fontWeight: 500, fontSize: 15, cursor: 'pointer' }}
-                                onClick={() => setReplyingReviewId(null)}
-                              >
-                                Hủy
-                              </button>
-                            </div>
+                            )}
+                          </td>
+                        )}
+                      </tr>
+                      {replyingReviewId === review.id && review && (
+                        <tr>
+                          <td colSpan={8} style={{ background: '#f3f4f6', padding: 16 }}>
+                            {/* Nếu đã có adminReply thì chỉ hiển thị nội dung phản hồi */}
+                            {review.adminReply ? (
+                              <div style={{ position: 'relative', fontStyle: 'italic', color: '#2563eb', fontSize: 16 }}>
+                                <button
+                                  onClick={() => setReplyingReviewId(null)}
+                                  style={{
+                                    position: 'absolute',
+                                    top: 4,
+                                    right: 4,
+                                    background: 'transparent',
+                                    border: 'none',
+                                    fontSize: 20,
+                                    color: '#888',
+                                    cursor: 'pointer',
+                                    zIndex: 1,
+                                  }}
+                                  aria-label="Đóng"
+                                >
+                                  ×
+                                </button>
+                                <b>Phản hồi của admin:</b> {review.adminReply}
+                              </div>
+                            ) : (
+                              <>
+                                {/* Gợi ý phản hồi admin */}
+                                {adminReplySuggestions[review.rating] && (
+                                  <div style={{ marginBottom: 8, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                    {adminReplySuggestions[review.rating].map((suggestion, idx) => (
+                                      <button
+                                        key={idx}
+                                        type="button"
+                                        style={{
+                                          background: '#fff',
+                                          border: '1px solid #2563eb',
+                                          color: '#2563eb',
+                                          borderRadius: 6,
+                                          padding: '4px 10px',
+                                          fontSize: 14,
+                                          cursor: 'pointer',
+                                          marginBottom: 4,
+                                          transition: 'background 0.2s',
+                                        }}
+                                        onClick={() => setReplyContent(suggestion)}
+                                      >
+                                        {suggestion}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                                <textarea
+                                  value={replyContent}
+                                  onChange={e => setReplyContent(e.target.value)}
+                                  placeholder="Nhập phản hồi..."
+                                  style={{ width: '100%', minHeight: 60, borderRadius: 6, border: '1px solid #d1d5db', padding: 8, fontSize: 15 }}
+                                />
+                                <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                                  <button
+                                    style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 18px', fontWeight: 500, fontSize: 15, cursor: 'pointer' }}
+                                    disabled={!replyContent.trim()}
+                                    onClick={async () => {
+                                      if (!replyContent.trim()) return;
+                                      try {
+                                        await respondReview(review.id, replyContent);
+                                        setReplyingReviewId(null);
+                                        setReplyContent('');
+                                        if (typeof fetchReviews === 'function') fetchReviews();
+                                      } catch (err) {
+                                        alert('Gửi phản hồi thất bại!');
+                                      }
+                                    }}
+                                  >
+                                    Gửi phản hồi
+                                  </button>
+                                  <button
+                                    style={{ background: '#e5e7eb', color: '#111', border: 'none', borderRadius: 6, padding: '6px 18px', fontWeight: 500, fontSize: 15, cursor: 'pointer' }}
+                                    onClick={() => setReplyingReviewId(null)}
+                                  >
+                                    Hủy
+                                  </button>
+                                </div>
+                              </>
+                            )}
                           </td>
                         </tr>
                       )}

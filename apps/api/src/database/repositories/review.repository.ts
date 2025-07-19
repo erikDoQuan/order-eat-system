@@ -126,6 +126,23 @@ export class ReviewRepository {
     return updated || null;
   }
 
+  async updateAdminReplyWithAdmin(id: string, adminReply: string, adminId: string): Promise<Review | null> {
+    const existingReview = await this.findOne(id);
+    if (!existingReview) {
+      return null;
+    }
+    const [updated] = await this.drizzle.db
+      .update(reviews)
+      .set({
+        adminReply: adminReply,
+        updatedBy: adminId,
+        updatedAt: new Date(),
+      } as any)
+      .where(eq(reviews.id, id))
+      .returning();
+    return updated || null;
+  }
+
   async delete(id: string): Promise<Review | null> {
     const [deleted] = await this.drizzle.db
       .delete(reviews)
