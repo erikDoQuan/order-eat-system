@@ -261,11 +261,28 @@ export class OrderService {
           i.note === newItem.note
         );
         if (idx > -1) {
-          // Cập nhật quantity tuyệt đối
+          // Cập nhật quantity tuyệt đối, KHÔNG cập nhật tên món đã snapshot
           currentItems[idx].quantity = newItem.quantity;
           currentItems[idx].id = newItem.id; // Đảm bảo id đồng bộ
         } else {
-          currentItems.push({ ...newItem });
+          // Nếu là item mới, tạo snapshot mới cho item này
+          const dish = await this.dishRepository.findOne(newItem.dishId);
+          const validSizes = ['small', 'medium', 'large'];
+          const validSize = newItem.size && validSizes.includes(newItem.size) ? newItem.size : null;
+          const snapshot = await this.dishSnapshotRepository.create({
+            dishId: dish.id,
+            name: dish.name,
+            basePrice: dish.basePrice,
+            description: dish.description,
+            imageUrl: dish.imageUrl || dish.image,
+            status: dish.status,
+            size: validSize,
+            typeName: dish.typeName,
+            categoryId: dish.categoryId,
+            createdBy: dish.createdBy,
+            updatedBy: dish.updatedBy,
+          });
+          currentItems.push({ ...newItem, dishSnapshotId: snapshot.id });
         }
       }
       // Loại bỏ item có quantity <= 0
@@ -273,8 +290,15 @@ export class OrderService {
       // Tính lại tổng tiền
       let total = 0;
       for (const item of (order.orderItems as { items: any[] }).items) {
-        const dish = await this.dishRepository.findOne(item.dishId);
-        const price = dish?.basePrice ? parseFloat(dish.basePrice as any) : 0;
+        // Lấy giá từ snapshot nếu có
+        let price = 0;
+        if (item.dishSnapshotId) {
+          const snapshot = await this.dishSnapshotRepository.findOne(item.dishSnapshotId);
+          price = snapshot?.basePrice ? parseFloat(snapshot.basePrice as any) : 0;
+        } else {
+          const dish = await this.dishRepository.findOne(item.dishId);
+          price = dish?.basePrice ? parseFloat(dish.basePrice as any) : 0;
+        }
         total += price * (item.quantity || 1);
       }
       if (order.type === 'delivery') {

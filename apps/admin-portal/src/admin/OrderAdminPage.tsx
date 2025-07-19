@@ -463,7 +463,7 @@ export default function OrderAdminPage() {
                               </>
                             )}
                             <td className="py-2 px-3 border-b">{
-                              item.name || getDishName(item.dishId) || item.dishSnapshot?.name || item.dish?.name || 'Không rõ tên món'
+                              item.dishSnapshot?.name || item.name || getDishName(item.dishId) || item.dish?.name || 'Không rõ tên món'
                             }</td>
                             <td className="py-2 px-3 border-b">{item.quantity}</td>
                             {i === 0 && (

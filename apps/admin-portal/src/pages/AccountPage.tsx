@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { FaEye, FaEyeSlash, FaBell } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { updateUser } from '../services/user.api';
 import { fetchMe } from '../services/me.api';
@@ -14,8 +14,7 @@ import ReviewForm from '../components/ReviewForm';
 import axios from '../services/axios';
 
 export default function AccountPage() {
-  const { user, setUser, loading } = useContext(AuthContext);
-  const navigate = useNavigate();
+  const { user, setUser } = useContext(AuthContext);
   const [phone, setPhone] = useState(user?.phoneNumber || user?.phone_number || '');
   const address = user?.address || '---';
   const [editing, setEditing] = useState(false);
@@ -108,15 +107,6 @@ export default function AccountPage() {
     checkOrderNotification();
     return () => clearTimeout(timeout);
   }, [user]);
-
-  useEffect(() => {
-    if (!loading && user && user.role === 'admin') {
-      navigate('/admin', { replace: true });
-    }
-  }, [user, loading, navigate]);
-
-  if (loading) return null;
-  if (user && user.role === 'admin') return null;
 
   const handleEdit = () => {
     setEditing(true);
@@ -326,7 +316,7 @@ export default function AccountPage() {
                     <tbody>
                       {displayedOrders.map(order => {
                         const items = (order.orderItems?.items || []);
-                        const dishNames = items.map((item: any) => getDishName(item.dishId)).join(', ');
+                        const dishNames = items.map((item: any) => item.dishSnapshot?.name || item.name || getDishName(item.dishId) || item.dish?.name || 'Không rõ tên món').join(', ');
                         const orderNumber = order.order_number || order.orderNumber || '-';
                         const orderLink = `/orders/${order.id}`;
                         const date = new Date(order.createdAt);
@@ -583,7 +573,7 @@ export default function AccountPage() {
                     <tbody>
                       {recentOrders.slice(0, 3).map(order => {
                         const items = (order.orderItems?.items || []);
-                        const dishNames = items.map((item: any) => getDishName(item.dishId)).join(', ');
+                        const dishNames = items.map((item: any) => item.dishSnapshot?.name || item.name || getDishName(item.dishId) || item.dish?.name || 'Không rõ tên món').join(', ');
                         const orderNumber = order.order_number || order.orderNumber || '-';
                         const orderLink = `/orders/${order.id}`;
                         const date = new Date(order.createdAt);
