@@ -136,8 +136,12 @@ export default function UserTransactionAdminPage() {
                     <td className="py-2 px-3 border-b text-right">{Number(tran.amount).toLocaleString('vi-VN')}₫</td>
                     <td className="py-2 px-3 border-b">{tran.method}</td>
                     <td className="py-2 px-3 border-b">
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${STATUS_LABEL[tran.status]?.color || 'bg-gray-100 text-gray-800'}`}>
-                        {STATUS_LABEL[tran.status]?.label || tran.status}
+                      <span className={`inline-block whitespace-nowrap px-2 py-1 rounded text-xs font-semibold ${
+                        (tran.statusText === 'Hoàn thành')
+                          ? 'bg-green-100 text-green-800'
+                          : (STATUS_LABEL[tran.status]?.color || 'bg-gray-100 text-gray-800')
+                      }`}>
+                        {tran.statusText || STATUS_LABEL[tran.status]?.label || tran.status}
                       </span>
                     </td>
                     <td className="py-2 px-3 border-b">{formatDate(tran.transTime)}</td>

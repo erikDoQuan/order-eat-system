@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateUserTransactionDto } from './dto/create-user-transaction.dto';
 import { DrizzleService } from '../../database/drizzle/drizzle.service';
 import { userTransactions } from '../../database/schema/user_transactions';
-import { sql, inArray, eq } from 'drizzle-orm';
+import { sql, inArray, eq, and } from 'drizzle-orm';
 import { users } from '../../database/schema/users';
 import { orders } from '../../database/schema/orders';
 
@@ -20,7 +20,34 @@ export class UserTransactionService {
     return result;
   }
 
-  async updateByOrderId(orderId: string, update: Partial<CreateUserTransactionDto>) {
+  async updateByOrderId(orderId: string, update: Partial<CreateUserTransactionDto> & { method?: string }) {
+    // Nếu truyền method, where theo cả orderId và method
+    if (update.method) {
+      return this.drizzleService.db.update(userTransactions)
+        .set({
+          ...update,
+          amount: update.amount ? update.amount.toString() : undefined,
+          transTime: update.transTime ? new Date(update.transTime) : undefined,
+        })
+        .where(and(
+          eq(userTransactions.orderId, orderId),
+          eq(userTransactions.method, update.method)
+        ));
+    }
+    // Nếu update status thành success, chỉ update transaction method cash
+    if (String(update.status).toLowerCase() === 'success') {
+      return this.drizzleService.db.update(userTransactions)
+        .set({
+          ...update,
+          amount: update.amount ? update.amount.toString() : undefined,
+          transTime: update.transTime ? new Date(update.transTime) : undefined,
+        })
+        .where(and(
+          eq(userTransactions.orderId, orderId),
+          eq(userTransactions.method, 'cash')
+        ));
+    }
+    // Ngược lại, update tất cả transaction theo orderId
     return this.drizzleService.db.update(userTransactions)
       .set({
         ...update,
@@ -69,11 +96,21 @@ export class UserTransactionService {
       // Map user, order vào transaction
       const userMap = new Map(userList.map(u => [u.id, u]));
       const orderMap = new Map(orderList.map(o => [o.id, o]));
-      const data = transactions.map(t => ({
-        ...t,
-        user: userMap.get(t.userId) || null,
-        order: orderMap.get(t.orderId) || null,
-      }));
+      const data = transactions.map(t => {
+        const order = orderMap.get(t.orderId) || null;
+        let statusText = t.status;
+        if (order && order.status === 'completed') statusText = 'Hoàn thành';
+        else if (t.status === 'success') statusText = 'Hoàn thành';
+        else if (t.status === 'pending') statusText = 'Chờ xử lý';
+        else if (t.status === 'cancelled') statusText = 'Đã hủy';
+        else if (t.status === 'failed') statusText = 'Thất bại';
+        return {
+          ...t,
+          user: userMap.get(t.userId) || null,
+          order,
+          statusText,
+        };
+      });
 
       // Đếm tổng số giao dịch
       const countResult = await this.drizzleService.db

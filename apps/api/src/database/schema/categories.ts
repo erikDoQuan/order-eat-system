@@ -5,10 +5,8 @@ import { baseColumns } from './_base';
 import { dishes } from './dishes';
 import { users } from './users';
 
-// Enum trạng thái danh mục
 export const categoryStatusEnum = pgEnum('category_status', ['active', 'inactive']);
 
-// Bảng categories
 export const categories = pgTable('categories', {
   ...baseColumns,
   name: varchar('name', { length: 100 }).notNull(),
@@ -16,7 +14,6 @@ export const categories = pgTable('categories', {
   status: categoryStatusEnum('status').notNull().default('active'),
 });
 
-// Quan hệ
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
   createdByUser: one(users, {
     fields: [categories.createdBy],
@@ -29,7 +26,6 @@ export const categoriesRelations = relations(categories, ({ one, many }) => ({
   dishes: many(dishes),
 }));
 
-// Kiểu dữ liệu
 export type Category = InferSelectModel<typeof categories>;
 export type CategoryInsert = InferInsertModel<typeof categories>;
 export type CategoryUpdate = Partial<CategoryInsert>;

@@ -397,6 +397,11 @@ export default function OrderAdminPage() {
                   const items = order.orderItems?.items || [];
                   const maxItems = Math.max(1, items.length);
                   const isCompleted = ["completed", "hoàn thành"].includes((order.status || "").toLowerCase());
+                  // Lấy paymentMethod từ user transaction nếu có
+                  const txs = transactions.filter((t: any) => t.orderId === order.id);
+                  const tx = txs.find((t: any) => (t.status === 'success' || t.status === 'pending'));
+                  let paymentMethod = order.paymentMethod || '';
+                  if (tx && tx.method) paymentMethod = String(tx.method).toLowerCase();
                   return (
                     <React.Fragment key={order.id}>
                       {items.length === 0 ? (
@@ -474,7 +479,7 @@ export default function OrderAdminPage() {
                                 <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.pickupTime || ''}</td>
                                 <td className="py-2 px-3 border-b" rowSpan={maxItems}>{formatDeliveryAddress(order.deliveryAddress)}</td>
                                 <td className="py-2 px-3 border-b" rowSpan={maxItems}>{order.note}</td>
-                                <td className="py-2 px-3 border-b" rowSpan={maxItems}>
+                                <td className="py-2 px-3 border-b">
                                   <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'center', width: 120 }}>
                                     <button
                                       title="Sửa"

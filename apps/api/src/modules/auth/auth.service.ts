@@ -1,16 +1,16 @@
 import { BadRequestException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import * as jwt from 'jsonwebtoken';
 
+import { hashPassword } from '~/common/utils/password.util';
+import { UserRepository } from '~/database/repositories/user.repository';
+import { EmailService } from '~/modules/email/email.service';
 import { USER_ROLE } from '~/modules/user/constants/users.constant';
 import { AuthBaseService } from '~/shared-modules/auth-base/auth-base.service';
-import { UserRepository } from '~/database/repositories/user.repository';
-import { hashPassword } from '~/common/utils/password.util';
-import { SignInDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
+import { ForgotPasswordDto, ResetPasswordDto, SignInDto } from './dto/auth.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RefreshTokensService } from './refresh-tokens.service';
 import { TokenService } from './token.service';
 import { VerificationService } from './verification.service';
-import * as jwt from 'jsonwebtoken';
-import { EmailService } from '~/modules/email/email.service';
 
 @Injectable()
 export class AuthService {

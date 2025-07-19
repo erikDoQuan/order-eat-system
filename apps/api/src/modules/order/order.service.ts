@@ -127,7 +127,16 @@ export class OrderService {
     return order;
   }
 
+  async findOneByAppTransId(appTransId: string) {
+    return this.orderRepository.findOneByAppTransId(appTransId);
+  }
+
   async create(dto: CreateOrderDto) {
+    // Nếu có appTransId, kiểm tra trùng
+    if (dto.appTransId) {
+      const existed = await this.orderRepository.findOneByAppTransId(dto.appTransId);
+      if (existed) return existed;
+    }
     // Validate type và deliveryAddress
     if (dto.type === 'delivery' && !dto.deliveryAddress) {
       throw new Error('Địa chỉ giao hàng là bắt buộc khi chọn hình thức giao hàng (delivery)');
@@ -215,14 +224,14 @@ export class OrderService {
     // Lấy lại order từ DB để chắc chắn có trường orderNumber
     const orderFull = await this.orderRepository.findOne(order.id);
 
-    // Lưu user_transaction với status pending khi tạo đơn hàng
+    // Lưu user_transaction với status phù hợp khi tạo đơn hàng
     if (orderFull && dto.userId) {
       await this.userTransactionService.create({
         userId: dto.userId,
         orderId: orderFull.id,
         amount: String(orderFull.totalAmount),
         method: dto.paymentMethod === 'zalopay' ? TransactionMethod.ZALOPAY : TransactionMethod.CASH,
-        status: TransactionStatus.PENDING,
+        status: dto.paymentMethod === 'zalopay' ? TransactionStatus.SUCCESS : TransactionStatus.PENDING,
         transTime: new Date().toISOString(),
         transactionCode: null,
         description: `Tạo giao dịch cho đơn hàng #${orderFull.orderNumber || orderFull.id}`,
@@ -236,6 +245,19 @@ export class OrderService {
   }
 
   async update(id: string, dto: UpdateOrderDto) {
+    // Nếu chỉ cập nhật status, không validate các trường khác
+    if (Object.keys(dto).length === 1 && dto.status) {
+      const order = await this.orderRepository.findOne(id);
+      if (!order) throw new NotFoundException('Đơn hàng không tồn tại');
+      if (['pending','confirmed','preparing','delivering','completed','cancelled'].includes(dto.status)) {
+        order.status = dto.status as any;
+      }
+      const updatedOrder = await this.orderRepository.update(id, order as UpdateOrderDto);
+      return {
+        ...updatedOrder,
+        order_number: updatedOrder?.orderNumber || updatedOrder?.id,
+      };
+    }
     // Validate type và deliveryAddress
     if (dto.type === 'delivery' && !dto.deliveryAddress) {
       throw new Error('Địa chỉ giao hàng là bắt buộc khi chọn hình thức giao hàng (delivery)');

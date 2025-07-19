@@ -1,10 +1,9 @@
 import { InferSelectModel, relations } from 'drizzle-orm';
-import { boolean, decimal, pgTable, text, uuid, varchar, json } from 'drizzle-orm/pg-core';
+import { boolean, decimal, pgTable, text, uuid, varchar } from 'drizzle-orm/pg-core';
 
 import { baseColumns } from './_base';
 import { dishes } from './dishes';
 
-// Bảng dish_options
 export const dishOptions = pgTable('dish_options', {
   ...baseColumns,
   dishId: uuid('dish_id')
@@ -16,7 +15,6 @@ export const dishOptions = pgTable('dish_options', {
   isRequired: boolean('is_required').default(false),
 });
 
-// Quan hệ cho bảng dish_options
 export const dishOptionsRelations = relations(dishOptions, ({ one }) => ({
   dish: one(dishes, {
     fields: [dishOptions.dishId],
@@ -24,5 +22,4 @@ export const dishOptionsRelations = relations(dishOptions, ({ one }) => ({
   }),
 }));
 
-// Kiểu dữ liệu xuất/ghi cho dish_options
 export type DishOption = InferSelectModel<typeof dishOptions>;

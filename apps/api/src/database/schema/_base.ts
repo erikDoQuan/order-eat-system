@@ -1,6 +1,5 @@
 import { boolean, pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
 
-// Base columns without FK references
 export const baseColumns = {
   id: uuid('id').primaryKey().defaultRandom(),
   isActive: boolean('is_active').default(true).notNull(),

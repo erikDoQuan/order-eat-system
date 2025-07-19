@@ -24,8 +24,8 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, IResponseForma
 
       return next.handle().pipe(
         map((data: DataWithMeta) => {
-          const { meta } = data;
-
+          // Sửa lỗi destructure meta of undefined
+          const meta = data && typeof data === 'object' && 'meta' in data ? (data as any).meta : undefined;
           return {
             statusCode,
             message,

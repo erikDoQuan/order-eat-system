@@ -54,6 +54,7 @@ export default function RevenueReportsPage() {
   });
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
 
   useEffect(() => {
     if (!loading && (!user || user.role !== 'admin')) {
@@ -70,6 +71,12 @@ export default function RevenueReportsPage() {
       .then(res => setData(res.data))
       .finally(() => setPageLoading(false));
   }, [from, to]);
+
+  useEffect(() => {
+    axios.get('/api/v1/user-transaction').then(res => {
+      setTransactions(res.data?.data || []);
+    });
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -207,15 +214,24 @@ export default function RevenueReportsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.orders.map((order: any) => (
-                    <tr key={order.id}>
-                      <td>{order.id}</td>
-                      <td>{new Date(order.date).toLocaleDateString('vi-VN')}</td>
-                      <td>{order.customer}</td>
-                      <td>{order.total.toLocaleString('vi-VN')}<span style={{marginLeft: 2}}>₫</span></td>
-                      <td>{order.paymentMethod || '-'}</td>
-                    </tr>
-                  ))}
+                  {data.orders.map((order: any) => {
+                    // Lấy paymentMethod từ user transaction nếu có, so sánh id về string
+                    const txs = transactions.filter((t: any) => String(t.orderId) === String(order.id));
+                    const tx = txs.find((t: any) => (t.status === 'success' || t.status === 'pending'));
+                    let paymentMethod = '-';
+                    if (tx && tx.method) paymentMethod = String(tx.method).toLowerCase();
+                    else if (order.paymentMethod) paymentMethod = order.paymentMethod;
+                    else paymentMethod = 'cash';
+                    return (
+                      <tr key={order.id}>
+                        <td>{order.id}</td>
+                        <td>{new Date(order.date).toLocaleDateString('vi-VN')}</td>
+                        <td>{order.customer}</td>
+                        <td>{order.total.toLocaleString('vi-VN')}<span style={{marginLeft: 2}}>₫</span></td>
+                        <td>{paymentMethod}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

@@ -1,24 +1,12 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  Req,
-  BadRequestException,
-} from '@nestjs/common';
-import { ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 
 import { Response } from '~/common/decorators/response.decorator';
-import { OrderService } from './order.service';
-
+import { CreateOrderDto } from './dto/create-order.dto';
 import { FetchOrdersDto } from './dto/fetch-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
-import { CreateOrderDto } from './dto/create-order.dto';
+import { OrderService } from './order.service';
 
 @ApiTags('Orders')
 @Controller('orders')
