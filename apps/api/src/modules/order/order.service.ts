@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { inArray } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
 import { DishSnapshotRepository } from '~/database/repositories/dish_snapshot.repository';
@@ -6,6 +7,7 @@ import { DishRepository } from '~/database/repositories/dish.repository';
 import { OrderRepository } from '~/database/repositories/order.repository';
 import { UserRepository } from '~/database/repositories/user.repository';
 import { Order } from '~/database/schema/orders';
+import { userTransactions } from '~/database/schema/user_transactions';
 import { NotificationGateway } from '../notification/notification.gateway';
 import { TransactionMethod, TransactionStatus } from '../user_transaction/dto/create-user-transaction.dto';
 import { UserTransactionService } from '../user_transaction/user-transaction.service';
@@ -39,12 +41,34 @@ export class OrderService {
     const users = adminIds.length > 0 ? await this.userRepository.findManyByIds(adminIds) : [];
     const userMap = new Map(users.map(u => [u.id, `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email || u.id]));
 
-    // Thêm trường tên admin vào từng order
-    const ordersWithAdminName = orders.map((order: any) => ({
-      ...order,
-      createdByName: order.createdBy ? userMap.get(order.createdBy) : null,
-      updatedByName: order.updatedBy ? userMap.get(order.updatedBy) : null,
-    }));
+    // Lấy tất cả orderId để lấy transaction
+    const orderIds = orders.map((o: any) => o.id);
+    const transactionsByOrderId: Record<string, any> = {};
+    if (orderIds.length > 0) {
+      // Lấy tất cả transaction liên quan các order này
+      const allTransactions = await this.userTransactionService.findByOrderIds(orderIds);
+      // Group theo orderId
+      for (const tx of allTransactions) {
+        if (!transactionsByOrderId[tx.orderId]) transactionsByOrderId[tx.orderId] = [];
+        transactionsByOrderId[tx.orderId].push(tx);
+      }
+    }
+
+    // Thêm trường tên admin và method vào từng order
+    const ordersWithAdminName = orders.map((order: any) => {
+      let method = undefined;
+      const txs = transactionsByOrderId[order.id] || [];
+      // Ưu tiên transaction có status = 'success', nếu không có thì lấy transaction đầu tiên
+      const successTx = txs.find((t: any) => t.status === 'success');
+      if (successTx) method = successTx.method;
+      else if (txs.length > 0) method = txs[0].method;
+      return {
+        ...order,
+        createdByName: order.createdBy ? userMap.get(order.createdBy) : null,
+        updatedByName: order.updatedBy ? userMap.get(order.updatedBy) : null,
+        method,
+      };
+    });
 
     return {
       ...result,

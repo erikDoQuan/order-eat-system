@@ -133,6 +133,17 @@ const ZaloPayPaymentPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [orderId, navigate]);
 
+  useEffect(() => {
+    // Nếu đã thanh toán ZaloPay, không cho phép vào lại trang này
+    if (sessionStorage.getItem('zalopay_paid') === 'true') {
+      navigate('/');
+    }
+    // Nếu items rỗng cũng redirect về trang chủ
+    if (!items || items.length === 0) {
+      navigate('/');
+    }
+  }, []);
+
   const appId = import.meta.env.VITE_ZP_APP_ID || '2554';
 
   // Thêm hàm gọi tạo đơn hàng khi user xác nhận đã thanh toán
@@ -188,6 +199,8 @@ const ZaloPayPaymentPage: React.FC = () => {
       // Gọi API tạo đơn hàng (chỉ khi bấm Thanh toán)
       const orderRes = await createOrder(payload);
       clearCart();
+      // Đặt flag đã thanh toán để chặn back lại
+      sessionStorage.setItem('zalopay_paid', 'true');
       navigate('/order-success', { state: { order: orderRes } });
     } catch (err) {
       setError('Có lỗi khi lưu đơn hàng sau thanh toán.');

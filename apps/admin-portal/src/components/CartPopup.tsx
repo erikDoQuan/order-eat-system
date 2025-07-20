@@ -1,20 +1,19 @@
-import React, { useEffect, useState, useContext, useRef } from 'react';
-import { AuthContext } from '../context/AuthContext';
-import { getOrderItemsByUserId } from '../services/user.api';
-import { getAllDishes } from '../services/dish.api';
-import type { Dish } from '../types/dish.type';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
+
+import type { Dish } from '../types/dish.type';
 import { ModalConfirm } from '../../../../packages/react-web-ui-shadcn/src/components/modals/modal-confirm';
+import { AuthContext } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import { useDishes } from '../context/DishContext';
 
 export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { orderItems, removeFromCart } = useCart();
-  const [dishes, setDishes] = useState<Dish[]>([]);
+  const dishes = useDishes();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [confirmRemove, setConfirmRemove] = useState<{ open: boolean; item: any | null }>({ open: false, item: null });
-  const dishesCache = useRef<{ data: Dish[]; timestamp: number } | null>(null);
   const CACHE_DURATION = 2 * 60 * 1000; // 2 phút
 
   // Hàm lấy phụ phí size
@@ -25,30 +24,9 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   ];
   // Lấy danh sách topping (dishes có category là topping)
   const [toppingDishes, setToppingDishes] = useState<Dish[]>([]);
-  useEffect(() => {
-    let ignore = false;
-    const now = Date.now();
-    const fetchDishes = async () => {
-      if (!dishesCache.current || now - dishesCache.current.timestamp > CACHE_DURATION) {
-        const all = await getAllDishes();
-        if (!ignore) {
-          setDishes(all);
-          dishesCache.current = { data: all, timestamp: now };
-        }
-      } else {
-        setDishes(dishesCache.current.data);
-      }
-    };
-    fetchDishes();
-    return () => {
-      ignore = true;
-    };
-  }, [orderItems]);
 
   // Force update khi orderItems thay đổi để đảm bảo re-render
-  useEffect(() => {
-    setDishes(d => [...d]);
-  }, [orderItems]);
+  // Xoá toàn bộ useEffect setDishes khi orderItems thay đổi
 
   const getDish = (dishId: string) => dishes.find(d => d.id === dishId);
 
@@ -68,7 +46,7 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       price += sizeOptions.find(s => s.value === item.size)?.price || 0;
     }
     if (item.base && item.base !== 'dày' && item.base !== 'mỏng') {
-      const topping = toppingDishes.find(t => t.id === item.base);
+      const topping = dishes.find(d => d.id === item.base);
       if (topping) price += Number(topping.basePrice) || 0;
     }
     return price;
@@ -95,7 +73,22 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   };
 
   return (
-    <div style={{ position: 'absolute', top: 50, right: 0, width: 420, background: '#fff', borderRadius: 16, boxShadow: '0 4px 32px #0003', zIndex: 100, padding: 32, display: 'flex', flexDirection: 'column', maxHeight: 600 }}>
+    <div
+      style={{
+        position: 'absolute',
+        top: 50,
+        right: 0,
+        width: 420,
+        background: '#fff',
+        borderRadius: 16,
+        boxShadow: '0 4px 32px #0003',
+        zIndex: 100,
+        padding: 32,
+        display: 'flex',
+        flexDirection: 'column',
+        maxHeight: 600,
+      }}
+    >
       <div style={{ fontWeight: 800, fontSize: 22, marginBottom: 18 }}>Giỏ hàng</div>
       {loading || (dishes.length === 0 && orderItems.length > 0) ? (
         <div style={{ color: '#888', textAlign: 'center', padding: 32 }}>Đang tải...</div>
@@ -108,30 +101,32 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               const dish = getDish(item.dishId);
               if (!dish) return null;
               return (
-                <div key={`${item.dishId}-${item.size || ''}-${item.base || ''}-${item.note || ''}-${idx}`} style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
+                <div
+                  key={`${item.dishId}-${item.size || ''}-${item.base || ''}-${item.note || ''}-${idx}`}
+                  style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}
+                >
                   {dish.imageUrl && (
-                    <img src={getImageUrl(dish.imageUrl)} alt={dish.name} style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, marginRight: 12 }} />
+                    <img
+                      src={getImageUrl(dish.imageUrl)}
+                      alt={dish.name}
+                      style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, marginRight: 12 }}
+                    />
                   )}
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 600, fontSize: 16 }}>{dish.name}</div>
                     {dish.description && <div style={{ color: '#666', fontSize: 14 }}>{dish.description}</div>}
                     <div style={{ color: '#666', fontSize: 15 }}>Số lượng: {item.quantity}</div>
-                    {item.size && (
-                      <div style={{ color: '#666', fontSize: 14 }}>Size: {item.size}</div>
-                    )}
+                    {item.size && <div style={{ color: '#666', fontSize: 14 }}>Size: {item.size}</div>}
                     {item.base && (
                       <div style={{ color: '#666', fontSize: 14 }}>
-                        Đế: {item.base === 'dày' || item.base === 'mỏng'
+                        Đế:{' '}
+                        {item.base === 'dày' || item.base === 'mỏng'
                           ? item.base.charAt(0).toUpperCase() + item.base.slice(1)
-                          : (dishes.find(d => d.id === item.base)?.name || item.base)}
+                          : dishes.find(d => d.id === item.base)?.name || item.base}
                       </div>
                     )}
-                    {item.note && item.note.trim() && (
-                      <div style={{ color: '#666', fontSize: 14 }}>Ghi chú: {item.note}</div>
-                    )}
-                    {dish.basePrice && (
-                      <div style={{ color: '#C92A15', fontWeight: 500 }}>Giá: {getItemPrice(item).toLocaleString('vi-VN')}₫</div>
-                    )}
+                    {item.note && item.note.trim() && <div style={{ color: '#666', fontSize: 14 }}>Ghi chú: {item.note}</div>}
+                    {dish.basePrice && <div style={{ color: '#C92A15', fontWeight: 500 }}>Giá: {getItemPrice(item).toLocaleString('vi-VN')}₫</div>}
                   </div>
                   <button
                     onClick={e => {
@@ -160,12 +155,25 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             Tổng tiền: {totalAmount.toLocaleString('vi-VN')}₫
           </div>
           <button
-            style={{ width: '100%', background: '#b45309', color: 'white', border: 'none', borderRadius: 8, padding: '12px 0', fontWeight: 700, fontSize: 17, marginTop: 12, cursor: 'pointer' }}
+            style={{
+              width: '100%',
+              background: '#b45309',
+              color: 'white',
+              border: 'none',
+              borderRadius: 8,
+              padding: '12px 0',
+              fontWeight: 700,
+              fontSize: 17,
+              marginTop: 12,
+              cursor: 'pointer',
+            }}
             onClick={() => {
               onClose();
               navigate('/checkout');
             }}
-          >Thanh toán</button>
+          >
+            Thanh toán
+          </button>
         </>
       )}
       <button
@@ -216,4 +224,4 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       />
     </div>
   );
-}; 
+};

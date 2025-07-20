@@ -91,7 +91,15 @@ export class UserTransactionService {
         userList = await this.drizzleService.db.select().from(users).where(inArray(users.id, userIds));
       }
       if (orderIds.length) {
-        orderList = await this.drizzleService.db.select().from(orders).where(inArray(orders.id, orderIds));
+        orderList = await this.drizzleService.db
+          .select({
+            id: orders.id,
+            orderNumber: orders.orderNumber,
+            appTransId: orders.appTransId,
+            // ... các trường khác nếu cần
+          })
+          .from(orders)
+          .where(inArray(orders.id, orderIds));
       }
 
       // Map user, order vào transaction
@@ -136,5 +144,18 @@ export class UserTransactionService {
 
   async findByOrderId(orderId: string) {
     return this.drizzleService.db.select().from(userTransactions).where(eq(userTransactions.orderId, orderId));
+  }
+
+  async findByOrderIds(orderIds: string[]) {
+    if (!orderIds.length) return [];
+    return this.drizzleService.db
+      .select({
+        id: userTransactions.id,
+        orderId: userTransactions.orderId,
+        method: userTransactions.method,
+        status: userTransactions.status,
+      })
+      .from(userTransactions)
+      .where(inArray(userTransactions.orderId, orderIds));
   }
 }

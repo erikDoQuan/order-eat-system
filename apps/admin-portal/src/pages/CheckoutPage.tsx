@@ -1,12 +1,13 @@
 import React, { useContext, useEffect, useState } from 'react';
-import Navbar from '../components/Navbar';
-import { AuthContext } from '../context/AuthContext';
-import { getAllDishes } from '../services/dish.api';
-import type { Dish } from '../types/dish.type';
-import { useCart } from '../context/CartContext';
 import { Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+import type { Dish } from '../types/dish.type';
 import { ModalConfirm } from '../../../../packages/react-web-ui-shadcn/src/components/modals/modal-confirm';
+import Navbar from '../components/Navbar';
+import { AuthContext } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import { getAllDishes } from '../services/dish.api';
 
 const CheckoutPage: React.FC = () => {
   const { user } = useContext(AuthContext);
@@ -22,11 +23,10 @@ const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   useEffect(() => {
     let ignore = false;
-    getAllDishes()
-      .then((all) => {
-        if (ignore) return;
-        setDishes(all);
-      });
+    getAllDishes().then(all => {
+      if (ignore) return;
+      setDishes(all);
+    });
     return () => {
       ignore = true;
     };
@@ -36,13 +36,13 @@ const CheckoutPage: React.FC = () => {
     { value: 'medium', price: 90_000 },
     { value: 'large', price: 190_000 },
   ];
-  const getDish = (dishId: string) => dishes.find((d) => d.id === dishId);
+  const getDish = (dishId: string) => dishes.find(d => d.id === dishId);
   const getItemPrice = (item: any) => {
     const dish = getDish(item.dishId);
     if (!dish) return 0;
     let price = Number(dish.basePrice) || 0;
     if (item.size) {
-      price += sizeOptions.find((s) => s.value === item.size)?.price || 0;
+      price += sizeOptions.find(s => s.value === item.size)?.price || 0;
     }
     return price;
   };
@@ -56,10 +56,7 @@ const CheckoutPage: React.FC = () => {
   const increaseQuantity = (item: any) => {
     addToCart(item.dishId, { quantity: 1, size: item.size, base: item.base, note: item.note });
   };
-  const totalAmount = orderItems.reduce(
-    (sum, item) => sum + getItemPrice(item) * (item.quantity || 1),
-    0,
-  );
+  const totalAmount = orderItems.reduce((sum, item) => sum + getItemPrice(item) * (item.quantity || 1), 0);
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
   const getImageUrl = (imageUrl: string | undefined | null) => {
     if (!imageUrl) return '/default-image.png';
@@ -99,7 +96,10 @@ const CheckoutPage: React.FC = () => {
                   const dish = getDish(item.dishId);
                   if (!dish) return null;
                   return (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 24, borderBottom: '1px solid #eee', paddingBottom: 16 }}>
+                    <div
+                      key={idx}
+                      style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 24, borderBottom: '1px solid #eee', paddingBottom: 16 }}
+                    >
                       {/* Hình ảnh món */}
                       {dish?.imageUrl ? (
                         <img
@@ -117,11 +117,16 @@ const CheckoutPage: React.FC = () => {
                       ) : null}
                       {/* Thông tin món */}
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>
-                          {dish?.name || `Món: ${item.dishId}`}
-                        </div>
+                        <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>{dish?.name || `Món: ${item.dishId}`}</div>
                         {item.size && <div style={{ fontSize: 14 }}>Size: {item.size}</div>}
-                        {item.base && <div style={{ fontSize: 14 }}>Đế: {item.base}</div>}
+                        {item.base && (
+                          <div style={{ fontSize: 14 }}>
+                            Đế:{' '}
+                            {item.base === 'dày' || item.base === 'mỏng'
+                              ? item.base.charAt(0).toUpperCase() + item.base.slice(1)
+                              : dishes.find(d => d.id === item.base)?.name || item.base}
+                          </div>
+                        )}
                         {item.note?.trim() && <div style={{ fontSize: 14 }}>Ghi chú: {item.note}</div>}
                       </div>
                       {/* Số lượng & giá */}

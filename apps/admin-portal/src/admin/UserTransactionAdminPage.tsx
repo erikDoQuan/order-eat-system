@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useContext, useRef } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
+
 import AdminSidebar from '../components/AdminSidebar';
-import { getAllUserTransactions } from '../services/user-transaction.api';
 import { AuthContext } from '../context/AuthContext';
+import { getAllUserTransactions } from '../services/user-transaction.api';
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   pending: { label: 'Chờ xử lý', color: 'bg-yellow-100 text-yellow-800' },
@@ -67,6 +68,7 @@ export default function UserTransactionAdminPage() {
 
   // Filter/search thực sự hoạt động
   const filteredTransactions = transactions
+    .filter(tran => tran.method === 'zalopay')
     .filter(tran => {
       const userName = (getUserName(tran.userId) || '').toLowerCase();
       const orderLabel = (getOrderLabel(tran.orderId) || '').toLowerCase();
@@ -89,7 +91,7 @@ export default function UserTransactionAdminPage() {
         <AdminSidebar />
       </div>
       <div className="admin-main-content">
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-[#C92A15]">User Transaction Management</h1>
         </div>
         <div className="mb-4 flex justify-end">
@@ -106,67 +108,65 @@ export default function UserTransactionAdminPage() {
         {error && <div style={{ color: 'red' }}>{error}</div>}
         {!loading && !error && (
           <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-200">
+            <table className="min-w-full border border-gray-200 bg-white">
               <thead>
                 <tr className="bg-gray-100 text-gray-700">
-                  <th className="py-2 px-3 border-b">STT</th>
-                  <th className="py-2 px-3 border-b">User</th>
-                  <th className="py-2 px-3 border-b">Order</th>
-                  <th className="py-2 px-3 border-b">Amount</th>
-                  <th className="py-2 px-3 border-b">Method</th>
-                  <th className="py-2 px-3 border-b">Status</th>
-                  <th className="py-2 px-3 border-b">Transaction Time</th>
-                  <th className="py-2 px-3 border-b">Transaction Code</th>
-                  <th className="py-2 px-3 border-b">Description</th>
-                  <th className="py-2 px-3 border-b">Created At</th>
-                  <th className="py-2 px-3 border-b">Updated At</th>
+                  <th className="border-b px-3 py-2">STT</th>
+                  <th className="border-b px-3 py-2">User</th>
+                  <th className="border-b px-3 py-2">Order</th>
+                  <th className="border-b px-3 py-2">Amount</th>
+                  <th className="border-b px-3 py-2">Method</th>
+                  <th className="border-b px-3 py-2">Status</th>
+                  <th className="border-b px-3 py-2">Transaction Time</th>
+                  <th className="border-b px-3 py-2">Transaction Code</th>
+                  <th className="border-b px-3 py-2">Description</th>
+                  <th className="border-b px-3 py-2">Created At</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredTransactions.length === 0 && (
                   <tr>
-                    <td colSpan={11} className="p-4 text-gray-500 text-center">Không có giao dịch nào.</td>
+                    <td colSpan={11} className="p-4 text-center text-gray-500">
+                      Không có giao dịch nào.
+                    </td>
                   </tr>
                 )}
                 {filteredTransactions.map((tran, idx) => (
-                  <tr key={tran.id} className="hover:bg-gray-50 transition">
-                    <td className="py-2 px-3 border-b text-xs text-gray-500">{idx + 1}</td>
-                    <td className="py-2 px-3 border-b font-medium">{getUserName(tran.userId)}</td>
-                    <td className="py-2 px-3 border-b">{getOrderLabel(tran.orderId)}</td>
-                    <td className="py-2 px-3 border-b text-right">{Number(tran.amount).toLocaleString('vi-VN')}₫</td>
-                    <td className="py-2 px-3 border-b">{tran.method}</td>
-                    <td className="py-2 px-3 border-b">
-                      <span className={`inline-block whitespace-nowrap px-2 py-1 rounded text-xs font-semibold ${
-                        (tran.statusText === 'Hoàn thành')
-                          ? 'bg-green-100 text-green-800'
-                          : (STATUS_LABEL[tran.status]?.color || 'bg-gray-100 text-gray-800')
-                      }`}>
+                  <tr key={tran.id} className="transition hover:bg-gray-50">
+                    <td className="border-b px-3 py-2 text-xs text-gray-500">{idx + 1}</td>
+                    <td className="border-b px-3 py-2 font-medium">{getUserName(tran.userId)}</td>
+                    <td className="border-b px-3 py-2">{getOrderLabel(tran.orderId)}</td>
+                    <td className="border-b px-3 py-2 text-right">{Number(tran.amount).toLocaleString('vi-VN')}₫</td>
+                    <td className="border-b px-3 py-2">{tran.method}</td>
+                    <td className="border-b px-3 py-2">
+                      <span
+                        className={`inline-block whitespace-nowrap rounded px-2 py-1 text-xs font-semibold ${
+                          tran.statusText === 'Hoàn thành'
+                            ? 'bg-green-100 text-green-800'
+                            : STATUS_LABEL[tran.status]?.color || 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
                         {tran.statusText || STATUS_LABEL[tran.status]?.label || tran.status}
                       </span>
                     </td>
-                    <td className="py-2 px-3 border-b">{formatDate(tran.transTime)}</td>
-                    <td className="py-2 px-3 border-b">{tran.transactionCode || '-'}</td>
-                    <td className="py-2 px-3 border-b">{tran.description}</td>
-                    <td className="py-2 px-3 border-b">{formatDate(tran.createdAt)}</td>
-                    <td className="py-2 px-3 border-b">{formatDate(tran.updatedAt)}</td>
+                    <td className="border-b px-3 py-2">{formatDate(tran.transTime)}</td>
+                    <td className="border-b px-3 py-2">{tran.transactionCode || tran.order?.appTransId || '-'}</td>
+                    <td className="border-b px-3 py-2">{tran.description}</td>
+                    <td className="border-b px-3 py-2">{formatDate(tran.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
             {/* PHÂN TRANG ĐƠN GIẢN */}
-            <div className="flex gap-2 mt-4 items-center justify-center">
-              <button
-                className="px-3 py-1 border rounded disabled:opacity-50"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <button className="rounded border px-3 py-1 disabled:opacity-50" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
                 Trang trước
               </button>
               <span>
                 Trang {page} / {totalPages}
               </span>
               <button
-                className="px-3 py-1 border rounded disabled:opacity-50"
+                className="rounded border px-3 py-1 disabled:opacity-50"
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
               >
@@ -178,4 +178,4 @@ export default function UserTransactionAdminPage() {
       </div>
     </div>
   );
-} 
+}

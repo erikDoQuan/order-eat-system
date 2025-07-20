@@ -1,40 +1,44 @@
 import React, { useContext } from 'react';
-import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
-import MainLayout from './layouts/MainLayout';
-import HomePage from './pages/HomePage';
-import AccountPage from './pages/AccountPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+
+import AccountAdminPage from './admin/AccountAdminPage';
 import AdminCategoryPage from './admin/AdminCategoryPage';
 import AdminDishPage from './admin/AdminDishPage';
-import AdminUserPage from './admin/AdminUserPage';
 import AdminPage from './admin/AdminPage';
-import AccountAdminPage from './admin/AccountAdminPage';
-import CheckoutPage from './pages/CheckoutPage';
-import AuthProvider from './context/AuthProvider';
-import { AuthContext } from './context/AuthContext';
-import { CartProvider } from './context/CartContext';
-import OrderTypePage from './pages/OrderTypePage';
-import OrderInfoPage from './pages/OrderInfoPage';
-import PaymentInfoPage from './pages/payment-info';
-import OrderSuccessPage from './pages/OrderSuccessPage';
+import AdminUserPage from './admin/AdminUserPage';
 import OrderAdminPage from './admin/OrderAdminPage';
 import ReviewAdminPage from './admin/ReviewAdminPage';
+import { AuthContext } from './context/AuthContext';
+import AuthProvider from './context/AuthProvider';
+import { CartProvider } from './context/CartContext';
 import { LanguageProvider } from './context/LanguageContext';
+import MainLayout from './layouts/MainLayout';
+import AccountPage from './pages/AccountPage';
+import CheckoutPage from './pages/CheckoutPage';
+import HomePage from './pages/HomePage';
+import LoginPage from './pages/LoginPage';
+import OrderInfoPage from './pages/OrderInfoPage';
+import OrderSuccessPage from './pages/OrderSuccessPage';
+import OrderTypePage from './pages/OrderTypePage';
+import PaymentInfoPage from './pages/payment-info';
+import RegisterPage from './pages/RegisterPage';
+
 import './i18n';
-import DeliveryOrderPage from './pages/DeliveryOrderPage';
-import OrderDetailPage from './pages/OrderDetailPage';
-import VerifyEmailPage from './pages/VerifyEmailPage';
-import ResetPasswordPage from './pages/reset-password';
-import ForgotPasswordPage from './pages/forgot-password';
-import ZaloPayPaymentPage from './pages/ZaloPayPaymentPage';
+
 import RevenueReportsPage from './admin/RevenueReportsPage';
 import UserTransactionAdminPage from './admin/UserTransactionAdminPage';
-import TeachableMachineTestPage from './pages/TeachableMachineTestPage';
-import BillPrintPage from './pages/BillPrintPage';
+import { DishProvider } from './context/DishContext';
 import BillPreviewPage from './pages/BillPreviewPage';
+import BillPrintPage from './pages/BillPrintPage';
+import DeliveryOrderPage from './pages/DeliveryOrderPage';
+import ForgotPasswordPage from './pages/forgot-password';
+import OrderDetailPage from './pages/OrderDetailPage';
+import ResetPasswordPage from './pages/reset-password';
+import TeachableMachineTestPage from './pages/TeachableMachineTestPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
+import ZaloPayPaymentPage from './pages/ZaloPayPaymentPage';
 
 import './globals.scss';
 
@@ -115,7 +119,7 @@ axios.interceptors.response.use(
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
@@ -141,16 +145,79 @@ function AppWithCartProvider() {
         {/* Route chi tiết đơn hàng */}
         <Route path="/orders/:orderId" element={<OrderDetailPage />} />
         {/* Route admin không dùng layout => không bị render Navbar */}
-        <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
-        <Route path="/admin/profile" element={<AdminRoute><AccountAdminPage /></AdminRoute>} />
-        <Route path="/admin/category" element={<AdminRoute><AdminCategoryPage /></AdminRoute>} />
-        <Route path="/admin/dishes" element={<AdminRoute><AdminDishPage /></AdminRoute>} />
-        <Route path="/admin/dishes/add" element={<AdminRoute><AdminDishPage showAddForm={true} /></AdminRoute>} />
-        <Route path="/admin/customers" element={<AdminRoute><AdminUserPage /></AdminRoute>} />
-        <Route path="/admin/orders" element={<AdminRoute><OrderAdminPage /></AdminRoute>} />
-        <Route path="/admin/reviews" element={<AdminRoute><ReviewAdminPage /></AdminRoute>} />
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/profile"
+          element={
+            <AdminRoute>
+              <AccountAdminPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/category"
+          element={
+            <AdminRoute>
+              <AdminCategoryPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/dishes"
+          element={
+            <AdminRoute>
+              <AdminDishPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/dishes/add"
+          element={
+            <AdminRoute>
+              <AdminDishPage showAddForm={true} />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/customers"
+          element={
+            <AdminRoute>
+              <AdminUserPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/orders"
+          element={
+            <AdminRoute>
+              <OrderAdminPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/reviews"
+          element={
+            <AdminRoute>
+              <ReviewAdminPage />
+            </AdminRoute>
+          }
+        />
         <Route path="/admin/revenue-reports" element={<RevenueReportsPage />} />
-        <Route path="/admin/user-transaction" element={<AdminRoute><UserTransactionAdminPage /></AdminRoute>} />
+        <Route
+          path="/admin/user-transaction"
+          element={
+            <AdminRoute>
+              <UserTransactionAdminPage />
+            </AdminRoute>
+          }
+        />
         {/* Các route không dùng layout */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -189,9 +256,11 @@ root.render(
     <BrowserRouter>
       <LanguageProvider>
         <AuthProvider>
-          <AppWithCartProvider />
+          <DishProvider>
+            <AppWithCartProvider />
+          </DishProvider>
         </AuthProvider>
       </LanguageProvider>
     </BrowserRouter>
-  </React.StrictMode>
+  </React.StrictMode>,
 );
