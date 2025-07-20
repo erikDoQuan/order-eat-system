@@ -1,26 +1,25 @@
-import React, { useEffect, useState, useContext, useRef } from 'react';
-import { User as UserIcon, Edit, Trash2, LogOut, Star } from 'lucide-react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import { Edit, LogOut, Star, Trash2, User as UserIcon } from 'lucide-react';
+
 import AdminSidebar from '../components/AdminSidebar';
+
 import '../css/ReviewAdminPage.css';
+
 import axios from 'axios';
-import { getAllUsers, User } from '../services/user.api';
-import { getAllDishes } from '../services/dish.api';
-import { Dish } from '../types/dish.type';
-import { deleteReview, updateReview, respondReview } from '../services/review.api';
-import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+
+import { AuthContext } from '../context/AuthContext';
+import { getAllDishes } from '../services/dish.api';
+import { deleteReview, respondReview, updateReview } from '../services/review.api';
+import { getAllUsers, User } from '../services/user.api';
+import { Dish } from '../types/dish.type';
 
 // Star Rating Component
 function StarRating({ rating }: { rating: number }) {
   return (
     <div className="star-rating">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <Star
-          key={star}
-          size={16}
-          className={star <= rating ? 'star' : 'star empty'}
-          fill={star <= rating ? '#ffd700' : 'none'}
-        />
+      {[1, 2, 3, 4, 5].map(star => (
+        <Star key={star} size={16} className={star <= rating ? 'star' : 'star empty'} fill={star <= rating ? '#ffd700' : 'none'} />
       ))}
       <span className="ml-1 text-sm text-gray-600">({rating})</span>
     </div>
@@ -42,7 +41,7 @@ export default function ReviewAdminPage() {
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [starFilter, setStarFilter] = useState<number|null>(null);
+  const [starFilter, setStarFilter] = useState<number | null>(null);
   // Thêm state để lưu review đang phản hồi
   const [replyingReviewId, setReplyingReviewId] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
@@ -58,16 +57,11 @@ export default function ReviewAdminPage() {
 
   const fetchReviews = () => {
     setPageLoading(true);
-    Promise.all([
-      axios.get('/api/v1/reviews'),
-      getAllUsers(1, 1000),
-      getAllDishes(),
-      axios.get('/api/v1/orders')
-    ])
+    Promise.all([axios.get('/api/v1/reviews'), getAllUsers(1, 1000), getAllDishes(), axios.get('/api/v1/orders')])
       .then(([reviewsRes, usersRes, dishesRes, ordersRes]) => {
         const reviewsArr = Array.isArray(reviewsRes.data?.data?.data) ? reviewsRes.data.data.data : [];
         setReviews(reviewsArr);
-        
+
         const sortedUsers = [...(usersRes.users || [])].sort((a, b) => {
           if ((b.isActive ? 1 : 0) !== (a.isActive ? 1 : 0)) {
             return (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0);
@@ -76,7 +70,7 @@ export default function ReviewAdminPage() {
         });
         setUsers(sortedUsers);
         setDishes(dishesRes);
-        
+
         const ordersArr = Array.isArray(ordersRes.data?.data?.data) ? ordersRes.data.data.data : [];
         setOrders(ordersArr);
       })
@@ -116,7 +110,7 @@ export default function ReviewAdminPage() {
       return {
         orderNumber: order.order_number || order.orderNumber,
         totalAmount: order.totalAmount,
-        status: order.status
+        status: order.status,
       };
     }
     return { orderNumber: 'Unknown', totalAmount: 0, status: 'Unknown' };
@@ -134,8 +128,7 @@ export default function ReviewAdminPage() {
       const userName = getUserName(review.userId) || '';
       const orderInfo = getOrderInfo(review.orderId);
       const orderNumber = orderInfo.orderNumber ? `#${orderInfo.orderNumber}` : '';
-      const matchSearch = userName.toLowerCase().includes(search.toLowerCase()) || 
-             orderNumber.toLowerCase().includes(search.toLowerCase());
+      const matchSearch = userName.toLowerCase().includes(search.toLowerCase()) || orderNumber.toLowerCase().includes(search.toLowerCase());
       const matchStar = starFilter ? review.rating === starFilter : true;
       return matchSearch && matchStar;
     })
@@ -165,16 +158,16 @@ export default function ReviewAdminPage() {
       const payload = {
         rating: editingReview.rating,
         comment: editingReview.comment,
-        isActive: editingReview.isActive
+        isActive: editingReview.isActive,
       };
-      
+
       const res = await updateReview(editingReview.id, payload);
       if (res?.statusCode && res.statusCode === 200) {
         setShowEdit(false);
         fetchReviews();
       } else {
         let msg = '';
-        if (Array.isArray(res.message)) msg = res.message.map((m: any) => typeof m === 'object' ? JSON.stringify(m) : m).join(', ');
+        if (Array.isArray(res.message)) msg = res.message.map((m: any) => (typeof m === 'object' ? JSON.stringify(m) : m)).join(', ');
         else if (typeof res.message === 'object') msg = JSON.stringify(res.message);
         else msg = res.message || 'Unknown error';
         alert('Update failed: ' + msg);
@@ -183,7 +176,7 @@ export default function ReviewAdminPage() {
       let msg = '';
       if (err?.response?.data) {
         if (Array.isArray(err.response.data.message)) {
-          msg = err.response.data.message.map((m: any) => typeof m === 'object' ? JSON.stringify(m) : m).join(', ');
+          msg = err.response.data.message.map((m: any) => (typeof m === 'object' ? JSON.stringify(m) : m)).join(', ');
         } else if (typeof err.response.data.message === 'object') {
           msg = JSON.stringify(err.response.data.message);
         } else {
@@ -271,8 +264,8 @@ export default function ReviewAdminPage() {
             {!(user?.firstName || user?.lastName) && user?.email}
           </span>
         </div>
-        
-        <div className="flex items-center justify-between mb-6">
+
+        <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-[#C92A15]">Review Management</h1>
         </div>
         {/* Search and star filter layout */}
@@ -287,40 +280,33 @@ export default function ReviewAdminPage() {
             />
           </div>
           <div className="review-star-filter-group">
-            <button
-              className={`review-star-filter-btn${starFilter === null ? ' selected' : ''}`}
-              onClick={() => setStarFilter(null)}
-            >
+            <button className={`review-star-filter-btn${starFilter === null ? 'selected' : ''}`} onClick={() => setStarFilter(null)}>
               All
             </button>
-            {[1,2,3,4,5].map(star => (
-              <button
-                key={star}
-                className={`review-star-filter-btn${starFilter === star ? ' selected' : ''}`}
-                onClick={() => setStarFilter(star)}
-              >
+            {[1, 2, 3, 4, 5].map(star => (
+              <button key={star} className={`review-star-filter-btn${starFilter === star ? 'selected' : ''}`} onClick={() => setStarFilter(star)}>
                 <Star size={15} fill="#ffd700" className="mr-1" />
                 {star}
               </button>
             ))}
           </div>
         </div>
-        
+
         {pageLoading && <div>Loading...</div>}
         {error && <div style={{ color: 'red' }}>{error}</div>}
-        
+
         {!pageLoading && !error && (
           <div className="overflow-x-auto">
             <table className="review-admin-table">
               <thead>
                 <tr className="bg-gray-100 text-gray-700">
-                  <th className="py-2 px-3 border-b">No.</th>
-                  <th className="py-2 px-3 border-b">Review Date</th>
-                  <th className="py-2 px-3 border-b">Customer</th>
-                  <th className="py-2 px-3 border-b">Order</th>
-                  <th className="py-2 px-3 border-b">Rating</th>
-                  <th className="py-2 px-3 border-b">Comment</th>
-                  <th className="py-2 px-3 border-b">Actions</th>
+                  <th className="border-b px-3 py-2">No.</th>
+                  <th className="border-b px-3 py-2">Review Date</th>
+                  <th className="border-b px-3 py-2">Customer</th>
+                  <th className="border-b px-3 py-2">Order</th>
+                  <th className="border-b px-3 py-2">Rating</th>
+                  <th className="border-b px-3 py-2">Comment</th>
+                  <th className="border-b px-3 py-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -328,25 +314,23 @@ export default function ReviewAdminPage() {
                   const orderInfo = getOrderInfo(review.orderId);
                   return (
                     <React.Fragment key={review.id}>
-                      <tr className="hover:bg-gray-50 transition">
-                        <td className="py-2 px-3 border-b font-medium">{index + 1}</td>
-                        <td className="py-2 px-3 border-b">{formatDate(review.createdAt)}</td>
-                        <td className="py-2 px-3 border-b">{getUserName(review.userId)}</td>
-                        <td className="py-2 px-3 border-b">
+                      <tr className="transition hover:bg-gray-50">
+                        <td className="border-b px-3 py-2 font-medium">{index + 1}</td>
+                        <td className="border-b px-3 py-2">{formatDate(review.createdAt)}</td>
+                        <td className="border-b px-3 py-2">{getUserName(review.userId)}</td>
+                        <td className="border-b px-3 py-2">
                           <div>
                             <div className="font-medium">{orderInfo.orderNumber ? `#${orderInfo.orderNumber}` : 'Unknown'}</div>
                             <div className="text-xs text-gray-500">{orderInfo.status}</div>
                             <div className="text-xs text-gray-700">{Number(orderInfo.totalAmount).toLocaleString('en-US')}đ</div>
                           </div>
                         </td>
-                        <td className="py-2 px-3 border-b">
+                        <td className="border-b px-3 py-2">
                           <StarRating rating={review.rating} />
                         </td>
-                        <td className="py-2 px-3 border-b review-comment">
-                          {review.comment || 'No comment'}
-                        </td>
+                        <td className="review-comment border-b px-3 py-2">{review.comment || 'No comment'}</td>
                         {review && (
-                          <td className="py-2 px-3 border-b">
+                          <td className="border-b px-3 py-2">
                             {review.adminReply ? (
                               <button
                                 style={{
@@ -461,7 +445,16 @@ export default function ReviewAdminPage() {
                                 />
                                 <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
                                   <button
-                                    style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 18px', fontWeight: 500, fontSize: 15, cursor: 'pointer' }}
+                                    style={{
+                                      background: '#2563eb',
+                                      color: '#fff',
+                                      border: 'none',
+                                      borderRadius: 6,
+                                      padding: '6px 18px',
+                                      fontWeight: 500,
+                                      fontSize: 15,
+                                      cursor: 'pointer',
+                                    }}
                                     disabled={!replyContent.trim()}
                                     onClick={async () => {
                                       if (!replyContent.trim()) return;
@@ -478,7 +471,16 @@ export default function ReviewAdminPage() {
                                     Gửi phản hồi
                                   </button>
                                   <button
-                                    style={{ background: '#e5e7eb', color: '#111', border: 'none', borderRadius: 6, padding: '6px 18px', fontWeight: 500, fontSize: 15, cursor: 'pointer' }}
+                                    style={{
+                                      background: '#e5e7eb',
+                                      color: '#111',
+                                      border: 'none',
+                                      borderRadius: 6,
+                                      padding: '6px 18px',
+                                      fontWeight: 500,
+                                      fontSize: 15,
+                                      cursor: 'pointer',
+                                    }}
                                     onClick={() => setReplyingReviewId(null)}
                                   >
                                     Hủy
@@ -496,16 +498,16 @@ export default function ReviewAdminPage() {
             </table>
           </div>
         )}
-        
+
         {showEdit && editingReview && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-            <form className="bg-white p-6 rounded shadow-md min-w-[400px]" onSubmit={handleEditSubmit}>
-              <h2 className="text-lg font-bold mb-4">Edit Review</h2>
-              
+            <form className="min-w-[400px] rounded bg-white p-6 shadow-md" onSubmit={handleEditSubmit}>
+              <h2 className="mb-4 text-lg font-bold">Edit Review</h2>
+
               <div className="mb-3">
                 <label className="block text-sm font-medium">Rating</label>
                 <select
-                  className="w-full border rounded px-2 py-1"
+                  className="w-full rounded border px-2 py-1"
                   value={editingReview.rating}
                   onChange={e => setEditingReview({ ...editingReview, rating: Number(e.target.value) })}
                 >
@@ -516,21 +518,21 @@ export default function ReviewAdminPage() {
                   <option value={5}>5 Stars</option>
                 </select>
               </div>
-              
+
               <div className="mb-3">
                 <label className="block text-sm font-medium">Comment</label>
                 <textarea
-                  className="w-full border rounded px-2 py-1"
+                  className="w-full rounded border px-2 py-1"
                   value={editingReview.comment || ''}
                   onChange={e => setEditingReview({ ...editingReview, comment: e.target.value })}
                   rows={3}
                 />
               </div>
-              
+
               <div className="mb-3">
                 <label className="block text-sm font-medium">Status</label>
                 <select
-                  className="w-full border rounded px-2 py-1"
+                  className="w-full rounded border px-2 py-1"
                   value={editingReview.isActive ? 'true' : 'false'}
                   onChange={e => setEditingReview({ ...editingReview, isActive: e.target.value === 'true' })}
                 >
@@ -538,12 +540,12 @@ export default function ReviewAdminPage() {
                   <option value="false">Inactive</option>
                 </select>
               </div>
-              
-              <div className="flex justify-end gap-2 mt-4">
-                <button type="button" className="px-4 py-2 rounded bg-gray-200" onClick={() => setShowEdit(false)} disabled={saving}>
+
+              <div className="mt-4 flex justify-end gap-2">
+                <button type="button" className="rounded bg-gray-200 px-4 py-2" onClick={() => setShowEdit(false)} disabled={saving}>
                   Cancel
                 </button>
-                <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white" disabled={saving}>
+                <button type="submit" className="rounded bg-blue-600 px-4 py-2 text-white" disabled={saving}>
                   Save
                 </button>
               </div>
@@ -553,4 +555,4 @@ export default function ReviewAdminPage() {
       </div>
     </div>
   );
-} 
+}

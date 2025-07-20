@@ -1,15 +1,19 @@
-import React, { useContext, useState, useEffect } from 'react';
-import { FaEye, FaEyeSlash, FaBell } from 'react-icons/fa';
+import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { FaBell, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
+
 import { AuthContext } from '../context/AuthContext';
-import { updateUser } from '../services/user.api';
+import { getAllDishes } from '../services/dish.api';
 import { fetchMe } from '../services/me.api';
 import { getOrdersByUserId } from '../services/order.api';
-import { getAllDishes } from '../services/dish.api';
 import { createReview, getReviewsByUserId } from '../services/review.api';
+import { updateUser } from '../services/user.api';
 import { Dish } from '../types/dish.type';
+
 import '../css/AccountPage.css';
+
+import RatingStars from '../components/RatingStars';
 import ReviewForm from '../components/ReviewForm';
 import axios from '../services/axios';
 
@@ -24,7 +28,7 @@ export default function AccountPage() {
     email: user?.email || '',
   });
   const [saving, setSaving] = useState(false);
-  const [tab, setTab] = useState<'info'|'password'|'history'>('info');
+  const [tab, setTab] = useState<'info' | 'password' | 'history'>('info');
   const [pwForm, setPwForm] = useState({
     oldPassword: '',
     newPassword: '',
@@ -40,16 +44,20 @@ export default function AccountPage() {
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [dishesLoading, setDishesLoading] = useState(true);
   const [searchValue, setSearchValue] = useState('');
-  const [searchResult, setSearchResult] = useState<any[]|null>(null);
+  const [searchResult, setSearchResult] = useState<any[] | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const ORDERS_PER_PAGE = 5;
-  const paginatedOrders = (searchResult !== null ? searchResult : recentOrders.filter(order => order.status === 'completed'));
+  const paginatedOrders = searchResult !== null ? searchResult : recentOrders.filter(order => order.status === 'completed');
   const totalPages = Math.ceil(paginatedOrders.length / ORDERS_PER_PAGE);
   const displayedOrders = paginatedOrders.slice((currentPage - 1) * ORDERS_PER_PAGE, currentPage * ORDERS_PER_PAGE);
   const { t } = useTranslation();
   const [showNewOrderNotification, setShowNewOrderNotification] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
   const [thankYouOrderId, setThankYouOrderId] = useState<string | null>(null);
+  // Thêm state quản lý order đang xem phản hồi
+  const [viewingReplyOrderId, setViewingReplyOrderId] = useState<string | null>(null);
+  // Thêm state quản lý order đang xem đánh giá
+  const [viewingReviewOrderId, setViewingReviewOrderId] = useState<string | null>(null);
 
   // Debug: Kiểm tra user và token
   useEffect(() => {
@@ -127,15 +135,16 @@ export default function AccountPage() {
       await updateUser(user.id, payload);
       const me = await fetchMe();
       if (me && me.email) {
-        setUser && setUser({
-          id: me.id,
-          email: me.email,
-          firstName: me.firstName,
-          lastName: me.lastName,
-          phoneNumber: me.phoneNumber,
-          address: me.address,
-          role: me.role,
-        });
+        setUser &&
+          setUser({
+            id: me.id,
+            email: me.email,
+            firstName: me.firstName,
+            lastName: me.lastName,
+            phoneNumber: me.phoneNumber,
+            address: me.address,
+            role: me.role,
+          });
         setForm({
           name: (me.firstName || '') + (me.lastName ? ' ' + me.lastName : ''),
           phone: me.phoneNumber || '',
@@ -202,11 +211,7 @@ export default function AccountPage() {
       const phone = order.phoneNumber || order.phone_number || '';
       const orderNum = String(order.order_number || order.orderNumber || '');
       const id = String(order.id || '');
-      return (
-        phone.includes(value) ||
-        orderNum.includes(value) ||
-        id.includes(value)
-      );
+      return phone.includes(value) || orderNum.includes(value) || id.includes(value);
     });
     setSearchResult(filtered);
   };
@@ -214,35 +219,43 @@ export default function AccountPage() {
   return (
     <>
       {showNewOrderNotification && (
-        <div style={{
-          position: 'fixed',
-          top: 24,
-          right: 24,
-          background: '#fffbe6',
-          color: '#ad6800',
-          border: '1px solid #ffe58f',
-          borderRadius: 8,
-          padding: '16px 32px 16px 20px',
-          boxShadow: '0 2px 8px #00000022',
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          minWidth: 320,
-          fontSize: 17,
-          fontWeight: 500
-        }}>
-          <FaBell style={{marginRight: 12, fontSize: 22}} />
-          <span>Bạn có đơn hàng vừa được xác nhận!</span>
-          <button onClick={() => setShowNewOrderNotification(false)} style={{
-            background: 'none',
-            border: 'none',
+        <div
+          style={{
+            position: 'fixed',
+            top: 24,
+            right: 24,
+            background: '#fffbe6',
             color: '#ad6800',
-            fontSize: 22,
-            marginLeft: 18,
-            cursor: 'pointer',
-            fontWeight: 700,
-            lineHeight: 1
-          }} title="Đóng">×</button>
+            border: '1px solid #ffe58f',
+            borderRadius: 8,
+            padding: '16px 32px 16px 20px',
+            boxShadow: '0 2px 8px #00000022',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            minWidth: 320,
+            fontSize: 17,
+            fontWeight: 500,
+          }}
+        >
+          <FaBell style={{ marginRight: 12, fontSize: 22 }} />
+          <span>Bạn có đơn hàng vừa được xác nhận!</span>
+          <button
+            onClick={() => setShowNewOrderNotification(false)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#ad6800',
+              fontSize: 22,
+              marginLeft: 18,
+              cursor: 'pointer',
+              fontWeight: 700,
+              lineHeight: 1,
+            }}
+            title="Đóng"
+          >
+            ×
+          </button>
         </div>
       )}
       <div className="account-container">
@@ -254,10 +267,16 @@ export default function AccountPage() {
             </div>
           </div>
           <ul className="account-menu">
-            <li className={tab==='info' ? 'active' : ''} onClick={()=>setTab('info')}>{t('customer_info')}</li>
+            <li className={tab === 'info' ? 'active' : ''} onClick={() => setTab('info')}>
+              {t('customer_info')}
+            </li>
             <li>{t('address_count')}</li>
-            <li className={tab==='history' ? 'active' : ''} onClick={()=>setTab('history')}>{t('purchase_history')}</li>
-            <li className={tab==='password' ? 'active' : ''} onClick={()=>setTab('password')}>{t('change_password')}</li>
+            <li className={tab === 'history' ? 'active' : ''} onClick={() => setTab('history')}>
+              {t('purchase_history')}
+            </li>
+            <li className={tab === 'password' ? 'active' : ''} onClick={() => setTab('password')}>
+              {t('change_password')}
+            </li>
             <li>{t('my_voucher')}</li>
           </ul>
         </div>
@@ -268,55 +287,72 @@ export default function AccountPage() {
             <>
               <div className="account-orders-box">
                 <h1 className="account-main-title">{t('order_lookup')}</h1>
-                <form onSubmit={handleSearch} style={{marginBottom: 0}}>
-                  <div style={{fontWeight: 600, fontSize: 18, marginBottom: 10}}>{t('enter_phone_or_order')}</div>
+                <form onSubmit={handleSearch} style={{ marginBottom: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 10 }}>{t('enter_phone_or_order')}</div>
                   <input
                     type="text"
                     value={searchValue}
                     onChange={e => setSearchValue(e.target.value)}
                     placeholder={t('enter_phone_or_order')}
-                    style={{width: '100%', padding: '16px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 17, background: '#fafafa', marginBottom: 18}}
+                    style={{
+                      width: '100%',
+                      padding: '16px',
+                      borderRadius: 8,
+                      border: '1px solid #e0e0e0',
+                      fontSize: 17,
+                      background: '#fafafa',
+                      marginBottom: 18,
+                    }}
                   />
-                  <button type="submit" style={{
-                    background: '#C92A15',
-                    color: 'white',
-                    fontWeight: 600,
-                    fontSize: 22,
-                    border: 'none',
-                    borderRadius: 10,
-                    padding: '13px 48px',
-                    cursor: 'pointer',
-                    marginTop: 0,
-                    maxWidth: 320,
-                    width: '100%',
-                    boxShadow: '0 2px 8px #C92A1533',
-                    letterSpacing: 0.1,
-                    transition: 'background 0.2s',
-                  }}>
+                  <button
+                    type="submit"
+                    style={{
+                      background: '#C92A15',
+                      color: 'white',
+                      fontWeight: 600,
+                      fontSize: 22,
+                      border: 'none',
+                      borderRadius: 10,
+                      padding: '13px 48px',
+                      cursor: 'pointer',
+                      marginTop: 0,
+                      maxWidth: 320,
+                      width: '100%',
+                      boxShadow: '0 2px 8px #C92A1533',
+                      letterSpacing: 0.1,
+                      transition: 'background 0.2s',
+                    }}
+                  >
                     {t('search')}
                   </button>
                 </form>
               </div>
-              <div className="account-orders-box" style={{marginTop: 32}}>
-                <h2 className="account-main-title" style={{fontSize: 28, marginBottom: 18}}>{t('order_history')}</h2>
-                <div className="account-recent-orders">
+              <div className="account-orders-box" style={{ marginTop: 32 }}>
+                <h2 className="account-main-title" style={{ fontSize: 28, marginBottom: 18 }}>
+                  {t('order_history')}
+                </h2>
+                <div className="account-recent-orders horizontal-scroll">
                   {(searchResult !== null ? searchResult : recentOrders.filter(order => order.status === 'completed')).length === 0 && (
                     <div className="text-gray-500">Bạn chưa có đơn hàng hoàn thành nào</div>
                   )}
-                  <table className="table-recent-orders" style={{width:'100%',marginTop:8}}>
+                  <table className="table-recent-orders" style={{ width: '100%', marginTop: 8, tableLayout: 'fixed' }}>
                     <thead>
                       <tr>
-                        <th>{t('order_code')}</th>
-                        <th>{t('product')}</th>
-                        <th>{t('order_date')}</th>
-                        <th>{t('total_amount')}</th>
-                        <th>{t('status')}</th>
+                        <th style={{ width: '10%' }}>{t('order_code')}</th>
+                        <th style={{ width: '35%' }}>{t('product')}</th>
+                        <th style={{ width: '15%' }}>{t('order_date')}</th>
+                        <th style={{ width: '15%' }}>{t('total_amount')}</th>
+                        <th style={{ width: 400 }}>{t('status')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {displayedOrders.map(order => {
-                        const items = (order.orderItems?.items || []);
-                        const dishNames = items.map((item: any) => item.dishSnapshot?.name || item.name || getDishName(item.dishId) || item.dish?.name || 'Không rõ tên món').join(', ');
+                        const items = order.orderItems?.items || [];
+                        const dishNames = items
+                          .map(
+                            (item: any) => item.dishSnapshot?.name || item.name || getDishName(item.dishId) || item.dish?.name || 'Không rõ tên món',
+                          )
+                          .join(', ');
                         const orderNumber = order.order_number || order.orderNumber || '-';
                         const orderLink = `/orders/${order.id}`;
                         const date = new Date(order.createdAt);
@@ -328,23 +364,70 @@ export default function AccountPage() {
                         else if (order.status === 'pending') statusText = t('order_pending');
                         else if (order.status === 'delivering') statusText = 'Đang giao hàng';
                         else statusText = order.status;
-                        const isCompleted = ["completed", "hoàn thành"].includes((order.status || "").toLowerCase());
+                        const isCompleted = ['completed', 'hoàn thành'].includes((order.status || '').toLowerCase());
                         return (
                           <React.Fragment key={order.id}>
                             <tr>
                               <td>
-                                <Link to={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>{orderNumber}</Link>
+                                <Link to={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>
+                                  {orderNumber}
+                                </Link>
                               </td>
-                              <td style={{whiteSpace:'pre-line'}}>{dishNames}</td>
+                              <td style={{ whiteSpace: 'pre-line' }}>{dishNames}</td>
                               <td className="order-date">{dateStr}</td>
                               <td>{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
-                              <td className={
-                                order.status === 'cancelled' ? 'order-status-cancelled' :
-                                order.status === 'completed' ? 'order-status-completed' :
-                                order.status === 'confirmed' ? 'order-status-confirmed' :
-                                order.status === 'delivering' ? 'order-status-delivering' :
-                                order.status === 'pending' ? 'order-status-pending' : ''
-                              }>{statusText}</td>
+                              <td
+                                style={{
+                                  width: 400,
+                                  position: 'relative',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'flex-start',
+                                  fontSize: 16,
+                                  lineHeight: 1.5,
+                                  paddingLeft: 12,
+                                  paddingRight: 12,
+                                  boxSizing: 'border-box',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    fontWeight: 500,
+                                    whiteSpace: 'nowrap',
+                                    lineHeight: '1.5',
+                                    fontSize: 16,
+                                    marginLeft: 8,
+                                    color: statusText === 'Hoàn thành' ? '#22c55e' : undefined,
+                                  }}
+                                >
+                                  {statusText}
+                                </span>
+                                {isCompleted && order.reviews && order.reviews.length > 0 && (
+                                  <>
+                                    <a
+                                      href="#"
+                                      style={{
+                                        color: '#2563eb',
+                                        textDecoration: 'underline',
+                                        fontWeight: 500,
+                                        fontSize: 14,
+                                        cursor: 'pointer',
+                                        display: 'inline-block',
+                                        whiteSpace: 'nowrap',
+                                        marginLeft: 48,
+                                        lineHeight: '1.5',
+                                      }}
+                                      onClick={e => {
+                                        e.preventDefault();
+                                        setViewingReviewOrderId(order.id);
+                                      }}
+                                    >
+                                      Xem đánh giá
+                                    </a>
+                                  </>
+                                )}
+                              </td>
                             </tr>
                             {isCompleted && (!order.reviews || order.reviews.length === 0) && (
                               <tr>
@@ -353,17 +436,16 @@ export default function AccountPage() {
                                     orderId={order.id}
                                     existingReview={order.reviews?.[0]}
                                     onSubmit={async ({ orderId, rating, comment }) => {
-                                      await createReview({ 
-                                        orderId, 
-                                        rating, 
+                                      await createReview({
+                                        orderId,
+                                        rating,
                                         comment,
-                                        userId: user?.id // Thêm userId nếu user đã đăng nhập
+                                        userId: user?.id,
                                       });
                                     }}
                                     onSuccess={async () => {
                                       setShowThankYou(true);
                                       setThankYouOrderId(order.id);
-                                      // Reload lại review cho order này
                                       if (user?.id) {
                                         const updatedOrders = await getOrdersByUserId(user.id);
                                         setRecentOrders(updatedOrders);
@@ -375,10 +457,48 @@ export default function AccountPage() {
                                     }}
                                   />
                                   {showThankYou && thankYouOrderId === order.id && (
-                                    <div style={{marginTop:8, color:'#17823c', fontWeight:600, fontSize:16, background:'#e8f5e9', borderRadius:8, padding:'8px 16px', display:'inline-block'}}>
+                                    <div
+                                      style={{
+                                        marginTop: 8,
+                                        color: '#17823c',
+                                        fontWeight: 600,
+                                        fontSize: 16,
+                                        background: '#e8f5e9',
+                                        borderRadius: 8,
+                                        padding: '8px 16px',
+                                        display: 'inline-block',
+                                      }}
+                                    >
                                       Cảm ơn bạn đã đánh giá!
                                     </div>
                                   )}
+                                </td>
+                              </tr>
+                            )}
+                            {isCompleted && order.reviews && order.reviews.length > 0 && viewingReviewOrderId === order.id && (
+                              <tr>
+                                <td colSpan={5}>
+                                  <div style={{ width: '100%', margin: '12px 0 0 0', position: 'relative' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => setViewingReviewOrderId(null)}
+                                      style={{
+                                        position: 'absolute',
+                                        top: 4,
+                                        right: 4,
+                                        background: 'transparent',
+                                        border: 'none',
+                                        fontSize: 20,
+                                        color: '#888',
+                                        cursor: 'pointer',
+                                        zIndex: 1,
+                                      }}
+                                      aria-label="Đóng"
+                                    >
+                                      ×
+                                    </button>
+                                    <ReviewForm existingReview={order.reviews[0]} viewOnly={true} />
+                                  </div>
                                 </td>
                               </tr>
                             )}
@@ -440,19 +560,36 @@ export default function AccountPage() {
                     </div>
                   </div>
                 ) : (
-                  <form className="account-info-content" onSubmit={handleUpdate} style={{
-                    width: '100%',
-                    background: '#fff',
-                    borderRadius: 12,
-                    boxShadow: '0 2px 8px #0001',
-                    padding: '18px 0 18px 0',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    gap: 0,
-                  }}>
+                  <form
+                    className="account-info-content"
+                    onSubmit={handleUpdate}
+                    style={{
+                      width: '100%',
+                      background: '#fff',
+                      borderRadius: 12,
+                      boxShadow: '0 2px 8px #0001',
+                      padding: '18px 0 18px 0',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      gap: 0,
+                    }}
+                  >
                     <div style={{ display: 'flex', alignItems: 'center', width: '100%', marginBottom: 14 }}>
-                      <label style={{ fontWeight: 700, color: '#222', minWidth: 130, maxWidth: 130, marginRight: 0, fontSize: 16, letterSpacing: 0.1, textAlign: 'left', whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                      <label
+                        style={{
+                          fontWeight: 700,
+                          color: '#222',
+                          minWidth: 130,
+                          maxWidth: 130,
+                          marginRight: 0,
+                          fontSize: 16,
+                          letterSpacing: 0.1,
+                          textAlign: 'left',
+                          whiteSpace: 'normal',
+                          wordBreak: 'break-word',
+                        }}
+                      >
                         {t('full_name')} <span style={{ color: 'red' }}>*</span>
                       </label>
                       <input
@@ -478,7 +615,20 @@ export default function AccountPage() {
                       />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', width: '100%', marginBottom: 14 }}>
-                      <label style={{ fontWeight: 700, color: '#222', minWidth: 130, maxWidth: 130, marginRight: 0, fontSize: 16, letterSpacing: 0.1, textAlign: 'left', whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                      <label
+                        style={{
+                          fontWeight: 700,
+                          color: '#222',
+                          minWidth: 130,
+                          maxWidth: 130,
+                          marginRight: 0,
+                          fontSize: 16,
+                          letterSpacing: 0.1,
+                          textAlign: 'left',
+                          whiteSpace: 'normal',
+                          wordBreak: 'break-word',
+                        }}
+                      >
                         {t('phone_number')}
                       </label>
                       <input
@@ -503,7 +653,20 @@ export default function AccountPage() {
                       />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', width: '100%', marginBottom: 18 }}>
-                      <label style={{ fontWeight: 700, color: '#222', minWidth: 130, maxWidth: 130, marginRight: 0, fontSize: 16, letterSpacing: 0.1, textAlign: 'left', whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                      <label
+                        style={{
+                          fontWeight: 700,
+                          color: '#222',
+                          minWidth: 130,
+                          maxWidth: 130,
+                          marginRight: 0,
+                          fontSize: 16,
+                          letterSpacing: 0.1,
+                          textAlign: 'left',
+                          whiteSpace: 'normal',
+                          wordBreak: 'break-word',
+                        }}
+                      >
                         {t('email')}
                       </label>
                       <input
@@ -560,7 +723,7 @@ export default function AccountPage() {
                 <span className="account-orders-title">{t('recent_orders')}</span>
                 <div className="account-recent-orders">
                   {recentOrders.length === 0 && <div className="text-gray-500">{t('no_orders')}</div>}
-                  <table className="table-recent-orders" style={{width:'100%',marginTop:8}}>
+                  <table className="table-recent-orders" style={{ width: '100%', marginTop: 8 }}>
                     <thead>
                       <tr>
                         <th>{t('order_code')}</th>
@@ -572,8 +735,12 @@ export default function AccountPage() {
                     </thead>
                     <tbody>
                       {recentOrders.slice(0, 3).map(order => {
-                        const items = (order.orderItems?.items || []);
-                        const dishNames = items.map((item: any) => item.dishSnapshot?.name || item.name || getDishName(item.dishId) || item.dish?.name || 'Không rõ tên món').join(', ');
+                        const items = order.orderItems?.items || [];
+                        const dishNames = items
+                          .map(
+                            (item: any) => item.dishSnapshot?.name || item.name || getDishName(item.dishId) || item.dish?.name || 'Không rõ tên món',
+                          )
+                          .join(', ');
                         const orderNumber = order.order_number || order.orderNumber || '-';
                         const orderLink = `/orders/${order.id}`;
                         const date = new Date(order.createdAt);
@@ -588,18 +755,30 @@ export default function AccountPage() {
                         return (
                           <tr key={order.id}>
                             <td>
-                              <Link to={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>{orderNumber}</Link>
+                              <Link to={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>
+                                {orderNumber}
+                              </Link>
                             </td>
-                            <td style={{whiteSpace:'pre-line'}}>{dishNames}</td>
+                            <td style={{ whiteSpace: 'pre-line' }}>{dishNames}</td>
                             <td>{dateStr}</td>
                             <td>{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
-                            <td className={
-                              order.status === 'cancelled' ? 'order-status-cancelled' :
-                              order.status === 'completed' ? 'order-status-completed' :
-                              order.status === 'confirmed' ? 'order-status-confirmed' :
-                              order.status === 'delivering' ? 'order-status-delivering' :
-                              order.status === 'pending' ? 'order-status-pending' : ''
-                            }>{statusText}</td>
+                            <td
+                              className={
+                                order.status === 'cancelled'
+                                  ? 'order-status-cancelled'
+                                  : order.status === 'completed'
+                                    ? 'order-status-completed'
+                                    : order.status === 'confirmed'
+                                      ? 'order-status-confirmed'
+                                      : order.status === 'delivering'
+                                        ? 'order-status-delivering'
+                                        : order.status === 'pending'
+                                          ? 'order-status-pending'
+                                          : ''
+                              }
+                            >
+                              {statusText}
+                            </td>
                           </tr>
                         );
                       })}
@@ -611,40 +790,51 @@ export default function AccountPage() {
           )}
           {tab === 'password' && (
             <div className="account-info-box">
-              <form className="account-info-content" onSubmit={handleChangePassword} style={{
-                width: '100%',
-                background: 'none',
-                borderRadius: 0,
-                boxShadow: 'none',
-                padding: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                gap: 0,
-              }}>
-                {[{
-                  label: t('old_password'),
-                  value: pwForm.oldPassword,
-                  onChange: (e:any) => setPwForm(f => ({ ...f, oldPassword: e.target.value })),
-                  name: 'oldPassword',
-                  show: showPw.old,
-                  toggle: () => setShowPw(s => ({ ...s, old: !s.old })),
-                }, {
-                  label: t('new_password'),
-                  value: pwForm.newPassword,
-                  onChange: (e:any) => setPwForm(f => ({ ...f, newPassword: e.target.value })),
-                  name: 'newPassword',
-                  show: showPw.new,
-                  toggle: () => setShowPw(s => ({ ...s, new: !s.new })),
-                }, {
-                  label: t('confirm_password'),
-                  value: pwForm.confirmPassword,
-                  onChange: (e:any) => setPwForm(f => ({ ...f, confirmPassword: e.target.value })),
-                  name: 'confirmPassword',
-                  show: showPw.confirm,
-                  toggle: () => setShowPw(s => ({ ...s, confirm: !s.confirm })),
-                }].map((item, idx) => (
-                  <div key={item.name} style={{ display: 'flex', alignItems: 'center', width: '100%', marginBottom: idx === 2 ? 18 : 14, maxWidth: 800 }}>
+              <form
+                className="account-info-content"
+                onSubmit={handleChangePassword}
+                style={{
+                  width: '100%',
+                  background: 'none',
+                  borderRadius: 0,
+                  boxShadow: 'none',
+                  padding: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  gap: 0,
+                }}
+              >
+                {[
+                  {
+                    label: t('old_password'),
+                    value: pwForm.oldPassword,
+                    onChange: (e: any) => setPwForm(f => ({ ...f, oldPassword: e.target.value })),
+                    name: 'oldPassword',
+                    show: showPw.old,
+                    toggle: () => setShowPw(s => ({ ...s, old: !s.old })),
+                  },
+                  {
+                    label: t('new_password'),
+                    value: pwForm.newPassword,
+                    onChange: (e: any) => setPwForm(f => ({ ...f, newPassword: e.target.value })),
+                    name: 'newPassword',
+                    show: showPw.new,
+                    toggle: () => setShowPw(s => ({ ...s, new: !s.new })),
+                  },
+                  {
+                    label: t('confirm_password'),
+                    value: pwForm.confirmPassword,
+                    onChange: (e: any) => setPwForm(f => ({ ...f, confirmPassword: e.target.value })),
+                    name: 'confirmPassword',
+                    show: showPw.confirm,
+                    toggle: () => setShowPw(s => ({ ...s, confirm: !s.confirm })),
+                  },
+                ].map((item, idx) => (
+                  <div
+                    key={item.name}
+                    style={{ display: 'flex', alignItems: 'center', width: '100%', marginBottom: idx === 2 ? 18 : 14, maxWidth: 800 }}
+                  >
                     <label style={{ fontWeight: 700, color: '#222', minWidth: 140, maxWidth: 140, fontSize: 17, textAlign: 'left' }}>
                       {item.label}
                     </label>
@@ -669,7 +859,10 @@ export default function AccountPage() {
                         onFocus={e => (e.target.style.border = '1.5px solid #17823c')}
                         onBlur={e => (e.target.style.border = '1.5px solid #e0e0e0')}
                       />
-                      <span onClick={item.toggle} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#888' }}>
+                      <span
+                        onClick={item.toggle}
+                        style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#888' }}
+                      >
                         {item.show ? <FaEye size={20} /> : <FaEyeSlash size={20} />}
                       </span>
                     </div>
