@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
 import AdminSidebar from '../components/AdminSidebar';
 import { AuthContext } from '../context/AuthContext';
@@ -23,6 +24,26 @@ export default function UserTransactionAdminPage() {
   const [limit, setLimit] = useState(20);
   const { user } = useContext(AuthContext);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const location = useLocation();
+
+  // Khi mount, nếu có orderId trên query param, setSearch
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const orderId = params.get('orderId');
+    if (orderId) {
+      // Tìm orderNumber nếu có
+      const order = orders.find((o: any) => o.id === orderId);
+      if (order && order.orderNumber) {
+        setSearch(`#${order.orderNumber}`);
+      } else {
+        setSearch(orderId);
+      }
+      setTimeout(() => {
+        if (searchInputRef.current) searchInputRef.current.focus();
+      }, 100);
+    }
+    // eslint-disable-next-line
+  }, [location.search, orders]);
 
   const fetchTransactions = () => {
     setLoading(true);
@@ -70,6 +91,10 @@ export default function UserTransactionAdminPage() {
   const filteredTransactions = transactions
     .filter(tran => tran.method === 'zalopay')
     .filter(tran => {
+      // Nếu search là orderId (UUID), so sánh trực tiếp tran.orderId === search
+      if (search && search.length >= 20 && /^[a-zA-Z0-9-]+$/.test(search)) {
+        return tran.orderId === search;
+      }
       const userName = (getUserName(tran.userId) || '').toLowerCase();
       const orderLabel = (getOrderLabel(tran.orderId) || '').toLowerCase();
       const desc = (tran.description || '').toLowerCase();

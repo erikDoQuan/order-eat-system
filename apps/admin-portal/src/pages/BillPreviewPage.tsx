@@ -95,7 +95,7 @@ export default function BillPreviewPage() {
             <div style={{ fontSize: 28, fontWeight: 700, color: '#C92A15', letterSpacing: 2, marginBottom: 8 }}>BẾP CỦA MẸ</div>
           </div>
           <div style={{ marginBottom: 8 }}>
-            <h1 style={{ color: '#1a936f', fontSize: 36, margin: 0, textAlign: 'left', lineHeight: 1.1 }}>
+            <h1 style={{ color: '#C8403B', fontSize: 28, margin: 0, textAlign: 'left', lineHeight: 1.1 }}>
               HÓA ĐƠN{orderNumber ? ` #${orderNumber}` : ''}
             </h1>
             <div style={{ textAlign: 'left', fontSize: 17, marginTop: 4 }}>
@@ -123,7 +123,7 @@ export default function BillPreviewPage() {
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 24 }} border={1} cellPadding={8}>
             <thead>
-              <tr style={{ background: '#e0f2f1' }}>
+              <tr style={{ background: '#FFE5D0' }}>
                 <th style={{ textAlign: 'left' }}>Mô tả</th>
                 <th style={{ textAlign: 'center' }}>Số lượng</th>
                 <th style={{ textAlign: 'center' }}>Đơn giá</th>
@@ -147,10 +147,11 @@ export default function BillPreviewPage() {
               ))}
             </tbody>
           </table>
-          <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: 20, color: '#1a936f' }}>
+          <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: 20, color: '#C8403B' }}>
             Tổng cộng: {Number(totalAmount).toLocaleString()} VND
           </div>
-          {paymentMethod === 'cash' && (
+          {/* Xóa dòng in đậm bên dưới tổng cộng */}
+          {/* {paymentMethod === 'cash' && (
             <div style={{ fontWeight: 'bold', fontSize: 16, color: '#000', marginTop: 8, textAlign: 'left' }}>
               <b>Tiền mặt:</b> {Number(totalAmount).toLocaleString()} VND
             </div>
@@ -159,12 +160,12 @@ export default function BillPreviewPage() {
             <div style={{ fontWeight: 'bold', fontSize: 16, color: '#000', marginTop: 8, textAlign: 'left' }}>
               <b>Chuyển khoản (zalopay):</b> {Number(totalAmount).toLocaleString()} VND
             </div>
-          )}
+          )} */}
         </div>
         <div className="hide-on-print" style={{ display: 'flex', justifyContent: 'flex-end', maxWidth: 700, margin: '8px auto 0 auto' }}>
           <button
             onClick={() => window.print()}
-            style={{ padding: '8px 24px', fontSize: 16, background: '#1a936f', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+            style={{ padding: '8px 24px', fontSize: 16, background: '#C8403B', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}
           >
             In hóa đơn
           </button>

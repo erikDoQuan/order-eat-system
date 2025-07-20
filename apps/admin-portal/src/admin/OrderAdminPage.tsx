@@ -158,12 +158,17 @@ export default function OrderAdminPage() {
   };
 
   const printBill = (order: any) => {
-    // Lấy paymentMethod từ user transaction nếu có
-    let paymentMethod = order.paymentMethod || '';
-    const txs = transactions.filter((t: any) => t.orderId === order.id);
-    const tx = txs.find((t: any) => t.status === 'success' || t.status === 'pending');
-    if (tx && tx.method) paymentMethod = String(tx.method).toLowerCase();
-    console.log('order.id:', order.id, 'paymentMethod:', paymentMethod, 'tx:', tx, 'allTx:', txs);
+    // Lấy method từ order nếu có, nếu không thì lấy từ transaction
+    let paymentMethod = order.method;
+    if (!paymentMethod) {
+      const tx = transactions.find(
+        (t: any) =>
+          String(t.orderId).trim() === String(order.id).trim() ||
+          String(t.orderId).trim() === String(order.order_number).trim() ||
+          String(t.orderId).trim() === String(order.orderNumber).trim(),
+      );
+      paymentMethod = tx && tx.method ? tx.method : '-';
+    }
     const items = (order.orderItems?.items || []).map(item => {
       // Ưu tiên lấy base_price từ dish theo dishId
       const dish = dishes.find(d => d.id === item.dishId);
@@ -406,8 +411,6 @@ export default function OrderAdminPage() {
                       String(t.orderId).trim() === String(order.order_number).trim() ||
                       String(t.orderId).trim() === String(order.orderNumber).trim(),
                   );
-                  // DEBUG LOG
-                  // console.log('ORDER_DEBUG', { orderId: order.id, paymentMethod, relatedTxs, transactions });
                   return (
                     <React.Fragment key={order.id}>
                       {items.length === 0 ? (
@@ -422,7 +425,19 @@ export default function OrderAdminPage() {
                           <td className="border-b px-3 py-2">{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
                           <td className="border-b px-3 py-2">{order.status}</td>
                           <td className="border-b px-3 py-2">{order.type}</td>
-                          <td className="border-b px-3 py-2">{paymentMethodDisplay}</td>
+                          <td className="border-b px-3 py-2">
+                            {paymentMethod === 'zalopay' ? (
+                              <a
+                                href={`/admin/user-transaction?orderId=${order.id}`}
+                                style={{ color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
+                                title="Xem giao dịch ZaloPay của đơn này"
+                              >
+                                {paymentMethodDisplay}
+                              </a>
+                            ) : (
+                              paymentMethodDisplay
+                            )}
+                          </td>
                           <td className="border-b px-3 py-2">{order.pickupTime || ''}</td>
                           <td className="border-b px-3 py-2">{formatDeliveryAddress(order.deliveryAddress)}</td>
                           <td className="border-b px-3 py-2">{order.note}</td>
@@ -522,7 +537,17 @@ export default function OrderAdminPage() {
                                   {order.type}
                                 </td>
                                 <td className="border-b px-3 py-2" rowSpan={maxItems}>
-                                  {paymentMethodDisplay}
+                                  {paymentMethod === 'zalopay' ? (
+                                    <a
+                                      href={`/admin/user-transaction?orderId=${order.id}`}
+                                      style={{ color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
+                                      title="Xem giao dịch ZaloPay của đơn này"
+                                    >
+                                      {paymentMethodDisplay}
+                                    </a>
+                                  ) : (
+                                    paymentMethodDisplay
+                                  )}
                                 </td>
                                 <td className="border-b px-3 py-2" rowSpan={maxItems}>
                                   {order.pickupTime || ''}
@@ -533,7 +558,7 @@ export default function OrderAdminPage() {
                                 <td className="border-b px-3 py-2" rowSpan={maxItems}>
                                   {order.note}
                                 </td>
-                                <td className="border-b px-3 py-2">
+                                <td className="border-b px-3 py-2" rowSpan={maxItems}>
                                   <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'center', width: 120 }}>
                                     <button
                                       title="Sửa"

@@ -23,23 +23,50 @@ export default function BillPrintPage() {
   const customerAddress = params.get('customerAddress');
   const customerPhone = params.get('customerPhone');
   const date = params.get('date');
+  const paymentMethod = params.get('paymentMethod');
+  let paymentMethodDisplay = 'Không rõ';
+  if (paymentMethod === 'zalopay') paymentMethodDisplay = 'ZaloPay';
+  else if (paymentMethod === 'cash') paymentMethodDisplay = 'Tiền mặt';
 
   // Debug log
   console.log('BillPrintPage debug:', {
-    customer, items, itemsError, itemsErrorMsg, totalRaw, total, totalError, customerAddress, customerPhone, date
+    customer,
+    items,
+    itemsError,
+    itemsErrorMsg,
+    totalRaw,
+    total,
+    totalError,
+    customerAddress,
+    customerPhone,
+    date,
   });
 
   if (itemsError) {
-    return <div style={{ color: 'red', textAlign: 'center', marginTop: 40 }}>Dữ liệu hóa đơn không hợp lệ!<br/>{itemsErrorMsg}</div>;
+    return (
+      <div style={{ color: 'red', textAlign: 'center', marginTop: 40 }}>
+        Dữ liệu hóa đơn không hợp lệ!
+        <br />
+        {itemsErrorMsg}
+      </div>
+    );
   }
   if (totalError) {
-    return <div style={{ color: 'red', textAlign: 'center', marginTop: 40 }}>Tổng tiền không hợp lệ!<br/>totalRaw: {String(totalRaw)}</div>;
+    return (
+      <div style={{ color: 'red', textAlign: 'center', marginTop: 40 }}>
+        Tổng tiền không hợp lệ!
+        <br />
+        totalRaw: {String(totalRaw)}
+      </div>
+    );
   }
 
   return (
     <div style={{ maxWidth: 600, margin: '40px auto', fontFamily: 'Arial' }}>
       <h2 style={{ textAlign: 'center', marginBottom: 24 }}>HÓA ĐƠN THANH TOÁN</h2>
-      <div>Khách hàng: <b>{customer}</b></div>
+      <div>
+        Khách hàng: <b>{customer}</b>
+      </div>
       <div>Địa chỉ: {customerAddress}</div>
       <div>Điện thoại: {customerPhone}</div>
       <div>Ngày: {date}</div>
@@ -63,9 +90,14 @@ export default function BillPrintPage() {
           ))}
         </tbody>
       </table>
-      <h3 style={{ textAlign: 'right', marginTop: 20 }}>
-        Tổng cộng: {total.toLocaleString('vi-VN')}đ
-      </h3>
+      <h3 style={{ textAlign: 'right', marginTop: 20 }}>Tổng cộng: {total.toLocaleString('vi-VN')}đ</h3>
+      {(paymentMethod === 'zalopay' || paymentMethod === 'cash') && (
+        <div style={{ fontWeight: 'bold', marginTop: 8, fontSize: 20, textAlign: 'left' }}>
+          {paymentMethod === 'zalopay'
+            ? `Chuyển khoản (zalopay): ${total.toLocaleString('vi-VN')} VND`
+            : `Tiền mặt: ${total.toLocaleString('vi-VN')} VND`}
+        </div>
+      )}
     </div>
   );
-} 
+}
