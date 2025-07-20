@@ -40,4 +40,10 @@ export async function getOrderDetailByNumber(orderNumber: number | string) {
 export async function getOrderDetailByAppTransId(appTransId: string) {
   const res = await axios.get(`/orders/by-zalopay/${appTransId}`);
   return res.data?.data || res.data;
-} 
+}
+
+export async function getOrderByAppTransId(appTransId: string) {
+  const res = await fetch(`/api/v1/orders/by-zalopay/${appTransId}`);
+  if (!res.ok) throw new Error('Không tìm thấy đơn hàng');
+  return res.json();
+}

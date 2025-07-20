@@ -1,6 +1,6 @@
 import * as crypto from 'crypto';
 import { BadRequestException, Body, Controller, Get, HttpCode, Logger, Post, Query, Req, Res } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { Request, Response } from 'express';
 
 import { DrizzleService } from '../../database/drizzle/drizzle.service';
@@ -52,6 +52,15 @@ export class ZaloPayController {
           return { return_code: 1, return_message: 'Dữ liệu callback không hợp lệ' };
         }
       }
+      this.logger.log('ZaloPay callback data (sau parse): ' + JSON.stringify(data));
+      // Lấy appTransId từ data hoặc body (ưu tiên data)
+      let appTransIdValue = undefined;
+      if (data && (data.app_trans_id || data.appTransId)) {
+        appTransIdValue = data.app_trans_id || data.appTransId;
+      } else if (body && body.app_trans_id) {
+        appTransIdValue = body.app_trans_id;
+      }
+      this.logger.log('appTransId truyền vào orderService.create:', appTransIdValue);
 
       // Chỉ xử lý khi thanh toán thành công
       if (body.return_code == 1) {
@@ -66,51 +75,55 @@ export class ZaloPayController {
         }
         // Validate orderInfo (orderItems, userId, ...)
         if (orderInfo && orderInfo['userId'] && orderInfo['orderItems'] && orderInfo['totalAmount']) {
-          // Lấy danh sách order gần nhất của userId
-          const recentOrders = await this.drizzle.db.query.orders.findMany({
-            where: (row, { eq }) => eq(row.userId, orderInfo['userId']),
-            orderBy: row => row.createdAt,
-            limit: 10,
-          });
-          const THIRTY_MINUTES = 30 * 60 * 1000;
-          const now = Date.now();
-          const existedOrder = recentOrders.find(
-            row =>
-              String(row.totalAmount) === String(orderInfo['totalAmount']) &&
-              row.type === orderInfo['type'] &&
-              JSON.stringify(row.deliveryAddress) === JSON.stringify(orderInfo['deliveryAddress']) &&
-              now - new Date(row.createdAt).getTime() < THIRTY_MINUTES,
-          );
-          let order = existedOrder;
-          if (!order) {
-            // Tạo order nếu chưa có
-            order = await this.orderService.create({
-              userId: orderInfo['userId'],
-              orderItems: orderInfo['orderItems'],
-              totalAmount: orderInfo['totalAmount'],
-              type: orderInfo['type'],
-              deliveryAddress: orderInfo['deliveryAddress'],
-              note: orderInfo['note'] || '',
-              paymentMethod: 'zalopay',
-            });
+          // Tìm đơn hàng theo appTransId
+          let order = null;
+          if (appTransIdValue) {
+            order = await this.orderService.findOneByAppTransId(appTransIdValue);
           }
-          // Tạo user_transaction với status SUCCESS nếu chưa có
-          const existedTxArr = await this.drizzle.db
-            .select()
-            .from(userTransactions)
-            .where((row, { eq, and }) => and(eq(row.orderId, order.id), eq(row.method, 'zalopay'), eq(row.status, 'success')));
-          const existedTx = existedTxArr[0];
-          if (!existedTx) {
-            await this.userTransactionService.create({
-              userId: order.userId,
-              orderId: order.id,
-              amount: String(order.totalAmount),
-              method: TransactionMethod.ZALOPAY,
-              status: TransactionStatus.SUCCESS,
-              transTime: new Date().toISOString(),
-              transactionCode: data.zp_trans_token || data.order_token || '',
-              description: data.description || `Thanh toán đơn hàng #${order.orderNumber || order.id}`,
+
+          // Nếu không tìm thấy đơn hàng theo appTransId, không tạo đơn hàng mới
+          // Chỉ cập nhật đơn hàng đã tồn tại
+          if (order) {
+            this.logger.log('Tìm thấy đơn hàng, cập nhật trạng thái thành completed:', order.id);
+
+            // Cập nhật trạng thái đơn hàng thành completed
+            await this.orderService.update(order.id, {
+              status: 'completed',
+              updatedBy: order.userId,
             });
+
+            // Cập nhật user_transaction hiện có thành SUCCESS
+            const existingTransactions = await this.drizzle.db
+              .select()
+              .from(userTransactions)
+              .where(aliases => and(eq(aliases.orderId, order.id), eq(aliases.method, 'zalopay')));
+
+            if (existingTransactions.length > 0) {
+              // Cập nhật transaction đầu tiên thành SUCCESS
+              await this.userTransactionService.updateByOrderId(order.id, {
+                status: TransactionStatus.SUCCESS,
+                transTime: new Date().toISOString(),
+                transactionCode: data.zp_trans_token || data.order_token || '',
+                description: `Thanh toán ZaloPay thành công cho đơn hàng #${order.orderNumber || order.id}`,
+                method: TransactionMethod.ZALOPAY,
+              });
+              this.logger.log('Cập nhật user_transaction thành SUCCESS cho orderId:', order.id);
+            } else {
+              // Tạo user_transaction mới nếu chưa có
+              await this.userTransactionService.create({
+                userId: order.userId,
+                orderId: order.id,
+                amount: String(order.totalAmount),
+                method: TransactionMethod.ZALOPAY,
+                status: TransactionStatus.SUCCESS,
+                transTime: new Date().toISOString(),
+                transactionCode: data.zp_trans_token || data.order_token || '',
+                description: `Thanh toán ZaloPay thành công cho đơn hàng #${order.orderNumber || order.id}`,
+              });
+              this.logger.log('Tạo user_transaction mới với status SUCCESS');
+            }
+          } else {
+            this.logger.log('Không tìm thấy đơn hàng với appTransId:', appTransIdValue);
           }
         } else {
           this.logger.error('orderInfo thiếu thông tin cần thiết');

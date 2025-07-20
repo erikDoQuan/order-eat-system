@@ -10,5 +10,5 @@ export type Dish = {
   categoryId?: string
   createdAt?: string
   updatedAt?: string
-  pickupTime?: string // Thời gian lấy món (ISO hoặc HH:mm)
+
 }

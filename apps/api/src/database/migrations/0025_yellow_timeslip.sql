@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "zp_trans_token" varchar(255);

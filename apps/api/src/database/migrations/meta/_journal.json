@@ -169,6 +169,20 @@
       "when": 1752854980550,
       "tag": "0023_lush_maximus",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1752936257285,
+      "tag": "0024_oval_miek",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1752974509513,
+      "tag": "0025_yellow_timeslip",
+      "breakpoints": true
     }
   ]
 }

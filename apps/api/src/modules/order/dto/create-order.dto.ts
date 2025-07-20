@@ -1,5 +1,6 @@
-import { IsOptional, IsUUID, IsNumber, IsEnum, IsObject } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsEnum, IsNumber, IsObject, IsOptional, IsUUID } from 'class-validator';
+
 import { orderStatusEnumValues, orderTypeEnumValues } from '../constants/order-status.constant';
 
 export class CreateOrderDto {
@@ -97,4 +98,20 @@ export class CreateOrderDto {
   })
   @IsOptional()
   paymentMethod?: 'cash' | 'zalopay';
+
+  @ApiProperty({
+    description: 'Mã giao dịch appTransId (nếu có, dùng cho thanh toán online)',
+    example: 'abc123xyz',
+    required: false,
+  })
+  @IsOptional()
+  appTransId?: string;
+
+  @ApiProperty({
+    description: 'Mã giao dịch ZaloPay zpTransToken (nếu có, dùng cho thanh toán ZaloPay)',
+    example: 'zp_token_123456',
+    required: false,
+  })
+  @IsOptional()
+  zpTransToken?: string;
 }

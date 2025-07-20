@@ -1,8 +1,9 @@
-import React, { useContext, useRef, useState, useEffect } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import { LogOut, User as UserIcon } from 'lucide-react';
+
+import logo from '../assets/images/logo.svg';
 import AdminSidebar from '../components/AdminSidebar';
 import { AuthContext } from '../context/AuthContext';
-import { User as UserIcon, LogOut } from 'lucide-react';
-import logo from '../assets/images/logo.svg';
 
 // Thêm CSS ẩn khi in
 if (typeof window !== 'undefined') {
@@ -30,7 +31,7 @@ export default function BillPreviewPage() {
   const adminName = params.get('adminName');
   const adminEmail = params.get('adminEmail');
   const adminId = params.get('adminId');
-  const [adminInfo, setAdminInfo] = useState<{name: string, email: string} | null>(null);
+  const [adminInfo, setAdminInfo] = useState<{ name: string; email: string } | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const type = params.get('type');
   const paymentMethod = params.get('paymentMethod');
@@ -59,8 +60,8 @@ export default function BillPreviewPage() {
 
   // Sửa logic hiển thị phương thức thanh toán
   let paymentLabel = '-';
-  if (paymentMethod === 'cash') paymentLabel = 'Tiền mặt';
-  else if (paymentMethod === 'zalopay') paymentLabel = 'Chuyển khoản (zalopay)';
+  if (paymentMethod === 'cash') paymentLabel = 'Thanh toán khi nhận hàng';
+  else if (paymentMethod === 'zalopay') paymentLabel = 'Thanh toán bằng ZaloPay';
   else if (items.some(i => i.name && i.name.toLowerCase().includes('phí ship'))) paymentLabel = 'Tiền mặt';
 
   return (
@@ -69,24 +70,37 @@ export default function BillPreviewPage() {
         <AdminSidebar />
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#fff' }}>
-        <div style={{
-          maxWidth: 700,
-          margin: '32px auto 0 auto',
-          fontFamily: 'Arial',
-          width: '100%',
-          border: '1.5px solid #e0e0e0',
-          borderRadius: 16,
-          padding: 32,
-          background: '#fff',
-          boxShadow: '0 2px 12px 0 rgba(0,0,0,0.04)'
-        }}>
+        <div
+          style={{
+            maxWidth: 700,
+            margin: '32px auto 0 auto',
+            fontFamily: 'Arial',
+            width: '100%',
+            border: '1.5px solid #e0e0e0',
+            borderRadius: 16,
+            padding: 32,
+            background: '#fff',
+            boxShadow: '0 2px 12px 0 rgba(0,0,0,0.04)',
+          }}
+        >
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <img src="/logo.png" alt="BẾP CỦA MẸ" style={{ height: 64, marginBottom: 8, objectFit: 'contain', display: 'block', marginLeft: 'auto', marginRight: 'auto' }} onError={(e) => { (e.target as HTMLImageElement).src = '/logo.svg'; }} />
+            <img
+              src="/logo.png"
+              alt="BẾP CỦA MẸ"
+              style={{ height: 64, marginBottom: 8, objectFit: 'contain', display: 'block', marginLeft: 'auto', marginRight: 'auto' }}
+              onError={e => {
+                (e.target as HTMLImageElement).src = '/logo.svg';
+              }}
+            />
             <div style={{ fontSize: 28, fontWeight: 700, color: '#C92A15', letterSpacing: 2, marginBottom: 8 }}>BẾP CỦA MẸ</div>
           </div>
           <div style={{ marginBottom: 8 }}>
-            <h1 style={{ color: '#1a936f', fontSize: 36, margin: 0, textAlign: 'left', lineHeight: 1.1 }}>HÓA ĐƠN{orderNumber ? ` #${orderNumber}` : ''}</h1>
-            <div style={{ textAlign: 'left', fontSize: 17, marginTop: 4 }}>Ngày lập: <b>{date}</b></div>
+            <h1 style={{ color: '#1a936f', fontSize: 36, margin: 0, textAlign: 'left', lineHeight: 1.1 }}>
+              HÓA ĐƠN{orderNumber ? ` #${orderNumber}` : ''}
+            </h1>
+            <div style={{ textAlign: 'left', fontSize: 17, marginTop: 4 }}>
+              Ngày lập: <b>{date}</b>
+            </div>
           </div>
           <div style={{ margin: '24px 0 20px 0' }}>
             <div>
@@ -96,11 +110,12 @@ export default function BillPreviewPage() {
               <b>Số điện thoại:</b> {customerPhone || ''}
             </div>
             <div>
-              <b>Địa chỉ nhận:</b> {customerAddress === '01 Nguyễn Trãi, Phường Phước Hải, Nha Trang, Khánh Hòa'
+              <b>Địa chỉ nhận:</b>{' '}
+              {customerAddress === '01 Nguyễn Trãi, Phường Phước Hải, Nha Trang, Khánh Hòa'
                 ? 'BẾP CỦA MẸ NGUYỄN TRÃI'
                 : customerAddress === '296/29 Lương Định Của, Nha Trang, Khánh Hòa'
                   ? 'BẾP CỦA MẸ - TP NHA TRANG'
-                  : (customerAddress || '')}
+                  : customerAddress || ''}
             </div>
             <div>
               <b>Phương thức thanh toán:</b> {paymentLabel}
@@ -121,7 +136,13 @@ export default function BillPreviewPage() {
                   <td>{!item.name || item.name.toLowerCase() === 'món ăn' ? 'Không rõ tên món' : item.name}</td>
                   <td style={{ textAlign: 'center' }}>{item.quantity ?? 0}</td>
                   <td style={{ textAlign: 'center' }}>{formatVND(Number(item.price) || 0)}</td>
-                  <td style={{ textAlign: 'center' }}>{formatVND((item.quantity === '' || Number(item.quantity) === 0) ? (Number(item.price) || 0) : (Number(item.price) || 0) * (Number(item.quantity) || 0))}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    {formatVND(
+                      item.quantity === '' || Number(item.quantity) === 0
+                        ? Number(item.price) || 0
+                        : (Number(item.price) || 0) * (Number(item.quantity) || 0),
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -158,4 +179,4 @@ function formatVND(value: number) {
     return (value / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + ' triệu VND';
   }
   return Number(value).toLocaleString('vi-VN') + ' VND';
-} 
+}

@@ -3,6 +3,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 
 import { Response } from '~/common/decorators/response.decorator';
+import { CompleteOrderDto } from './dto/complete-order.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { FetchOrdersDto } from './dto/fetch-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
@@ -12,6 +13,26 @@ import { OrderService } from './order.service';
 @Controller('orders')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
+
+  @Post('confirm-order')
+  @ApiOperation({
+    summary: 'Xác nhận thanh toán và tạo đơn ZaloPay',
+    description: 'Tạo đơn hàng ZaloPay khi người dùng xác nhận thanh toán.',
+  })
+  @Response({ message: 'Tạo đơn hàng ZaloPay thành công' })
+  async confirmOrder(@Body() dto: CreateOrderDto) {
+    return this.orderService.confirmOrder(dto);
+  }
+
+  @Post('complete')
+  @ApiOperation({
+    summary: 'Hoàn tất đơn hàng (chuyển pending thành completed)',
+    description: 'Cập nhật đơn hàng pending của user thành completed khi xác nhận đã thanh toán.',
+  })
+  @Response({ message: 'Cập nhật trạng thái đơn hàng thành công' })
+  async completeOrder(@Body() dto: CompleteOrderDto) {
+    return this.orderService.completeOrder(dto);
+  }
 
   @Get()
   @ApiOperation({
@@ -43,14 +64,14 @@ export class OrderController {
     return this.orderService.findOneByOrderNumber(Number(orderNumber));
   }
 
-  @Get('by-zalopay/:orderNumber')
+  @Get('by-zalopay/:appTransId')
   @ApiOperation({
-    summary: 'Lấy chi tiết đơn hàng cho ZaloPay theo orderNumber',
-    description: 'Trả về thông tin chi tiết của một đơn hàng dựa vào orderNumber (dùng cho ZaloPay).',
+    summary: 'Lấy chi tiết đơn hàng cho ZaloPay theo appTransId',
+    description: 'Trả về thông tin chi tiết của một đơn hàng dựa vào appTransId (dùng cho ZaloPay).',
   })
-  @Response({ message: 'Lấy chi tiết đơn hàng theo orderNumber cho ZaloPay thành công' })
-  getOrderByZaloPay(@Param('orderNumber') orderNumber: string) {
-    return this.orderService.findOneByOrderNumber(Number(orderNumber));
+  @Response({ message: 'Lấy chi tiết đơn hàng theo appTransId cho ZaloPay thành công' })
+  async getOrderByZaloPay(@Param('appTransId') appTransId: string) {
+    return this.orderService.findOneByAppTransId(appTransId);
   }
 
   @Post()

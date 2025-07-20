@@ -26,6 +26,7 @@ export const orders = pgTable('orders', {
   pickupTime: varchar('pickup_time', { length: 20 }),
   updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
   appTransId: varchar('app_trans_id', { length: 32 }),
+  zpTransToken: varchar('zp_trans_token', { length: 255 }),
   orderNumber: serial('order_number'),
 });
 

@@ -1,14 +1,13 @@
-import { IsOptional, IsEnum, IsUUID, IsNumber, IsObject, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsBoolean, IsEnum, IsNumber, IsObject, IsOptional, IsUUID } from 'class-validator';
+
 import { orderStatusEnumValues, orderTypeEnumValues } from '../constants/order-status.constant';
 
 export class UpdateOrderDto {
   @ApiProperty({
     description: 'Cập nhật danh sách món trong đơn hàng',
     example: {
-      items: [
-        { dishId: 'a1b2c3d4', quantity: 3 },
-      ],
+      items: [{ dishId: 'a1b2c3d4', quantity: 3 }],
     },
     required: false,
   })
@@ -76,4 +75,20 @@ export class UpdateOrderDto {
     phone: string;
     name?: string;
   };
+
+  @ApiProperty({
+    description: 'Mã giao dịch appTransId (nếu có, dùng cho thanh toán online)',
+    example: 'abc123xyz',
+    required: false,
+  })
+  @IsOptional()
+  appTransId?: string;
+
+  @ApiProperty({
+    description: 'Mã giao dịch ZaloPay zpTransToken (nếu có, dùng cho thanh toán ZaloPay)',
+    example: 'zp_token_123456',
+    required: false,
+  })
+  @IsOptional()
+  zpTransToken?: string;
 }

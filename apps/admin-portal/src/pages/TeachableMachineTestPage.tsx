@@ -1,4 +1,5 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+
 import { getAllDishes } from '../services/dish.api';
 
 const MODEL_URL = 'https://teachablemachine.withgoogle.com/models/nh5IAvf-C/';
@@ -115,7 +116,7 @@ const TeachableMachineTestPage: React.FC<TeachableMachineTestPageProps> = ({ onD
       console.log('Predicting on image...');
       const prediction = await model.predict(imageRef.current);
       // Chỉ lấy nhãn có xác suất cao nhất
-      const best = prediction.reduce((max: any, cur: any) => cur.probability > max.probability ? cur : max, prediction[0]);
+      const best = prediction.reduce((max: any, cur: any) => (cur.probability > max.probability ? cur : max), prediction[0]);
       setLabels([`${best.className}: ${best.probability.toFixed(2)}`]);
     } catch (e) {
       setError('Không thể nhận diện ảnh.');
@@ -144,30 +145,31 @@ const TeachableMachineTestPage: React.FC<TeachableMachineTestPageProps> = ({ onD
   return (
     <div style={{ padding: 16, textAlign: 'center' }}>
       {!tmReady && <div>Đang tải thư viện Teachable Machine...</div>}
-      <label htmlFor="food-image-upload" style={{
-        display: 'inline-block',
-        padding: '10px 22px',
-        background: '#fff',
-        color: '#C92A15',
-        border: '2px solid #C92A15',
-        borderRadius: 12,
-        fontWeight: 600,
-        cursor: 'pointer',
-        marginBottom: 8,
-        transition: 'background 0.2s, color 0.2s',
-      }}
-        onMouseOver={e => (e.currentTarget.style.background = '#C92A15', e.currentTarget.style.color = '#fff')}
-        onMouseOut={e => (e.currentTarget.style.background = '#fff', e.currentTarget.style.color = '#C92A15')}
+      <label
+        htmlFor="food-image-upload"
+        style={{
+          display: 'inline-block',
+          padding: '10px 22px',
+          background: '#fff',
+          color: '#C92A15',
+          border: '2px solid #C92A15',
+          borderRadius: 12,
+          fontWeight: 600,
+          cursor: 'pointer',
+          marginBottom: 8,
+          transition: 'background 0.2s, color 0.2s',
+        }}
+        onMouseOver={e => ((e.currentTarget.style.background = '#C92A15'), (e.currentTarget.style.color = '#fff'))}
+        onMouseOut={e => ((e.currentTarget.style.background = '#fff'), (e.currentTarget.style.color = '#C92A15'))}
       >
-        <span className="tm-highlight-logo" style={{ marginRight: 12, fontSize: 26, width: 32, height: 32, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>📷</span> Chọn ảnh món ăn
-        <input
-          id="food-image-upload"
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          disabled={!tmReady}
-          style={{ display: 'none' }}
-        />
+        <span
+          className="tm-highlight-logo"
+          style={{ marginRight: 12, fontSize: 26, width: 32, height: 32, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          📷
+        </span>{' '}
+        Chọn ảnh món ăn
+        <input id="food-image-upload" type="file" accept="image/*" onChange={handleFileChange} disabled={!tmReady} style={{ display: 'none' }} />
       </label>
       {imageUrl && (
         <div style={{ margin: '16px 0', display: 'flex', justifyContent: 'center' }}>
@@ -201,7 +203,11 @@ const TeachableMachineTestPage: React.FC<TeachableMachineTestPageProps> = ({ onD
                   <a
                     href="#"
                     style={{ color: '#1976d2', textDecoration: 'underline', fontSize: 15 }}
-                    onClick={e => { e.preventDefault(); onDishClick && onDishClick(dish); onClose && onClose(); }}
+                    onClick={e => {
+                      e.preventDefault();
+                      onDishClick && onDishClick(dish);
+                      onClose && onClose();
+                    }}
                   >
                     bạn có thể xem kỹ hơn tại đây
                   </a>
@@ -215,4 +221,4 @@ const TeachableMachineTestPage: React.FC<TeachableMachineTestPageProps> = ({ onD
   );
 };
 
-export default TeachableMachineTestPage; 
+export default TeachableMachineTestPage;

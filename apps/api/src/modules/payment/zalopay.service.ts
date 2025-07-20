@@ -1,7 +1,7 @@
-import axios from 'axios';
 import * as crypto from 'crypto';
-const moment = require('moment');
 import * as querystring from 'querystring';
+import axios from 'axios';
+import moment from 'moment';
 
 export class ZaloPayService {
   private app_id = process.env.ZP_APP_ID || '';
@@ -55,4 +55,4 @@ export class ZaloPayService {
       }
     }
   }
-} 
+}

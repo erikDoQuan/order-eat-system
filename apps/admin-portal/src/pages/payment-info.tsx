@@ -1,22 +1,24 @@
 import React, { useContext } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import { useCart } from '../context/CartContext';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+
+import Navbar from '../components/Navbar';
 import { AuthContext } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import { createOrder } from '../services/order.api';
+
 import '../css/payment-info.css';
 
 const PaymentInfoPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const state = location.state as any || {};
+  const state = (location.state as any) || {};
   const orderType = state?.orderType || 'pickup';
   const store = state?.store || { name: 'Chưa chọn cửa hàng', address: '' };
   const customer = state?.customer || { name: '', phone: '' };
   const { user } = useContext(AuthContext);
   const { orderItems, dishes } = useCart();
-  const items = Array.isArray(state?.items) && state.items.length > 0 ? state.items : (orderItems || []);
+  const items = Array.isArray(state?.items) && state.items.length > 0 ? state.items : orderItems || [];
   // Thêm sizeOptions và toppingDishes, getItemPrice giống CheckoutPage
   const sizeOptions = [
     { value: 'small', price: 0 },
@@ -26,35 +28,33 @@ const PaymentInfoPage: React.FC = () => {
   const [toppingDishes, setToppingDishes] = React.useState<any[]>([]);
   React.useEffect(() => {
     fetch('/api/v1/categories')
-      .then((res) => res.json())
-      .then((catRes) => {
+      .then(res => res.json())
+      .then(catRes => {
         const categories = catRes.data || [];
-        const toppingCat = categories.find((c: any) =>
-          (c.nameLocalized || c.name)?.toLowerCase().includes('topping'),
-        );
-        if (toppingCat) setToppingDishes(dishes.filter((d) => d.categoryId === toppingCat.id));
+        const toppingCat = categories.find((c: any) => (c.nameLocalized || c.name)?.toLowerCase().includes('topping'));
+        if (toppingCat) setToppingDishes(dishes.filter(d => d.categoryId === toppingCat.id));
       });
   }, [dishes]);
-  const getDish = (dishId: string) => dishes.find((d) => d.id === dishId);
+  const getDish = (dishId: string) => dishes.find(d => d.id === dishId);
   const getItemPrice = (item: any) => {
     const dish = getDish(item.dishId);
     if (!dish) return 0;
     let price = Number(dish.basePrice) || 0;
     if (item.size) {
-      price += sizeOptions.find((s) => s.value === item.size)?.price || 0;
+      price += sizeOptions.find(s => s.value === item.size)?.price || 0;
     }
     if (item.base && !['dày', 'mỏng'].includes(item.base)) {
-      const topping = toppingDishes.find((t) => t.id === item.base);
+      const topping = toppingDishes.find(t => t.id === item.base);
       if (topping) price += Number(topping.basePrice) || 0;
     }
     return price;
   };
   // Hàm lấy thông tin món ăn từ dishId
-  const getDishInfo = (item) => {
+  const getDishInfo = item => {
     const dish = dishes.find(d => d.id === item.dishId);
     return {
       name: item.name || dish?.name || 'Món ăn',
-      price: typeof item.price !== 'undefined' ? item.price : (dish?.basePrice ? Number(dish.basePrice) : 0),
+      price: typeof item.price !== 'undefined' ? item.price : dish?.basePrice ? Number(dish.basePrice) : 0,
     };
   };
   const subtotal = state?.subtotal ?? 0;
@@ -116,7 +116,7 @@ const PaymentInfoPage: React.FC = () => {
   // 1. Thêm hàm handleOrder để gọi createOrder với deliveryAddress là object
   const handleOrder = async () => {
     if (paymentMethod === 'zalopay') {
-      // 1. Tạo đơn hàng trạng thái pending trước
+      // KHÔNG gọi createOrder ở đây, chỉ điều hướng sang ZaloPayPaymentPage
       let deliveryAddressObj;
       if (orderType === 'delivery') {
         deliveryAddressObj = {
@@ -128,37 +128,20 @@ const PaymentInfoPage: React.FC = () => {
           storeName: store.name || '',
         };
       }
-      const payload = {
-        userId: user?.id,
-        orderItems: { items: items },
-        totalAmount: totalAmountDisplay,
-        type: orderType,
-        deliveryAddress: deliveryAddressObj,
-        note: '',
-        paymentMethod: 'zalopay',
-        status: 'pending',
-      };
-      try {
-        const orderRes = await createOrder(payload);
-        // 2. Điều hướng sang trang ZaloPayPaymentPage, truyền orderNumber thật
-        navigate('/zalo-pay-payment', {
-          state: {
-            items,
-            customer,
-            store,
-            orderType,
-            shippingFee,
-            deliveryAddress,
-            subtotal: computedSubtotal,
-            totalAmount: totalAmountDisplay,
-            userId: user?.id,
-            orderNumber: orderRes.orderNumber, // truyền orderNumber thật
-            orderId: orderRes.id, // truyền cả id nếu cần
-          },
-        });
-      } catch (err) {
-        alert('Có lỗi khi tạo đơn hàng, vui lòng thử lại!');
-      }
+      navigate('/zalo-pay-payment', {
+        state: {
+          items,
+          customer,
+          store,
+          orderType,
+          shippingFee,
+          deliveryAddress,
+          subtotal: computedSubtotal,
+          totalAmount: totalAmountDisplay,
+          userId: user?.id,
+          // Không truyền orderNumber, orderId ở đây
+        },
+      });
       return;
     }
     let deliveryAddressObj;
@@ -214,9 +197,7 @@ const PaymentInfoPage: React.FC = () => {
                   <div className="payment-info-text">
                     Nhận hàng tại: <span className="payment-info-highlight">{store.name}</span>
                   </div>
-                  <div className="payment-info-text">
-                    {store.address}
-                  </div>
+                  <div className="payment-info-text">{store.address}</div>
                   <div className="payment-info-text">
                     <b>Khách hàng:</b> {customer.name} &nbsp; <b>Điện thoại:</b> {customer.phone}
                   </div>
@@ -227,7 +208,7 @@ const PaymentInfoPage: React.FC = () => {
               <div className="payment-info-title">Phương thức thanh toán</div>
               <div className="payment-info-options" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div
-                  className={`payment-method-box${paymentMethod === 'cod' ? ' selected' : ''}`}
+                  className={`payment-method-box${paymentMethod === 'cod' ? 'selected' : ''}`}
                   style={{
                     border: paymentMethod === 'cod' ? '2px solid #22c55e' : '1px solid #ddd',
                     borderRadius: 12,
@@ -251,32 +232,38 @@ const PaymentInfoPage: React.FC = () => {
                   </div>
                   <div style={{ width: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
                     {paymentMethod === 'cod' ? (
-                      <span style={{
-                        display: 'inline-block',
-                        width: 24,
-                        height: 24,
-                        borderRadius: '50%',
-                        background: '#22c55e',
-                        border: '2px solid #22c55e',
-                        color: '#fff',
-                        fontSize: 18,
-                        textAlign: 'center',
-                        lineHeight: '22px',
-                      }}>✔</span>
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          width: 24,
+                          height: 24,
+                          borderRadius: '50%',
+                          background: '#22c55e',
+                          border: '2px solid #22c55e',
+                          color: '#fff',
+                          fontSize: 18,
+                          textAlign: 'center',
+                          lineHeight: '22px',
+                        }}
+                      >
+                        ✔
+                      </span>
                     ) : (
-                      <span style={{
-                        display: 'inline-block',
-                        width: 24,
-                        height: 24,
-                        borderRadius: '50%',
-                        border: '2px solid #22c55e',
-                        background: '#fff',
-                      }} />
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          width: 24,
+                          height: 24,
+                          borderRadius: '50%',
+                          border: '2px solid #22c55e',
+                          background: '#fff',
+                        }}
+                      />
                     )}
                   </div>
                 </div>
                 <div
-                  className={`payment-method-box${paymentMethod === 'zalopay' ? ' selected' : ''}`}
+                  className={`payment-method-box${paymentMethod === 'zalopay' ? 'selected' : ''}`}
                   style={{
                     border: paymentMethod === 'zalopay' ? '2px solid #22c55e' : '1px solid #ddd',
                     borderRadius: 12,
@@ -300,27 +287,33 @@ const PaymentInfoPage: React.FC = () => {
                   </div>
                   <div style={{ width: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
                     {paymentMethod === 'zalopay' ? (
-                      <span style={{
-                        display: 'inline-block',
-                        width: 24,
-                        height: 24,
-                        borderRadius: '50%',
-                        background: '#22c55e',
-                        border: '2px solid #22c55e',
-                        color: '#fff',
-                        fontSize: 18,
-                        textAlign: 'center',
-                        lineHeight: '22px',
-                      }}>✔</span>
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          width: 24,
+                          height: 24,
+                          borderRadius: '50%',
+                          background: '#22c55e',
+                          border: '2px solid #22c55e',
+                          color: '#fff',
+                          fontSize: 18,
+                          textAlign: 'center',
+                          lineHeight: '22px',
+                        }}
+                      >
+                        ✔
+                      </span>
                     ) : (
-                      <span style={{
-                        display: 'inline-block',
-                        width: 24,
-                        height: 24,
-                        borderRadius: '50%',
-                        border: '2px solid #22c55e',
-                        background: '#fff',
-                      }} />
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          width: 24,
+                          height: 24,
+                          borderRadius: '50%',
+                          border: '2px solid #22c55e',
+                          background: '#fff',
+                        }}
+                      />
                     )}
                   </div>
                 </div>
@@ -336,9 +329,7 @@ const PaymentInfoPage: React.FC = () => {
               </div>
             </div>
             <div className="payment-info-block">
-              <div className="payment-info-title">
-                Đơn hàng của bạn
-              </div>
+              <div className="payment-info-title">Đơn hàng của bạn</div>
               {items.length === 0 ? (
                 <div className="payment-info-empty">Chưa có sản phẩm trong giỏ hàng</div>
               ) : (
@@ -393,7 +384,7 @@ const PaymentInfoPage: React.FC = () => {
                 </>
               )}
             </div>
-  
+
             <div style={{ display: 'flex', gap: 16, justifyContent: 'flex-end', marginTop: 24 }}>
               <button
                 onClick={() => navigate(-1)}
@@ -438,4 +429,4 @@ const PaymentInfoPage: React.FC = () => {
   );
 };
 
-export default PaymentInfoPage; 
+export default PaymentInfoPage;
