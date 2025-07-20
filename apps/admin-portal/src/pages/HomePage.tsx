@@ -1,20 +1,18 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import '../css/HomePage.css';
 
 import type { Category } from '../services/category.api';
 import type { Dish } from '../types/dish.type';
+import logo from '../assets/images/logo.svg';
+import { CartPopup } from '../components/CartPopup';
+import { AuthContext } from '../context/AuthContext';
 import { getAllCategories } from '../services/category.api';
 import { getAllDishes } from '../services/dish.api';
-import DishCard from './DishCard';
-import { DishDetailModal } from './DishCard';
-import { CartPopup } from '../components/CartPopup';
 import { getOrderItemsByUserId } from '../services/user.api';
-import { AuthContext } from '../context/AuthContext';
-import Footer from '../components/Footer';
-import logo from '../assets/images/logo.svg';
+import DishCard, { DishDetailModal } from './DishCard';
 import TeachableMachineTestPage from './TeachableMachineTestPage';
 
 export default function HomePage() {
@@ -85,20 +83,35 @@ export default function HomePage() {
   }, [location]);
 
   const pizzaDishes = dishes.filter(
-    d => d.status === 'available' && d.categoryId && categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('pizza') && cat.id === d.categoryId),
+    d =>
+      d.status === 'available' &&
+      d.categoryId &&
+      categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('pizza') && cat.id === d.categoryId),
   );
   const chickenDishes = dishes.filter(
-    d => d.status === 'available' && d.categoryId && categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('gà') && cat.id === d.categoryId),
+    d =>
+      d.status === 'available' &&
+      d.categoryId &&
+      categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('gà') && cat.id === d.categoryId),
   );
   const spaghettiDishes = dishes.filter(
-    d => d.status === 'available' && d.categoryId && categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('mỳ ý') && cat.id === d.categoryId),
+    d =>
+      d.status === 'available' &&
+      d.categoryId &&
+      categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('mỳ ý') && cat.id === d.categoryId),
   );
   const appetizerDishes = dishes.filter(
-    d => d.status === 'available' && d.categoryId && categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('khai vị') && cat.id === d.categoryId)
+    d =>
+      d.status === 'available' &&
+      d.categoryId &&
+      categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('khai vị') && cat.id === d.categoryId),
   );
   // Nếu không tìm thấy theo 'khai vị', thử 'appetizer'
   const appetizerDishesFallback = dishes.filter(
-    d => d.status === 'available' && d.categoryId && categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('appetizer') && cat.id === d.categoryId)
+    d =>
+      d.status === 'available' &&
+      d.categoryId &&
+      categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('appetizer') && cat.id === d.categoryId),
   );
 
   // Lọc pizza theo filter
@@ -135,19 +148,26 @@ export default function HomePage() {
   });
   // Nếu không tìm thấy theo 'khai vị', thử 'appetizer'
   const filteredAppetizerDishesFallback = appetizerDishesFallback.filter(
-    d => d.status === 'available' && d.categoryId && categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('appetizer') && cat.id === d.categoryId)
+    d =>
+      d.status === 'available' &&
+      d.categoryId &&
+      categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('appetizer') && cat.id === d.categoryId),
   );
 
   // Thêm lọc salad và drink
   const saladDishes = dishes.filter(
-    d => d.status === 'available' && d.categoryId && categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('salad') && cat.id === d.categoryId)
+    d =>
+      d.status === 'available' &&
+      d.categoryId &&
+      categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('salad') && cat.id === d.categoryId),
   );
   const drinkDishes = dishes.filter(
-    d => d.status === 'available' && d.categoryId && (
-      categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('drink') && cat.id === d.categoryId) ||
-      categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('thức uống') && cat.id === d.categoryId) ||
-      categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('beverage') && cat.id === d.categoryId)
-    )
+    d =>
+      d.status === 'available' &&
+      d.categoryId &&
+      (categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('drink') && cat.id === d.categoryId) ||
+        categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('thức uống') && cat.id === d.categoryId) ||
+        categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('beverage') && cat.id === d.categoryId)),
   );
 
   const handleOpenCart = () => {
@@ -165,7 +185,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-white py-8">
       <div className="mb-10 w-full">
         <div className="banner-16-9 relative w-full overflow-hidden">
-          <img src="/banner.png" alt="Banner" className="absolute inset-0 w-full h-full object-cover" />
+          <img src="/banner.png" alt="Banner" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-black/30" />
         </div>
       </div>
@@ -178,25 +198,29 @@ export default function HomePage() {
             {!typeParam && (
               <div className="ml-4 flex flex-1 flex-wrap justify-end gap-2">
                 <button
-                  className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
-                  ${filterPizzaType === 'Tất cả' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
+                  className={`rounded-full border px-4 py-1 text-sm font-bold shadow transition-all duration-150 ${filterPizzaType === 'Tất cả' ? 'border-[#C92A15] bg-[#C92A15] text-white' : 'border-gray-200 bg-white font-semibold text-[#C92A15]'}`}
                   onClick={() => setFilterPizzaType('Tất cả')}
-                >{t('all')}</button>
+                >
+                  {t('all')}
+                </button>
                 <button
-                  className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
-                  ${filterPizzaType === 'Pizza Hải Sản' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
+                  className={`rounded-full border px-4 py-1 text-sm font-bold shadow transition-all duration-150 ${filterPizzaType === 'Pizza Hải Sản' ? 'border-[#C92A15] bg-[#C92A15] text-white' : 'border-gray-200 bg-white font-semibold text-[#C92A15]'}`}
                   onClick={() => setFilterPizzaType('Pizza Hải Sản')}
-                >{t('seafood_pizza')}</button>
+                >
+                  {t('seafood_pizza')}
+                </button>
                 <button
-                  className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
-                  ${filterPizzaType === 'Pizza Truyền Thống' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
+                  className={`rounded-full border px-4 py-1 text-sm font-bold shadow transition-all duration-150 ${filterPizzaType === 'Pizza Truyền Thống' ? 'border-[#C92A15] bg-[#C92A15] text-white' : 'border-gray-200 bg-white font-semibold text-[#C92A15]'}`}
                   onClick={() => setFilterPizzaType('Pizza Truyền Thống')}
-                >{t('traditional_pizza')}</button>
+                >
+                  {t('traditional_pizza')}
+                </button>
                 <button
-                  className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
-                  ${filterPizzaType === 'Pizza Thập Cẩm' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
+                  className={`rounded-full border px-4 py-1 text-sm font-bold shadow transition-all duration-150 ${filterPizzaType === 'Pizza Thập Cẩm' ? 'border-[#C92A15] bg-[#C92A15] text-white' : 'border-gray-200 bg-white font-semibold text-[#C92A15]'}`}
                   onClick={() => setFilterPizzaType('Pizza Thập Cẩm')}
-                >{t('combo_pizza')}</button>
+                >
+                  {t('combo_pizza')}
+                </button>
               </div>
             )}
           </div>
@@ -292,25 +316,29 @@ export default function HomePage() {
                 <h2 className="flex-shrink-0 text-3xl font-extrabold text-black drop-shadow-lg">{t('pizza')}</h2>
                 <div className="ml-4 flex flex-1 flex-wrap justify-end gap-2">
                   <button
-                    className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
-                      ${filterPizzaType === 'Tất cả' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
+                    className={`rounded-full border px-4 py-1 text-sm font-bold shadow transition-all duration-150 ${filterPizzaType === 'Tất cả' ? 'border-[#C92A15] bg-[#C92A15] text-white' : 'border-gray-200 bg-white font-semibold text-[#C92A15]'}`}
                     onClick={() => setFilterPizzaType('Tất cả')}
-                  >{t('all')}</button>
+                  >
+                    {t('all')}
+                  </button>
                   <button
-                    className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
-                      ${filterPizzaType === 'Pizza Hải Sản' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
+                    className={`rounded-full border px-4 py-1 text-sm font-bold shadow transition-all duration-150 ${filterPizzaType === 'Pizza Hải Sản' ? 'border-[#C92A15] bg-[#C92A15] text-white' : 'border-gray-200 bg-white font-semibold text-[#C92A15]'}`}
                     onClick={() => setFilterPizzaType('Pizza Hải Sản')}
-                  >{t('seafood_pizza')}</button>
+                  >
+                    {t('seafood_pizza')}
+                  </button>
                   <button
-                    className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
-                      ${filterPizzaType === 'Pizza Truyền Thống' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
+                    className={`rounded-full border px-4 py-1 text-sm font-bold shadow transition-all duration-150 ${filterPizzaType === 'Pizza Truyền Thống' ? 'border-[#C92A15] bg-[#C92A15] text-white' : 'border-gray-200 bg-white font-semibold text-[#C92A15]'}`}
                     onClick={() => setFilterPizzaType('Pizza Truyền Thống')}
-                  >{t('traditional_pizza')}</button>
+                  >
+                    {t('traditional_pizza')}
+                  </button>
                   <button
-                    className={`rounded-full px-4 py-1 text-sm font-bold shadow border transition-all duration-150
-                      ${filterPizzaType === 'Pizza Thập Cẩm' ? 'text-white bg-[#C92A15] border-[#C92A15]' : 'text-[#C92A15] bg-white border-gray-200 font-semibold'}`}
+                    className={`rounded-full border px-4 py-1 text-sm font-bold shadow transition-all duration-150 ${filterPizzaType === 'Pizza Thập Cẩm' ? 'border-[#C92A15] bg-[#C92A15] text-white' : 'border-gray-200 bg-white font-semibold text-[#C92A15]'}`}
                     onClick={() => setFilterPizzaType('Pizza Thập Cẩm')}
-                  >{t('combo_pizza')}</button>
+                  >
+                    {t('combo_pizza')}
+                  </button>
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
@@ -378,29 +406,27 @@ export default function HomePage() {
             <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
               <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('appetizer')}</h2>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-                {(appetizerDishes.length > 0 ? appetizerDishes : appetizerDishesFallback)
-                  .slice(0, visibleAppetizerCount)
-                  .map(dish => (
-                    <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                {(appetizerDishes.length > 0 ? appetizerDishes : appetizerDishesFallback).slice(0, visibleAppetizerCount).map(dish => (
+                  <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
                 ))}
               </div>
               {/* Thêm nút Xem thêm cho Khai vị */}
               {(appetizerDishes.length > 3 || (appetizerDishes.length === 0 && appetizerDishesFallback.length > 3)) &&
                 visibleAppetizerCount < (appetizerDishes.length > 0 ? appetizerDishes.length : appetizerDishesFallback.length) && (
-                <div className="mb-12 mt-4 flex justify-center">
-                  <a
-                    className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
-                    style={{ textDecoration: 'none' }}
-                    onClick={() => setVisibleAppetizerCount(prev => prev + 3)}
-                  >
-                    Xem thêm
-                  </a>
-                </div>
-              )}
+                  <div className="mb-12 mt-4 flex justify-center">
+                    <a
+                      className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                      style={{ textDecoration: 'none' }}
+                      onClick={() => setVisibleAppetizerCount(prev => prev + 3)}
+                    >
+                      Xem thêm
+                    </a>
+                  </div>
+                )}
               {/* Thêm phần hiển thị salad nếu có */}
               {saladDishes.length > 0 && (
                 <>
-                  <h3 className="mt-8 mb-4 text-2xl font-bold text-black">{t('salad') || 'Salad'}</h3>
+                  <h3 className="mb-4 mt-8 text-2xl font-bold text-black">{t('salad') || 'Salad'}</h3>
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
                     {saladDishes.slice(0, visibleSaladCount).map(dish => (
                       <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
@@ -422,7 +448,7 @@ export default function HomePage() {
               {/* Thêm phần hiển thị thức uống nếu có */}
               {drinkDishes.length > 0 && (
                 <>
-                  <h3 className="mt-8 mb-4 text-2xl font-bold text-black">{t('drink') || 'Thức uống'}</h3>
+                  <h3 className="mb-4 mt-8 text-2xl font-bold text-black">{t('drink') || 'Thức uống'}</h3>
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
                     {drinkDishes.slice(0, visibleDrinkCount).map(dish => (
                       <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
@@ -463,7 +489,6 @@ export default function HomePage() {
           <CartPopup onClose={handleCloseCart} />
         </>
       )}
-      <Footer />
       {/* Nút hỗ trợ nổi góc phải cuối màn hình */}
       <div
         style={{
@@ -542,10 +567,14 @@ export default function HomePage() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <b>Trợ lý món ăn thông minh</b>
-              <button onClick={() => setShowMiniChat(false)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>&times;</button>
+              <button onClick={() => setShowMiniChat(false)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>
+                &times;
+              </button>
             </div>
             <div style={{ flex: 1, minHeight: 80, margin: '8px 0', background: '#f8f8f8', borderRadius: 8, padding: 8 }}>
-              <div style={{ color: '#888', marginBottom: 8 }}><i>Hãy tìm món ăn bằng hình ảnh hoặc upload ảnh để nhận diện món ăn.</i></div>
+              <div style={{ color: '#888', marginBottom: 8 }}>
+                <i>Hãy tìm món ăn bằng hình ảnh hoặc upload ảnh để nhận diện món ăn.</i>
+              </div>
               <TeachableMachineTestPage onDishClick={dish => setDishModal(dish)} onClose={() => setShowMiniChat(false)} />
             </div>
           </div>

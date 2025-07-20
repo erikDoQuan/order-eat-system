@@ -85,5 +85,194 @@
     "view_more": "View More",
     "note": "Note",
     "note_placeholder": "Enter your note here",
-    "all": "All"
+    "all": "All",
+    "footer_slogan_title": "BEP CUA ME",
+    "footer_slogan_desc1": "Specializing in fast food favorites like pizza, fried chicken, pasta, and many other irresistible options.",
+    "footer_slogan_desc2": "Delicious – Fast – Just like Mom used to make.",
+    "footer_quick_links": "Quick Links",
+    "footer_branch": "Branches",
+    "footer_contact": "Contact",
+    "footer_rights": "All rights reserved.",
+    "menu": {
+        "d4e464f8-c362-4907-8d4f-a6ae951d20f4": {
+            "name": "Ham & Sausage Pizza",
+            "desc": "Ham, sausage, pineapple, and Thousand Island sauce."
+        },
+        "9e1f6a61-45d3-4c87-806d-46699e8ea69b": {
+            "name": "Cheese & Sausage Crust",
+            "desc": ""
+        },
+        "30188803-8c5a-41c3-a480-4a2d039279d4": {
+            "name": "Cheese Crust",
+            "desc": ""
+        },
+        "9c26fb0f-828c-44b3-920d-2cb25c9a331f": {
+            "name": "Spicy Clam Spaghetti",
+            "desc": "Spaghetti with spicy sauce and the natural sweetness of clams."
+        },
+        "3f632885-a38e-4084-bd75-27e8f874591f": {
+            "name": "Hawaiian Pizza",
+            "desc": "Ham, bacon, and pineapple."
+        },
+        "a488dd89-c67c-4372-b25a-59b5a83ad012": {
+            "name": "Canadian Ham Pizza",
+            "desc": "Ham and sweet corn."
+        },
+        "c4decb12-2ff2-4c8b-b47d-560a282a1ef4": {
+            "name": "Pesto Seafood Spaghetti",
+            "desc": "Spaghetti with shrimp and squid, blended in green pesto sauce."
+        },
+        "350ec8ec-7e33-41a5-8864-7fb2ddae2298": {
+            "name": "Crispy Chicken Skin with Signature Sauce",
+            "desc": "Crispy chicken skin soaked in savory signature sauce."
+        },
+        "118f9292-a740-467b-b4fa-55e5f03b99b6": {
+            "name": "Crispy Chicken Skin with Garlic Soy Sauce",
+            "desc": "Crispy chicken skin soaked in savory garlic soy sauce."
+        },
+        "c9e96f61-3a14-4184-86a7-859b2ed78111": {
+            "name": "Boneless Crispy Chicken",
+            "desc": "Crispy boneless chicken served with rich cocktail sauce."
+        },
+        "ad38378f-01cc-42e9-ba67-9f9b651c480f": {
+            "name": "Crispy Chicken with Creamy Onion Sauce (9 pcs)",
+            "desc": "Crispy chicken pieces with the rich flavor of creamy onion sauce."
+        },
+        "d4a398c6-0ae4-40fd-bdae-f7d4b2075dd4": {
+            "name": "Premium Seafood Pizza",
+            "desc": "Shrimp, crab, squid, clams, and marinara sauce."
+        },
+        "acf010f9-2a1e-41d6-b9b8-17d99bee29f9": {
+            "name": "Tropical Seafood Pizza",
+            "desc": "Shrimp, clams, squid, crab, pineapple, and Thousand Island sauce."
+        },
+        "40f1d525-3483-4e13-939a-4b2bd688bc6a": {
+            "name": "Shrimp Cocktail Pizza",
+            "desc": "Shrimp, mushrooms, pineapple, tomato, and Thousand Island sauce."
+        },
+        "fe5cabe8-9d48-4f50-b6c6-ef6f7bcd17e3": {
+            "name": "Ham & Sausage Pizza",
+            "desc": "Ham, sausage, pineapple, and Thousand Island sauce."
+        },
+        "5b93ed19-ec33-4cb9-9acd-47952d092f59": {
+            "name": "Green Pesto Seafood Pizza",
+            "desc": "Shrimp, crab sticks, squid, and fresh broccoli on green pesto sauce."
+        },
+        "9deb9556-2259-4e5a-a1f5-93b696739cea": {
+            "name": "Grilled Chicken & Pineapple Pizza",
+            "desc": "Grilled chicken and pineapple."
+        },
+        "86e72afc-0d93-438b-8d8b-e4dec31fc317": {
+            "name": "Basil Clam Spaghetti",
+            "desc": "Spaghetti with basil sauce and the natural sweetness of clams."
+        },
+        "e6553e45-4aca-48ab-a088-210aa6fa61d7": {
+            "name": "Korean Spicy Chicken Platter",
+            "desc": "Crispy chicken platter coated in rich Korean-style spicy sauce."
+        },
+        "08d3c415-0714-429c-a05f-60d7123b3a73": {
+            "name": "Spicy Seafood Spaghetti",
+            "desc": "Spaghetti with fresh seafood, chili, and garlic."
+        },
+        "04fe4e21-8f03-47c3-9aef-41de2d67e178": {
+            "name": "Popcorn Chicken",
+            "desc": "Crispy fried chicken bites."
+        },
+        "6d949cd0-1fd6-4d2a-a168-1f93d1f39eed": {
+            "name": "Crispy Chicken with Garlic Butter Sauce (2 pcs)",
+            "desc": "Juicy chicken with a thin, crispy coating, topped with rich garlic butter sauce and golden fried garlic."
+        },
+        "ad442ab8-ff1f-4c2b-b138-d9f75b06b3e5": {
+            "name": "Crispy Chicken with Creamy Onion Sauce (5 pcs)",
+            "desc": "Crispy chicken pieces with the rich flavor of creamy onion sauce."
+        },
+        "06c6ecef-590d-428c-ae2a-3207658c750a": {
+            "name": "Crispy Chicken with Signature Sauce (2 pcs)",
+            "desc": "Crispy fried chicken coated in traditional Korean signature sauce."
+        },
+        "f6c22e5a-1cd2-4589-b4a0-cb59986371bf": {
+            "name": "Italian Sausage Pizza",
+            "desc": "Italian sausage on tomato sauce base."
+        },
+        "12001dc9-725e-4783-9ff6-e3ad474cc2ae": {
+            "name": "Ham & Mushroom Pizza",
+            "desc": "Ham and mushrooms."
+        },
+        "50268512-dc16-439a-b782-15b6c8f20699": {
+            "name": "Boneless Crispy Chicken Salad",
+            "desc": "Crispy chicken salad with quail eggs, bacon, cheese, and Thousand Island dressing."
+        },
+        "da51838f-30c2-4f62-b1b4-14e93e3a5cca": {
+            "name": "Pepsi Lime Zero Sugar",
+            "desc": ""
+        },
+        "3db50d27-9ca4-46b6-a953-8746bc715e3d": {
+            "name": "Crispy Chicken Skin with Spicy Sauce",
+            "desc": "Crispy chicken skin soaked in savory spicy sauce."
+        },
+        "811c534e-6f2e-4fe0-881f-b5c95ce8604d": {
+            "name": "Shrimp Spaghetti with Tomato Cream Sauce",
+            "desc": "Spaghetti and shrimp in creamy tomato sauce."
+        },
+        "ca3c706d-1497-4bda-bac7-365e531b31b5": {
+            "name": "Spicy Sausage Spaghetti",
+            "desc": "Spaghetti with sausage, herbs, cilantro, and Italian basil."
+        },
+        "0cb9951e-9261-4360-88bb-8621163fbcc2": {
+            "name": "Ham & Mushroom Spaghetti with Cream Sauce",
+            "desc": "Spaghetti with ham, mushrooms, and creamy white sauce."
+        },
+        "cc2dc51a-8e13-4f54-939b-90eef5977239": {
+            "name": "Special Bacon Pizza",
+            "desc": "Ham, bacon, green peppers, and tomatoes."
+        },
+        "79641c26-6945-48a3-899d-a64916032dd3": {
+            "name": "Crispy Salmon Skin Salad",
+            "desc": "Salad with crispy salmon skin, cabbage, tomatoes, corn, and Yuzu dressing."
+        },
+        "33ef7037-3069-41cc-8ef5-ab412fb29e71": {
+            "name": "Signature Salad",
+            "desc": "Fresh vegetable and fruit salad with creamy dressing."
+        },
+        "f4d4ea46-bb7c-423c-8ca0-e7e13db3f76a": {
+            "name": "Caesar Salad",
+            "desc": "Greens with Caesar dressing."
+        },
+        "c7e0912f-7a9e-445f-88b3-3d061523f457": {
+            "name": "Pepsi Zero Sugar",
+            "desc": ""
+        },
+        "1ba4d43b-b041-457e-980b-bb49556f904a": {
+            "name": "Pepsi Can",
+            "desc": ""
+        },
+        "be4564dc-a5f6-45b9-8fbf-379052f5cba1": {
+            "name": "Mirinda Cream Soda Can",
+            "desc": ""
+        },
+        "ef10a814-bfed-4252-be67-58971f53e8d5": {
+            "name": "7Up Can",
+            "desc": ""
+        },
+        "f97959ce-2760-4d15-818f-fe1e09422605": {
+            "name": "Pepsi 1.5L Bottle",
+            "desc": ""
+        },
+        "eaa45aec-af0e-4638-803b-a1a89d4b981a": {
+            "name": "7Up 1.5L Bottle",
+            "desc": ""
+        },
+        "61b16c49-ddb0-4d3d-9257-017d9945d033": {
+            "name": "Aquafina Bottle",
+            "desc": ""
+        },
+        "ca559f7b-5437-4e8e-999d-83564a0dd592": {
+            "name": "Bolognese Spaghetti",
+            "desc": "A special style of bolognese sauce."
+        },
+        "d0372884-a918-429e-8112-74fce9817917": {
+            "name": "Cheese Pizza",
+            "desc": "Cheese, cheese, and more cheese."
+        }
+    }
 }

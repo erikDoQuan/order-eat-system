@@ -1,13 +1,13 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import '../css/DishCard.css';
 
-import { Dish } from '../types/dish.type';
 import { AuthContext } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { Dish } from '../types/dish.type';
 
 // Đặt hàm getCategoryNameById ở đầu file, trước mọi component
 function getCategoryNameById(categoryId: string | undefined, categories: any[], lang: string) {
@@ -22,7 +22,19 @@ function getCategoryNameById(categoryId: string | undefined, categories: any[], 
 /* -------------------------------------------------
  *  Modal chi tiết món ăn (Size, Đế + Topping radio)
  * ------------------------------------------------- */
-function DishDetailModal({ dish, onClose, categoryName, categories, dishes }: { dish: Dish; onClose: () => void; categoryName?: string; categories: any[]; dishes: Dish[] }) {
+function DishDetailModal({
+  dish,
+  onClose,
+  categoryName,
+  categories,
+  dishes,
+}: {
+  dish: Dish;
+  onClose: () => void;
+  categoryName?: string;
+  categories: any[];
+  dishes: Dish[];
+}) {
   const { addToCart } = useCart();
   const { t, i18n } = useTranslation();
   const { user } = useContext(AuthContext);
@@ -57,28 +69,27 @@ function DishDetailModal({ dish, onClose, categoryName, categories, dishes }: { 
       return;
     }
     const lang = i18n.language === 'en-us' ? 'en' : 'vi';
-    
+
     // Tìm category Topping từ props categories - mở rộng tìm kiếm
     const toppingCat = categories.find((c: any) => {
       const catName = typeof c.name === 'string' ? c.name : (c.name as any)?.vi || (c.name as any)?.en || '';
-      return catName.toLowerCase().includes('topping') || 
-             catName.toLowerCase().includes('đế') ||
-             catName.toLowerCase().includes('base');
+      return catName.toLowerCase().includes('topping') || catName.toLowerCase().includes('đế') || catName.toLowerCase().includes('base');
     });
-    
+
     if (!toppingCat) {
       setToppingDishes([]);
       return;
     }
-    
+
     // Chỉ fetch dishes để lấy toppingDishes
-    axios.get(`/api/v1/dishes?lang=${lang}`)
+    axios
+      .get(`/api/v1/dishes?lang=${lang}`)
       .then(dishRes => {
         const allDishes: Dish[] = dishRes.data.data || [];
         const filteredDishes = allDishes.filter(d => d.categoryId === toppingCat.id);
         setToppingDishes(filteredDishes);
       })
-      .catch((error) => {
+      .catch(error => {
         console.error('Error fetching dishes:', error);
         setToppingDishes([]);
       });
@@ -112,9 +123,21 @@ function DishDetailModal({ dish, onClose, categoryName, categories, dishes }: { 
   const isChickenCategory = dishCategoryName.toLowerCase().includes('gà');
   const isToppingCategory = dishCategoryName.toLowerCase().includes('topping');
 
-  // Lấy tên và mô tả đúng ngôn ngữ
-  const dishName = typeof dish.name === 'string' ? dish.name : (dish.name as any)?.[lang] || (dish.name as any)?.vi || '';
-  const dishDescription = typeof dish.description === 'string' ? dish.description : (dish.description as any)?.[lang] || (dish.description as any)?.vi || '';
+  // Lấy tên và mô tả đúng ngôn ngữ từ i18n, fallback về dish.name nếu không có (dùng cho cả card)
+  const dishNameRaw = t(`menu.${dish.id}.name`);
+  const dishDescriptionRaw = t(`menu.${dish.id}.desc`);
+  const dishName =
+    !dishNameRaw || dishNameRaw.startsWith('menu.')
+      ? typeof dish.name === 'string'
+        ? dish.name
+        : (dish.name as any)?.[lang] || (dish.name as any)?.vi || ''
+      : dishNameRaw;
+  const dishDescription =
+    !dishDescriptionRaw || dishDescriptionRaw.startsWith('menu.')
+      ? typeof dish.description === 'string'
+        ? dish.description
+        : (dish.description as any)?.[lang] || (dish.description as any)?.vi || ''
+      : dishDescriptionRaw;
 
   // Nếu là category Topping thì chỉ render tên dish
   if (isToppingCategory) {
@@ -278,7 +301,7 @@ export { DishDetailModal };
 /* --------------------------------------------------
  *  Thẻ card món ăn – export mặc định
  * -------------------------------------------------- */
-export default function DishCard({ dish, categoryName }: { dish: Dish, categoryName?: string }) {
+export default function DishCard({ dish, categoryName }: { dish: Dish; categoryName?: string }) {
   const [showDetail, setShowDetail] = useState(false);
   const { user } = useContext(AuthContext);
   const { addToCart } = useCart();
@@ -290,7 +313,8 @@ export default function DishCard({ dish, categoryName }: { dish: Dish, categoryN
 
   useEffect(() => {
     const lang = i18n.language === 'en-us' ? 'en' : 'vi';
-    axios.get(`/api/v1/categories?lang=${lang}`)
+    axios
+      .get(`/api/v1/categories?lang=${lang}`)
       .then(res => {
         setCategories(res.data.data || []);
       })
@@ -303,10 +327,21 @@ export default function DishCard({ dish, categoryName }: { dish: Dish, categoryN
     axios.get('/api/v1/dishes').then(res => setDishes(res.data.data || []));
   }, []);
 
-  // Lấy tên và mô tả theo ngôn ngữ
-  const nameObj = dish.name as any;
-  const dishName = typeof dish.name === 'string' ? dish.name : nameObj?.[locale] || nameObj?.vi || '';
-  const dishDesc = dish.description?.[locale] || dish.description || '';
+  // Lấy tên và mô tả đúng ngôn ngữ từ i18n, fallback về dish.name nếu không có (dùng cho cả card)
+  const dishNameRaw = t(`menu.${dish.id}.name`);
+  const dishDescriptionRaw = t(`menu.${dish.id}.desc`);
+  const dishName =
+    !dishNameRaw || dishNameRaw.startsWith('menu.')
+      ? typeof dish.name === 'string'
+        ? dish.name
+        : (dish.name as any)?.[locale] || (dish.name as any)?.vi || ''
+      : dishNameRaw;
+  const dishDesc =
+    !dishDescriptionRaw || dishDescriptionRaw.startsWith('menu.')
+      ? typeof dish.description === 'string'
+        ? dish.description
+        : (dish.description as any)?.[locale] || (dish.description as any)?.vi || ''
+      : dishDescriptionRaw;
 
   const priceText = dish.basePrice !== undefined && !isNaN(Number(dish.basePrice)) ? Number(dish.basePrice).toLocaleString('vi-VN') + '₫' : t('free');
 
@@ -370,7 +405,9 @@ export default function DishCard({ dish, categoryName }: { dish: Dish, categoryN
         </div>
       </div>
 
-      {showDetail && <DishDetailModal dish={dish} onClose={() => setShowDetail(false)} categoryName={categoryName} categories={categories} dishes={dishes} />}
+      {showDetail && (
+        <DishDetailModal dish={dish} onClose={() => setShowDetail(false)} categoryName={categoryName} categories={categories} dishes={dishes} />
+      )}
     </>
   );
 }
