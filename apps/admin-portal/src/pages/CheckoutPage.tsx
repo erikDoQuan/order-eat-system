@@ -31,12 +31,15 @@ const CheckoutPage: React.FC = () => {
       ignore = true;
     };
   }, []);
+
   const sizeOptions = [
     { value: 'small', price: 0 },
-    { value: 'medium', price: 90_000 },
-    { value: 'large', price: 190_000 },
+    { value: 'medium', price: 90000 },
+    { value: 'large', price: 190000 },
   ];
+
   const getDish = (dishId: string) => dishes.find(d => d.id === dishId);
+
   const getItemPrice = (item: any) => {
     const dish = getDish(item.dishId);
     if (!dish) return 0;
@@ -46,6 +49,7 @@ const CheckoutPage: React.FC = () => {
     }
     return price;
   };
+
   const decreaseQuantity = (item: any) => {
     if (item.quantity > 1) {
       addToCart(item.dishId, { quantity: -1, size: item.size, base: item.base, note: item.note });
@@ -53,16 +57,20 @@ const CheckoutPage: React.FC = () => {
       removeFromCart({ dishId: item.dishId, size: item.size, base: item.base, note: item.note });
     }
   };
+
   const increaseQuantity = (item: any) => {
     addToCart(item.dishId, { quantity: 1, size: item.size, base: item.base, note: item.note });
   };
+
   const totalAmount = orderItems.reduce((sum, item) => sum + getItemPrice(item) * (item.quantity || 1), 0);
+
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
   const getImageUrl = (imageUrl: string | undefined | null) => {
     if (!imageUrl) return '/default-image.png';
     if (imageUrl.startsWith('http')) return imageUrl;
     return `${API_URL}/api/v1/files/public/${imageUrl}`;
   };
+
   return (
     <div style={{ background: '#fff', minHeight: '100vh' }}>
       <Navbar />
@@ -98,7 +106,14 @@ const CheckoutPage: React.FC = () => {
                   return (
                     <div
                       key={idx}
-                      style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 24, borderBottom: '1px solid #eee', paddingBottom: 16 }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 20,
+                        marginBottom: 24,
+                        borderBottom: '1px solid #eee',
+                        paddingBottom: 16,
+                      }}
                     >
                       {/* Hình ảnh món */}
                       {dish?.imageUrl ? (

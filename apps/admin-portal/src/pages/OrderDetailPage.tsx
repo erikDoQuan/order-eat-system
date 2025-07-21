@@ -36,14 +36,16 @@ export default function OrderDetailPage() {
     { value: 'medium', price: 90000 },
     { value: 'large', price: 190000 },
   ];
+  // Hàm tính giá đúng cho từng item (đồng bộ với CartPopup/CheckoutPage)
   const getItemPrice = (item: any) => {
-    let price = Number(item.price ?? 0);
+    let price = Number(item.basePrice ?? item.price ?? 0);
     if (item.size) {
       price += sizeOptions.find((s) => s.value === item.size)?.price || 0;
     }
     if (item.base && !['dày', 'mỏng'].includes(item.base)) {
       if (item.toppingPrice) price += Number(item.toppingPrice) || 0;
       else if (item.basePrice && item.base !== item.dishId) price += Number(item.basePrice) || 0;
+      else if (item.basePriceExtra) price += Number(item.basePriceExtra) || 0;
     }
     return price;
   };
