@@ -184,9 +184,19 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white py-8">
       <div className="mb-10 w-full">
-        <div className="banner-16-9 relative w-full overflow-hidden">
-          <img src="/banner.png" alt="Banner" className="absolute inset-0 h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-black/30" />
+        <div
+          className="mx-auto"
+          style={{
+            width: '100%',
+            maxWidth: 1536,
+            aspectRatio: '1536/864',
+            overflow: 'hidden',
+            position: 'relative',
+            background: '#fff',
+            borderRadius: 24,
+          }}
+        >
+          <img src="/banner.png" alt="Banner" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', borderRadius: 24 }} />
         </div>
       </div>
       {/* Nếu có selectedCategory thì chỉ render đúng 1 category đó */}

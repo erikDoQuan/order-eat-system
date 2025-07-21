@@ -261,35 +261,37 @@ function DishDetailModal({
             rows={2}
           />
 
-          <button
-            className="mt-2 w-full rounded-lg bg-[#C92A15] px-6 py-3 text-lg font-bold text-white hover:bg-[#a81f10]"
-            onClick={async () => {
-              if (!user) {
-                navigate('/login');
-                return;
-              }
-              try {
-                if (isPizzaCategory && !isSpaghettiCategory && !isChickenCategory) {
-                  await addToCart(dish.id, {
-                    quantity: 1,
-                    size: selectedSize,
-                    base: selectedVariant,
-                    note,
-                  });
-                } else {
-                  await addToCart(dish.id, {
-                    quantity: 1,
-                    note,
-                  });
+          <div style={{ position: 'sticky', bottom: 0, background: '#fff', zIndex: 10, paddingTop: 8, paddingBottom: 8 }}>
+            <button
+              className="w-full rounded-lg bg-[#C92A15] px-6 py-3 text-lg font-bold text-white hover:bg-[#a81f10]"
+              onClick={async () => {
+                if (!user) {
+                  navigate('/login');
+                  return;
                 }
-                onClose();
-              } catch (err) {
-                console.error('Lỗi thêm vào giỏ hàng:', err);
-              }
-            }}
-          >
-            {t('add_to_cart')}
-          </button>
+                try {
+                  if (isPizzaCategory && !isSpaghettiCategory && !isChickenCategory) {
+                    await addToCart(dish.id, {
+                      quantity: 1,
+                      size: selectedSize,
+                      base: selectedVariant,
+                      note,
+                    });
+                  } else {
+                    await addToCart(dish.id, {
+                      quantity: 1,
+                      note,
+                    });
+                  }
+                  onClose();
+                } catch (err) {
+                  console.error('Lỗi thêm vào giỏ hàng:', err);
+                }
+              }}
+            >
+              {t('add_to_cart')}
+            </button>
+          </div>
         </div>
       </div>
     </div>

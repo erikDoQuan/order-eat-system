@@ -1,17 +1,17 @@
-import { useContext, useEffect, useRef, useState, useCallback } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { LogOut, ShoppingCart, User as UserIcon } from 'lucide-react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { FaBell } from 'react-icons/fa';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 
 import { AuthContext } from '../context/AuthContext';
-import { CartIcon } from './CartIcon';
-import { CartPopup } from './CartPopup';
 import { useCart } from '../context/CartContext';
 import { getAllDishes } from '../services/dish.api';
-import LanguageSwitcher from './LanguageSwitcher';
-import { FaBell } from 'react-icons/fa';
-import NotificationPopup from './NotificationPopup';
 import { getOrdersByUserId } from '../services/order.api';
+import { CartIcon } from './CartIcon';
+import { CartPopup } from './CartPopup';
+import LanguageSwitcher from './LanguageSwitcher';
+import NotificationPopup from './NotificationPopup';
 
 import '../css/Navbar.css';
 
@@ -36,8 +36,9 @@ export default function Navbar() {
   const ordersCache = useRef<{ data: any[]; timestamp: number } | null>(null);
   const dishesCache = useRef<{ data: any[]; timestamp: number } | null>(null);
   const CACHE_DURATION = 2 * 60 * 1000; // 2 phút
-  const [showToast, setShowToast] = useState(false);
   const prevConfirmedOrderIds = useRef<string[]>([]);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   // Fetch latest order and dishes for notification
   const fetchLatestOrderNotification = async (force = false) => {
@@ -70,30 +71,36 @@ export default function Navbar() {
         return;
       }
       // Map từng order thành notification
-      const notificationsArr = validOrders.sort((a, b) => {
-        if (a.createdAt && b.createdAt) return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        if (a.orderNumber && b.orderNumber) return b.orderNumber - a.orderNumber;
-        return 0;
-      }).map(order => {
-        let items = order.orderItems;
-        if (typeof items === 'string') {
-          try { items = JSON.parse(items); } catch { items = null; }
-        }
-        const products = (items?.items || []).map((item: any) => {
-          const dish = dishes.find((d: any) => d.id === item.dishId);
+      const notificationsArr = validOrders
+        .sort((a, b) => {
+          if (a.createdAt && b.createdAt) return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          if (a.orderNumber && b.orderNumber) return b.orderNumber - a.orderNumber;
+          return 0;
+        })
+        .map(order => {
+          let items = order.orderItems;
+          if (typeof items === 'string') {
+            try {
+              items = JSON.parse(items);
+            } catch {
+              items = null;
+            }
+          }
+          const products = (items?.items || []).map((item: any) => {
+            const dish = dishes.find((d: any) => d.id === item.dishId);
+            return {
+              name: dish ? dish.name : item.dishId,
+              quantity: item.quantity || 1,
+            };
+          });
           return {
-            name: dish ? dish.name : item.dishId,
-            quantity: item.quantity || 1,
+            orderId: order.orderNumber || order.id,
+            products,
+            date: order.createdAt || new Date().toISOString(),
+            total: Number(order.totalAmount) || 0,
+            status: order.status === 'completed' ? 'Hoàn thành' : 'Đã xác nhận',
           };
         });
-        return {
-          orderId: order.orderNumber || order.id,
-          products,
-          date: order.createdAt || new Date().toISOString(),
-          total: Number(order.totalAmount) || 0,
-          status: order.status === 'completed' ? 'Hoàn thành' : 'Đã xác nhận',
-        };
-      });
       setNotifications(notificationsArr);
     } catch (e) {
       setNotifications([]);
@@ -116,20 +123,6 @@ export default function Navbar() {
     getAllDishes().then(d => setDishes(d || []));
   }, []);
 
-  // Tự động refetch sau 2 phút nếu popup vẫn mở
-  useEffect(() => {
-    if (!showNotificationPopup) return;
-    const interval = setInterval(() => fetchLatestOrderNotification(true), CACHE_DURATION);
-    return () => clearInterval(interval);
-  }, [showNotificationPopup]);
-
-  // Poll for order status changes every 5s when user is logged in
-  useEffect(() => {
-    if (!user?.id) return;
-    const interval = setInterval(() => fetchLatestOrderNotification(true), 5000);
-    return () => clearInterval(interval);
-  }, [user?.id]);
-
   useEffect(() => {
     // Lấy danh sách id các đơn đã xác nhận (status === 'Đã xác nhận')
     const confirmedOrders = notifications.filter((n: any) => n.status === 'Đã xác nhận');
@@ -137,8 +130,8 @@ export default function Navbar() {
     // Nếu có id mới xuất hiện trong danh sách đã xác nhận thì hiện toast
     const newConfirmed = confirmedIds.filter(id => !prevConfirmedOrderIds.current.includes(id));
     if (newConfirmed.length > 0) {
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 5000);
+      // setShowToast(true); // Removed as per edit hint
+      // setTimeout(() => setShowToast(false), 5000); // Removed as per edit hint
     }
     prevConfirmedOrderIds.current = confirmedIds;
   }, [notifications]);
@@ -242,21 +235,24 @@ export default function Navbar() {
                       <UserIcon size={18} className="text-gray-500" />
                       {t('account')}
                     </button>
-                    <button className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100" onClick={handleLogout}>
+                    <button
+                      className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100"
+                      onClick={handleLogout}
+                    >
                       <LogOut size={18} className="text-red-400" />
                       {t('logout')}
                     </button>
                   </div>
                 )}
               </div>
-              <span className="text-base font-semibold text-black" style={{ cursor: 'pointer' }}>
+              <span className="hidden text-base font-semibold text-black md:inline" style={{ cursor: 'pointer' }}>
                 {user.firstName || user.lastName
                   ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
                   : user.name
-                  ? user.name
-                  : user.email
-                  ? user.email
-                  : user.id || ''}
+                    ? user.name
+                    : user.email
+                      ? user.email
+                      : user.id || ''}
               </span>
               <span style={{ margin: '0 8px', color: '#ccc', fontWeight: 600 }}>|</span>
               <LanguageSwitcher />
@@ -269,7 +265,20 @@ export default function Navbar() {
                 className="flex items-center gap-2 rounded-xl bg-transparent px-4 py-2 text-base font-semibold transition hover:bg-[#e6f4ed]"
                 style={{ fontWeight: 500 }}
               >
-                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: '50%', border: '2px solid #C92A15', background: '#e6f4ed', color: '#C92A15', marginRight: 8 }}>
+                <span
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    border: '2px solid #C92A15',
+                    background: '#e6f4ed',
+                    color: '#C92A15',
+                    marginRight: 8,
+                  }}
+                >
                   <UserIcon size={24} />
                 </span>
                 {t('login')}
@@ -291,8 +300,14 @@ export default function Navbar() {
       {/* Dòng dưới: nav menu + giỏ hàng */}
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 pb-2">
         <div className="flex w-full items-center justify-between rounded-[15px] bg-[#C92A15] px-4 py-2 shadow">
-          {/* Menu trung tâm */}
-          <ul className="flex max-w-[80%] flex-wrap items-center gap-x-3 text-sm font-semibold text-white">
+          {/* Hamburger menu cho mobile */}
+          <button className="mr-2 block text-2xl text-white md:hidden" onClick={() => setShowMobileMenu(true)}>
+            <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          {/* Menu trung tâm - ẩn trên mobile */}
+          <ul className="hidden max-w-[80%] flex-wrap items-center gap-x-3 text-sm font-semibold text-white md:flex">
             {navItems.map(item =>
               item.dropdown ? (
                 <li key={item.label} className="group relative">
@@ -303,7 +318,7 @@ export default function Navbar() {
                     </svg>
                   </button>
                   <ul
-                    className="absolute left-0 z-20 w-48 rounded-xl border bg-white opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto shadow-xl transition-all duration-200"
+                    className="pointer-events-none absolute left-0 z-20 w-48 rounded-xl border bg-white opacity-0 shadow-xl transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100"
                     style={{ borderColor: '#C92A15', top: '100%' }}
                   >
                     {item.dropdown.map(drop => (
@@ -335,6 +350,81 @@ export default function Navbar() {
               ),
             )}
           </ul>
+          {/* Overlay menu mobile */}
+          {showMobileMenu && (
+            <>
+              <style>{`body { overflow: hidden !important; }`}</style>
+              <div className="fixed inset-0 z-[9999] flex md:hidden">
+                {/* Overlay mờ */}
+                <div className="fixed inset-0 bg-black/40" onClick={() => setShowMobileMenu(false)} />
+                {/* Sidebar */}
+                <div
+                  className="fixed left-0 top-0 z-[10000] flex h-screen w-4/5 max-w-xs flex-col bg-[#C92A15] shadow-xl"
+                  style={{ animation: 'slideInLeft 0.25s' }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <button
+                    className="absolute right-4 top-4 text-3xl font-bold text-white"
+                    onClick={() => setShowMobileMenu(false)}
+                    aria-label="Đóng menu"
+                  >
+                    &times;
+                  </button>
+                  <ul className="mt-16 flex flex-col gap-2 px-4">
+                    {navItems.map(item =>
+                      item.dropdown ? (
+                        <li key={item.label} className="w-full">
+                          <button
+                            className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-base font-bold text-white hover:bg-white/10 focus:outline-none"
+                            onClick={() => setOpenDropdown(openDropdown === item.label ? null : item.label)}
+                            type="button"
+                          >
+                            <span>{item.label}</span>
+                            <svg
+                              className={`ml-2 transition-transform duration-200 ${openDropdown === item.label ? 'rotate-180' : ''}`}
+                              width="20"
+                              height="20"
+                              viewBox="0 0 20 20"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path d="M6 8L10 12L14 8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </button>
+                          {openDropdown === item.label && (
+                            <ul className="ml-2 flex flex-col gap-1">
+                              {item.dropdown.map(drop => (
+                                <li key={drop.path + '-' + drop.label} className="w-full">
+                                  <NavLink
+                                    to={drop.path}
+                                    className="block w-full rounded px-3 py-2 text-left text-sm text-white hover:bg-white/10"
+                                    onClick={() => setShowMobileMenu(false)}
+                                  >
+                                    {drop.label}
+                                  </NavLink>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </li>
+                      ) : (
+                        <li key={item.path + '-' + item.label} className="w-full">
+                          <NavLink
+                            to={item.path}
+                            end={item.path === '/'}
+                            className="block w-full rounded px-3 py-2 text-left text-base font-semibold text-white hover:bg-white/10"
+                            onClick={() => setShowMobileMenu(false)}
+                          >
+                            {item.label}
+                          </NavLink>
+                        </li>
+                      ),
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Giỏ hàng nằm phía cuối bên phải (ĐÃ SỬA: thêm border-radius đẹp) */}
           <div
@@ -343,82 +433,63 @@ export default function Navbar() {
           >
             <div
               onClick={() => {
-                if (showCartPopup) return; // Nếu đang mở giỏ hàng thì không mở thông báo
-                setShowNotificationPopup(v => {
-                  const next = !v;
-                  if (next && !notificationLoading) fetchLatestOrderNotification();
-                  return next;
-                });
+                if (showCartPopup) return;
+                if (!showNotificationPopup) {
+                  setShowNotificationPopup(true);
+                  fetchLatestOrderNotification();
+                } else {
+                  setShowNotificationPopup(false);
+                }
               }}
               style={{ display: 'inline-block', position: 'relative' }}
             >
               <FaBell size={22} style={{ marginRight: 18, cursor: 'pointer', color: '#C92A15', position: 'relative' }} />
               {hasOrderNotification && (
-                <span style={{
-                  position: 'absolute',
-                  top: '-2px',
-                  right: '14px',
-                  width: 16,
-                  height: 16,
-                  background: '#dc2626',
-                  borderRadius: '50%',
-                  border: '2.5px solid #fff',
-                  boxShadow: '0 1px 4px #0002',
-                  zIndex: 110,
-                  display: 'block',
-                }}></span>
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: '-2px',
+                    right: '14px',
+                    width: 16,
+                    height: 16,
+                    background: '#dc2626',
+                    borderRadius: '50%',
+                    border: '2.5px solid #fff',
+                    boxShadow: '0 1px 4px #0002',
+                    zIndex: 110,
+                    display: 'block',
+                  }}
+                ></span>
               )}
               {showNotificationPopup && (
-                <div
-                  style={{ position: 'absolute', top: 50, right: 0 }}
-                >
-                  {notificationLoading ? (
-                    <div style={{ width: 320, background: '#fff', borderRadius: 16, boxShadow: '0 4px 32px #0003', zIndex: 100, padding: 32, textAlign: 'center', color: '#b45309', fontWeight: 600 }}>Đang tải thông báo...</div>
-                  ) : (
-                    <NotificationPopup
-                      notifications={notifications}
-                      onClose={() => setShowNotificationPopup(false)}
-                      className="notification-popup"
-                    />
-                  )}
+                <div style={{ position: 'absolute', top: 50, right: 0 }}>
+                  <NotificationPopup
+                    notifications={notifications}
+                    onClose={() => setShowNotificationPopup(false)}
+                    className="notification-popup"
+                    loading={notificationLoading}
+                  />
                 </div>
               )}
             </div>
             <div
               onClick={() => {
-                if (showNotificationPopup) return; // Nếu đang mở thông báo thì không mở giỏ hàng
+                if (showNotificationPopup) return;
+                if (window.innerWidth <= 600) {
+                  navigate('/cart');
+                  return;
+                }
                 setShowCartPopup(v => !v);
               }}
               style={{ display: 'inline-block', position: 'relative' }}
             >
               <CartIcon />
-              {showCartPopup && (
-                <CartPopup onClose={() => setShowCartPopup(false)} />
-              )}
+              {showCartPopup && <CartPopup onClose={() => setShowCartPopup(false)} />}
             </div>
             <span className="text-sm font-bold text-[#a01f10]">{t('cart')}</span>
           </div>
         </div>
       </div>
-      {showToast && (
-        <div style={{
-          position: 'fixed',
-          top: 24,
-          right: 32,
-          zIndex: 9999,
-          background: '#16a34a',
-          color: '#fff',
-          fontWeight: 700,
-          fontSize: 18,
-          borderRadius: 12,
-          padding: '16px 32px',
-          boxShadow: '0 4px 24px #0002',
-          letterSpacing: 0.5,
-          transition: 'opacity 0.3s',
-        }}>
-          Bạn có thông báo mới!
-        </div>
-      )}
     </nav>
   );
 }

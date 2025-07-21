@@ -172,7 +172,19 @@ export default function OrderAdminPage() {
     const items = (order.orderItems?.items || []).map(item => {
       // Ưu tiên lấy base_price từ dish theo dishId
       const dish = dishes.find(d => d.id === item.dishId);
-      const price = Number(dish?.basePrice) || Number(item.dishSnapshot?.price) || Number(item.dish?.price) || Number(item.price) || 0;
+
+      // Sửa logic lấy giá: ưu tiên đơn giá từ dish/dishSnapshot.
+      // Nếu không có, mới tính đơn giá từ item.price (là tổng tiền của mục) chia cho số lượng.
+      let price = Number(dish?.basePrice) || Number(item.dishSnapshot?.price) || Number(item.dish?.price) || 0;
+      if (!price && item.price) {
+        const quantity = Number(item.quantity);
+        if (quantity > 0) {
+          price = Number(item.price) / quantity;
+        } else {
+          price = Number(item.price); // Giữ nguyên nếu không có số lượng
+        }
+      }
+
       return {
         name: getDishNameById(item.dishId) || item.dishSnapshot?.name || item.dish?.name || item.name || 'Không rõ tên món',
         quantity: item.quantity,

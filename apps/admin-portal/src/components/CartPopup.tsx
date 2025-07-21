@@ -74,6 +74,7 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
   return (
     <div
+      className="cart-popup-modal"
       style={{
         position: 'absolute',
         top: 50,
@@ -96,7 +97,7 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         <div style={{ color: '#888', textAlign: 'center', padding: 32 }}>Chưa có món nào trong giỏ hàng</div>
       ) : (
         <>
-          <div style={{ flex: 1, maxHeight: 320, overflowY: 'auto', marginBottom: 12 }}>
+          <div className="cart-popup-content" style={{ flex: 1, maxHeight: 320, overflowY: 'auto', marginBottom: 12 }}>
             {orderItems.map((item, idx) => {
               const dish = getDish(item.dishId);
               if (!dish) return null;
@@ -154,26 +155,28 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           <div style={{ fontWeight: 600, fontSize: 17, color: '#C92A15', textAlign: 'right', margin: '8px 0 12px' }}>
             Tổng tiền: {totalAmount.toLocaleString('vi-VN')}₫
           </div>
-          <button
-            style={{
-              width: '100%',
-              background: '#b45309',
-              color: 'white',
-              border: 'none',
-              borderRadius: 8,
-              padding: '12px 0',
-              fontWeight: 700,
-              fontSize: 17,
-              marginTop: 12,
-              cursor: 'pointer',
-            }}
-            onClick={() => {
-              onClose();
-              navigate('/checkout');
-            }}
-          >
-            Thanh toán
-          </button>
+          <div style={{ position: 'sticky', bottom: 0, background: '#fff', zIndex: 10, paddingTop: 8, paddingBottom: 8 }}>
+            <button
+              style={{
+                width: '100%',
+                background: '#b45309',
+                color: 'white',
+                border: 'none',
+                borderRadius: 8,
+                padding: '12px 0',
+                fontWeight: 700,
+                fontSize: 17,
+                marginTop: 0,
+                cursor: 'pointer',
+              }}
+              onClick={() => {
+                onClose();
+                navigate('/checkout');
+              }}
+            >
+              Thanh toán
+            </button>
+          </div>
         </>
       )}
       <button

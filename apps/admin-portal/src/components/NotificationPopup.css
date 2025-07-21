@@ -1,0 +1,23 @@
+/* Hiệu ứng fade + slide cho NotificationPopup */
+.notification-fade-slide-appear {
+  opacity: 0;
+  transform: translateY(40px);
+}
+.notification-fade-slide-appear-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.notification-fade-slide-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+.notification-fade-slide-exit-active {
+  opacity: 0;
+  transform: translateY(40px);
+  transition:
+    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}

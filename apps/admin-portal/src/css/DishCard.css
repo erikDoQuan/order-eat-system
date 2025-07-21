@@ -73,3 +73,78 @@
   background: #c92a15;
   color: #fff;
 }
+
+/* Responsive cho popup DishDetailModal */
+@media (max-width: 600px) {
+  .dish-detail-modal {
+    max-width: 95vw !important;
+    width: 95vw !important;
+    min-width: 0 !important;
+    border-radius: 0.75rem !important;
+    padding: 0.25rem !important;
+    max-height: 95vh !important;
+    overflow-y: auto !important;
+  }
+  .dish-detail-modal-content {
+    flex-direction: column !important;
+    padding: 0.25rem !important;
+    height: auto !important;
+    max-height: 95vh !important;
+    overflow-y: auto !important;
+  }
+  .dish-card-img {
+    height: 5.5rem !important;
+    border-radius: 0.5rem !important;
+  }
+  .dish-detail-modal h2,
+  .dish-detail-modal .text-3xl {
+    font-size: 1rem !important;
+  }
+  .dish-detail-modal .text-base,
+  .dish-detail-modal p,
+  .dish-detail-modal label,
+  .dish-detail-modal textarea,
+  .dish-detail-modal button {
+    font-size: 0.9rem !important;
+  }
+  .dish-detail-modal .absolute.right-6.top-6 {
+    right: 0.5rem !important;
+    top: 0.5rem !important;
+    font-size: 2rem !important;
+  }
+  .dish-detail-modal textarea {
+    min-height: 2.5rem !important;
+  }
+  .dish-detail-modal button {
+    padding: 0.5rem 1rem !important;
+  }
+}
+
+/* Responsive cho popup CartPopup */
+@media (max-width: 600px) {
+  .cart-popup-modal {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 95vw !important;
+    max-width: 420px !important;
+    min-width: 0 !important;
+    border-radius: 16px !important;
+    z-index: 99999 !important;
+    padding: 0.25rem !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    transform: translate(-50%, -50%) !important;
+  }
+  .cart-popup-content {
+    padding: 0.25rem !important;
+    height: auto !important;
+    max-height: 60vh !important;
+    overflow-y: auto !important;
+    font-size: 0.95rem !important;
+  }
+  .cart-popup-modal button {
+    font-size: 0.95rem !important;
+    padding: 0.5rem 1rem !important;
+  }
+}
