@@ -19,6 +19,26 @@ function getCategoryNameById(categoryId: string | undefined, categories: any[], 
   return nameObj?.[lang] || nameObj?.vi || '';
 }
 
+// --- Map tên tiếng Việt sang key i18n cho Nui Bỏ Lò ---
+const bakedMacaroniKeyMap = [
+  {
+    vi: 'Nui Bỏ Lò Phô Mai Gà Bơ Tỏi Xốt Kem',
+    key: 'nui_baked_garlic_chicken_mushroom',
+  },
+  {
+    vi: 'Nui Bỏ Lò Phô Mai Thịt Nguội & Nấm Xốt Kem',
+    key: 'nui_baked_ham_mushroom',
+  },
+  {
+    vi: 'Nui Bỏ Lò Phô Mai Gà Nướng BBQ Xốt Hương Nhu',
+    key: 'nui_baked_bbq_chicken',
+  },
+  {
+    vi: 'Nui Bỏ Lò Phô Mai Hải Sản Xốt Hương Nhu',
+    key: 'nui_baked_seafood',
+  },
+];
+
 /* -------------------------------------------------
  *  Modal chi tiết món ăn (Size, Đế + Topping radio)
  * ------------------------------------------------- */
@@ -123,21 +143,34 @@ function DishDetailModal({
   const isChickenCategory = dishCategoryName.toLowerCase().includes('gà');
   const isToppingCategory = dishCategoryName.toLowerCase().includes('topping');
 
+  // --- Nhận diện món Nui Bỏ Lò ---
+  const isBakedMacaroni = (categoryName || '').toLowerCase().includes('nui bỏ lò') || (dish.name || '').toLowerCase().includes('nui bỏ lò');
+  // Map tên tiếng Việt sang key i18n
+  let bakedMacaroniKey = '';
+  if (isBakedMacaroni) {
+    const found = bakedMacaroniKeyMap.find(item => (dish.name || '').toLowerCase().includes(item.vi.toLowerCase()));
+    if (found) bakedMacaroniKey = found.key;
+  }
+
   // Lấy tên và mô tả đúng ngôn ngữ từ i18n, fallback về dish.name nếu không có (dùng cho cả card)
   const dishNameRaw = t(`menu.${dish.id}.name`);
   const dishDescriptionRaw = t(`menu.${dish.id}.desc`);
   const dishName =
-    !dishNameRaw || dishNameRaw.startsWith('menu.')
-      ? typeof dish.name === 'string'
-        ? dish.name
-        : (dish.name as any)?.[lang] || (dish.name as any)?.vi || ''
-      : dishNameRaw;
+    bakedMacaroniKey && isBakedMacaroni
+      ? t(bakedMacaroniKey)
+      : !dishNameRaw || dishNameRaw.startsWith('menu.')
+        ? typeof dish.name === 'string'
+          ? dish.name
+          : (dish.name as any)?.[lang] || (dish.name as any)?.vi || ''
+        : dishNameRaw;
   const dishDescription =
-    !dishDescriptionRaw || dishDescriptionRaw.startsWith('menu.')
-      ? typeof dish.description === 'string'
-        ? dish.description
-        : (dish.description as any)?.[lang] || (dish.description as any)?.vi || ''
-      : dishDescriptionRaw;
+    bakedMacaroniKey && isBakedMacaroni
+      ? t(bakedMacaroniKey + '_desc')
+      : !dishDescriptionRaw || dishDescriptionRaw.startsWith('menu.')
+        ? typeof dish.description === 'string'
+          ? dish.description
+          : (dish.description as any)?.[lang] || (dish.description as any)?.vi || ''
+        : dishDescriptionRaw;
 
   // Nếu là category Topping thì chỉ render tên dish
   if (isToppingCategory) {
@@ -332,18 +365,28 @@ export default function DishCard({ dish, categoryName }: { dish: Dish; categoryN
   // Lấy tên và mô tả đúng ngôn ngữ từ i18n, fallback về dish.name nếu không có (dùng cho cả card)
   const dishNameRaw = t(`menu.${dish.id}.name`);
   const dishDescriptionRaw = t(`menu.${dish.id}.desc`);
+  const isBakedMacaroni = (categoryName || '').toLowerCase().includes('nui bỏ lò') || (dish.name || '').toLowerCase().includes('nui bỏ lò');
+  let bakedMacaroniKey = '';
+  if (isBakedMacaroni) {
+    const found = bakedMacaroniKeyMap.find(item => (dish.name || '').toLowerCase().includes(item.vi.toLowerCase()));
+    if (found) bakedMacaroniKey = found.key;
+  }
   const dishName =
-    !dishNameRaw || dishNameRaw.startsWith('menu.')
-      ? typeof dish.name === 'string'
-        ? dish.name
-        : (dish.name as any)?.[locale] || (dish.name as any)?.vi || ''
-      : dishNameRaw;
+    bakedMacaroniKey && isBakedMacaroni
+      ? t(bakedMacaroniKey)
+      : !dishNameRaw || dishNameRaw.startsWith('menu.')
+        ? typeof dish.name === 'string'
+          ? dish.name
+          : (dish.name as any)?.[locale] || (dish.name as any)?.vi || ''
+        : dishNameRaw;
   const dishDesc =
-    !dishDescriptionRaw || dishDescriptionRaw.startsWith('menu.')
-      ? typeof dish.description === 'string'
-        ? dish.description
-        : (dish.description as any)?.[locale] || (dish.description as any)?.vi || ''
-      : dishDescriptionRaw;
+    bakedMacaroniKey && isBakedMacaroni
+      ? t(bakedMacaroniKey + '_desc')
+      : !dishDescriptionRaw || dishDescriptionRaw.startsWith('menu.')
+        ? typeof dish.description === 'string'
+          ? dish.description
+          : (dish.description as any)?.[locale] || (dish.description as any)?.vi || ''
+        : dishDescriptionRaw;
 
   const priceText = dish.basePrice !== undefined && !isNaN(Number(dish.basePrice)) ? Number(dish.basePrice).toLocaleString('vi-VN') + '₫' : t('free');
 

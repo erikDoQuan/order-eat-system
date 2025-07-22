@@ -58,6 +58,8 @@ export default function AccountPage() {
   const [viewingReplyOrderId, setViewingReplyOrderId] = useState<string | null>(null);
   // Thêm state quản lý order đang xem đánh giá
   const [viewingReviewOrderId, setViewingReviewOrderId] = useState<string | null>(null);
+  const [showAddressSuccess, setShowAddressSuccess] = useState(false);
+  const [showInfoSuccess, setShowInfoSuccess] = useState(false);
 
   // Debug: Kiểm tra user và token
   useEffect(() => {
@@ -159,6 +161,13 @@ export default function AccountPage() {
       }
       setPhone(me.phoneNumber || '');
       setEditing(false);
+      if (tab === 'address') {
+        setShowAddressSuccess(true);
+        setTimeout(() => setShowAddressSuccess(false), 2500);
+      } else if (tab === 'info') {
+        setShowInfoSuccess(true);
+        setTimeout(() => setShowInfoSuccess(false), 2500);
+      }
     } catch (err: any) {
       alert('Cập nhật thất bại: ' + (err?.response?.data?.message || err?.message || ''));
     }
@@ -252,6 +261,86 @@ export default function AccountPage() {
               background: 'none',
               border: 'none',
               color: '#ad6800',
+              fontSize: 22,
+              marginLeft: 18,
+              cursor: 'pointer',
+              fontWeight: 700,
+              lineHeight: 1,
+            }}
+            title="Đóng"
+          >
+            ×
+          </button>
+        </div>
+      )}
+      {showAddressSuccess && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 24,
+            right: 24,
+            background: '#e6fffb',
+            color: '#17823c',
+            border: '1px solid #87e8de',
+            borderRadius: 8,
+            padding: '16px 32px 16px 20px',
+            boxShadow: '0 2px 8px #00000022',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            minWidth: 320,
+            fontSize: 17,
+            fontWeight: 500,
+          }}
+        >
+          <FaBell style={{ marginRight: 12, fontSize: 22, color: '#13c2c2' }} />
+          <span>Bạn đã thay đổi địa chỉ thành công!</span>
+          <button
+            onClick={() => setShowAddressSuccess(false)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#17823c',
+              fontSize: 22,
+              marginLeft: 18,
+              cursor: 'pointer',
+              fontWeight: 700,
+              lineHeight: 1,
+            }}
+            title="Đóng"
+          >
+            ×
+          </button>
+        </div>
+      )}
+      {showInfoSuccess && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 24,
+            right: 24,
+            background: '#e6fffb',
+            color: '#17823c',
+            border: '1px solid #87e8de',
+            borderRadius: 8,
+            padding: '16px 32px 16px 20px',
+            boxShadow: '0 2px 8px #00000022',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            minWidth: 320,
+            fontSize: 17,
+            fontWeight: 500,
+          }}
+        >
+          <FaBell style={{ marginRight: 12, fontSize: 22, color: '#13c2c2' }} />
+          <span>Bạn đã thay đổi thông tin thành công!</span>
+          <button
+            onClick={() => setShowInfoSuccess(false)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#17823c',
               fontSize: 22,
               marginLeft: 18,
               cursor: 'pointer',
@@ -840,40 +929,38 @@ export default function AccountPage() {
           )}
           {tab === 'address' && (
             <div className="account-info-box">
-              <h1 className="account-main-title">{t('address_book') || 'Sổ địa chỉ'}</h1>
+              <h1 className="account-main-title" style={{ fontSize: 26, fontWeight: 700, marginBottom: 24, textAlign: 'left', width: '100%' }}>
+                Sổ địa chỉ
+              </h1>
               <form
                 className="account-info-content"
                 onSubmit={handleUpdate}
                 style={{
                   width: '100%',
-                  background: '#fff',
-                  borderRadius: 12,
-                  boxShadow: '0 2px 8px #0001',
-                  padding: '18px 0 18px 0',
+                  maxWidth: 480,
+                  margin: '0',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'flex-start',
                   gap: 0,
-                  maxWidth: 600,
-                  margin: '0 auto',
+                  background: 'none',
+                  borderRadius: 0,
+                  boxShadow: 'none',
+                  padding: 0,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', width: '100%', marginBottom: 18 }}>
+                <div style={{ display: 'flex', alignItems: 'center', width: '100%', marginBottom: 24, maxWidth: 480 }}>
                   <label
                     style={{
                       fontWeight: 700,
                       color: '#222',
-                      minWidth: 130,
+                      minWidth: 100,
                       maxWidth: 130,
-                      marginRight: 0,
-                      fontSize: 16,
-                      letterSpacing: 0.1,
+                      fontSize: 17,
                       textAlign: 'left',
-                      whiteSpace: 'normal',
-                      wordBreak: 'break-word',
                     }}
                   >
-                    {t('address')}
+                    Địa chỉ
                   </label>
                   <input
                     type="text"
@@ -882,9 +969,10 @@ export default function AccountPage() {
                     style={{
                       flex: 1,
                       minWidth: 0,
+                      maxWidth: 380,
                       boxSizing: 'border-box',
                       padding: '12px 16px',
-                      borderRadius: 10,
+                      borderRadius: 8,
                       border: '1.5px solid #e0e0e0',
                       fontSize: 16,
                       background: '#fafafa',
@@ -896,32 +984,30 @@ export default function AccountPage() {
                     onBlur={e => (e.target.style.border = '1.5px solid #e0e0e0')}
                   />
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                  <div style={{ minWidth: 130, marginRight: 12 }}></div>
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    style={{
-                      background: '#C92A15',
-                      color: 'white',
-                      width: '100%',
-                      border: 'none',
-                      borderRadius: 10,
-                      padding: '13px 0',
-                      fontWeight: 700,
-                      fontSize: 18,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 10,
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 8px #C92A1533',
-                      letterSpacing: 0.1,
-                    }}
-                  >
-                    <span style={{ fontSize: 20, marginRight: 6 }}>✎</span> {t('update')}
-                  </button>
-                </div>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  style={{
+                    background: '#C92A15',
+                    color: 'white',
+                    minWidth: 180,
+                    maxWidth: 320,
+                    width: 'fit-content',
+                    border: 'none',
+                    borderRadius: 14,
+                    padding: '14px 32px',
+                    fontWeight: 700,
+                    fontSize: 20,
+                    display: 'block',
+                    margin: '0 auto',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px #C92A1533',
+                    letterSpacing: 0.1,
+                    transition: 'background 0.2s',
+                  }}
+                >
+                  <span style={{ fontSize: 20, marginRight: 6 }}>✎</span> Cập nhật
+                </button>
               </form>
             </div>
           )}

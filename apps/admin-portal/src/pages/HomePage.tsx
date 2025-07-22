@@ -34,6 +34,7 @@ export default function HomePage() {
   const [visibleSaladCount, setVisibleSaladCount] = useState(3);
   const [visibleDrinkCount, setVisibleDrinkCount] = useState(3);
   const [visibleSpaghettiCount, setVisibleSpaghettiCount] = useState(3);
+  const [visibleBakedMacaroniCount, setVisibleBakedMacaroniCount] = useState(3);
   const typeParam = queryParams.get('type');
   const [showMiniChat, setShowMiniChat] = useState(false);
   const [dishModal, setDishModal] = useState<any | null>(null);
@@ -167,6 +168,13 @@ export default function HomePage() {
       (categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('drink') && cat.id === d.categoryId) ||
         categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('thức uống') && cat.id === d.categoryId) ||
         categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('beverage') && cat.id === d.categoryId)),
+  );
+
+  const bakedMacaroniDishes = dishes.filter(
+    d =>
+      d.status === 'available' &&
+      d.categoryId &&
+      categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('nui bỏ lò') && cat.id === d.categoryId),
   );
 
   const handleOpenCart = () => {
@@ -323,6 +331,27 @@ export default function HomePage() {
           )}
         </div>
       )}
+      {selectedCategory === 'baked_macaroni' && bakedMacaroniDishes.length > 0 && (
+        <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('baked_macaroni') || 'Nui Bỏ Lò'}</h2>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+            {bakedMacaroniDishes.slice(0, visibleBakedMacaroniCount).map(dish => (
+              <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+            ))}
+          </div>
+          {bakedMacaroniDishes.length > 3 && visibleBakedMacaroniCount < bakedMacaroniDishes.length && (
+            <div className="mb-12 mt-4 flex justify-center">
+              <a
+                className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                style={{ textDecoration: 'none' }}
+                onClick={() => setVisibleBakedMacaroniCount(prev => prev + 3)}
+              >
+                Xem thêm
+              </a>
+            </div>
+          )}
+        </div>
+      )}
       {selectedCategory === 'salad' && saladDishes.length > 0 && (
         <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
           <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('salad') || 'Salad'}</h2>
@@ -453,6 +482,27 @@ export default function HomePage() {
                     className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
                     style={{ textDecoration: 'none' }}
                     onClick={() => setVisibleSpaghettiCount(prev => prev + 3)}
+                  >
+                    Xem thêm
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+          {bakedMacaroniDishes.length > 0 && (
+            <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+              <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('baked_macaroni') || 'Nui Bỏ Lò'}</h2>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+                {bakedMacaroniDishes.slice(0, visibleBakedMacaroniCount).map(dish => (
+                  <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                ))}
+              </div>
+              {bakedMacaroniDishes.length > 3 && visibleBakedMacaroniCount < bakedMacaroniDishes.length && (
+                <div className="mb-12 mt-4 flex justify-center">
+                  <a
+                    className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                    style={{ textDecoration: 'none' }}
+                    onClick={() => setVisibleBakedMacaroniCount(prev => prev + 3)}
                   >
                     Xem thêm
                   </a>

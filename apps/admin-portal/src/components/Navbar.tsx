@@ -39,6 +39,8 @@ export default function Navbar() {
   const prevConfirmedOrderIds = useRef<string[]>([]);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 600;
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Fetch latest order and dishes for notification
   const fetchLatestOrderNotification = async (force = false) => {
@@ -222,7 +224,11 @@ export default function Navbar() {
           </span>
         </div>
         <div className="flex min-w-[180px] items-center justify-end gap-4">
-          {user ? (
+          {isAuthPage ? (
+            <div className="flex items-center gap-1">
+              <LanguageSwitcher />
+            </div>
+          ) : user ? (
             <div className="flex items-center gap-2">
               <div
                 ref={userIconRef}
@@ -244,8 +250,8 @@ export default function Navbar() {
                       {t('account')}
                     </button>
                     <button
-                      className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100"
-                      onClick={handleLogout}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-left text-red-600 hover:bg-gray-100"
+                      onClick={() => setShowLogoutConfirm(true)}
                     >
                       <LogOut size={18} className="text-red-400" />
                       {t('logout')}
@@ -266,39 +272,42 @@ export default function Navbar() {
               <LanguageSwitcher />
             </div>
           ) : (
-            // Luôn hiển thị cụm Đăng nhập | Tạo tài khoản | Language, kể cả ở trang login/register
             <div className="flex items-center gap-1">
-              <NavLink
-                to="/login"
-                className="flex items-center gap-2 rounded-xl bg-transparent px-4 py-2 text-base font-semibold transition hover:bg-[#e6f4ed]"
-                style={{ fontWeight: 500 }}
-              >
-                <span
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 36,
-                    height: 36,
-                    borderRadius: '50%',
-                    border: '2px solid #C92A15',
-                    background: '#e6f4ed',
-                    color: '#C92A15',
-                    marginRight: 8,
-                  }}
-                >
-                  <UserIcon size={24} />
-                </span>
-                {t('login')}
-              </NavLink>
-              <NavLink
-                to="/register"
-                className="rounded-xl bg-transparent py-2 text-base font-semibold transition hover:bg-[#e6f4ed]"
-                style={{ fontWeight: 500 }}
-              >
-                {t('register')}
-              </NavLink>
-              <span style={{ margin: '0 8px', color: '#ccc', fontWeight: 600 }}>|</span>
+              {!(isAuthPage && isMobile) ? (
+                <>
+                  <NavLink
+                    to="/login"
+                    className="flex items-center gap-2 rounded-xl bg-transparent px-4 py-2 text-base font-semibold transition hover:bg-[#e6f4ed]"
+                    style={{ fontWeight: 500 }}
+                  >
+                    <span
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 36,
+                        height: 36,
+                        borderRadius: '50%',
+                        border: '2px solid #C92A15',
+                        background: '#e6f4ed',
+                        color: '#C92A15',
+                        marginRight: 8,
+                      }}
+                    >
+                      <UserIcon size={24} />
+                    </span>
+                    {t('login')}
+                  </NavLink>
+                  <NavLink
+                    to="/register"
+                    className="rounded-xl bg-transparent py-2 text-base font-semibold transition hover:bg-[#e6f4ed]"
+                    style={{ fontWeight: 500 }}
+                  >
+                    {t('register')}
+                  </NavLink>
+                  <span style={{ margin: '0 8px', color: '#ccc', fontWeight: 600 }}>|</span>
+                </>
+              ) : null}
               <LanguageSwitcher />
             </div>
           )}
@@ -487,6 +496,79 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+
+      {/* Popup xác nhận đăng xuất */}
+      {showLogoutConfirm && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.25)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: 16,
+              boxShadow: '0 4px 24px #0002',
+              padding: '32px 32px 24px 32px',
+              minWidth: 320,
+              maxWidth: '90vw',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
+            <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 18 }}>Bạn có chắc muốn đăng xuất không?</div>
+            <div style={{ display: 'flex', gap: 18, justifyContent: 'center', marginTop: 8 }}>
+              <button
+                onClick={() => {
+                  setShowLogoutConfirm(false);
+                  handleLogout();
+                }}
+                style={{
+                  background: '#C92A15',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '10px 32px',
+                  fontWeight: 700,
+                  fontSize: 18,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px #C92A1533',
+                  marginRight: 8,
+                }}
+              >
+                Có
+              </button>
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                style={{
+                  background: '#f3f4f6',
+                  color: '#222',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '10px 32px',
+                  fontWeight: 700,
+                  fontSize: 18,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px #0001',
+                }}
+              >
+                Không
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
