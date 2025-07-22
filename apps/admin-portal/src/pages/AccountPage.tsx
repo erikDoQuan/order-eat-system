@@ -20,7 +20,7 @@ import axios from '../services/axios';
 export default function AccountPage() {
   const { user, setUser } = useContext(AuthContext);
   const [phone, setPhone] = useState(user?.phoneNumber || user?.phone_number || '');
-  const address = user?.address || '---';
+  const [address, setAddress] = useState(user?.address || '');
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     name: (user?.firstName || '') + (user?.lastName ? ' ' + user.lastName : ''),
@@ -28,7 +28,7 @@ export default function AccountPage() {
     email: user?.email || '',
   });
   const [saving, setSaving] = useState(false);
-  const [tab, setTab] = useState<'info' | 'password' | 'history'>('info');
+  const [tab, setTab] = useState<'info' | 'password' | 'history' | 'address'>('info');
   const [pwForm, setPwForm] = useState({
     oldPassword: '',
     newPassword: '',
@@ -75,6 +75,10 @@ export default function AccountPage() {
       phone: user?.phoneNumber || user?.phone_number || '',
       email: user?.email || '',
     });
+  }, [user]);
+
+  useEffect(() => {
+    setAddress(user?.address || '');
   }, [user]);
 
   useEffect(() => {
@@ -131,6 +135,7 @@ export default function AccountPage() {
         lastName: lastNameArr.join(' '),
         phoneNumber: form.phone,
         email: form.email,
+        address: address,
       };
       await updateUser(user.id, payload);
       const me = await fetchMe();
@@ -150,6 +155,7 @@ export default function AccountPage() {
           phone: me.phoneNumber || '',
           email: me.email || '',
         });
+        setAddress(me.address || '');
       }
       setPhone(me.phoneNumber || '');
       setEditing(false);
@@ -270,7 +276,9 @@ export default function AccountPage() {
             <li className={tab === 'info' ? 'active' : ''} onClick={() => setTab('info')}>
               {t('customer_info')}
             </li>
-            <li>{t('address_count')}</li>
+            <li className={tab === 'address' ? 'active' : ''} onClick={() => setTab('address')}>
+              {t('address_count')}
+            </li>
             <li className={tab === 'history' ? 'active' : ''} onClick={() => setTab('history')}>
               {t('purchase_history')}
             </li>
@@ -558,6 +566,10 @@ export default function AccountPage() {
                       <b>{t('email')}</b>
                       <span>{form.email}</span>
                     </div>
+                    <div>
+                      <b>{t('address')}</b>
+                      <span>{address || <span className="text-gray-400">-</span>}</span>
+                    </div>
                   </div>
                 ) : (
                   <form
@@ -690,6 +702,44 @@ export default function AccountPage() {
                         onBlur={e => (e.target.style.border = '1.5px solid #e0e0e0')}
                       />
                     </div>
+                    <div style={{ display: 'flex', alignItems: 'center', width: '100%', marginBottom: 18 }}>
+                      <label
+                        style={{
+                          fontWeight: 700,
+                          color: '#222',
+                          minWidth: 130,
+                          maxWidth: 130,
+                          marginRight: 0,
+                          fontSize: 16,
+                          letterSpacing: 0.1,
+                          textAlign: 'left',
+                          whiteSpace: 'normal',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {t('address')}
+                      </label>
+                      <input
+                        type="text"
+                        value={address}
+                        onChange={e => setAddress(e.target.value)}
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          boxSizing: 'border-box',
+                          padding: '12px 16px',
+                          borderRadius: 10,
+                          border: '1.5px solid #e0e0e0',
+                          fontSize: 16,
+                          background: '#fafafa',
+                          outline: 'none',
+                          transition: 'border 0.2s',
+                          marginLeft: 12,
+                        }}
+                        onFocus={e => (e.target.style.border = '1.5px solid #17823c')}
+                        onBlur={e => (e.target.style.border = '1.5px solid #e0e0e0')}
+                      />
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                       <div style={{ minWidth: 130, marginRight: 12 }}></div>
                       <button
@@ -787,6 +837,93 @@ export default function AccountPage() {
                 </div>
               </div>
             </>
+          )}
+          {tab === 'address' && (
+            <div className="account-info-box">
+              <h1 className="account-main-title">{t('address_book') || 'Sổ địa chỉ'}</h1>
+              <form
+                className="account-info-content"
+                onSubmit={handleUpdate}
+                style={{
+                  width: '100%',
+                  background: '#fff',
+                  borderRadius: 12,
+                  boxShadow: '0 2px 8px #0001',
+                  padding: '18px 0 18px 0',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  gap: 0,
+                  maxWidth: 600,
+                  margin: '0 auto',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', width: '100%', marginBottom: 18 }}>
+                  <label
+                    style={{
+                      fontWeight: 700,
+                      color: '#222',
+                      minWidth: 130,
+                      maxWidth: 130,
+                      marginRight: 0,
+                      fontSize: 16,
+                      letterSpacing: 0.1,
+                      textAlign: 'left',
+                      whiteSpace: 'normal',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {t('address')}
+                  </label>
+                  <input
+                    type="text"
+                    value={address}
+                    onChange={e => setAddress(e.target.value)}
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      boxSizing: 'border-box',
+                      padding: '12px 16px',
+                      borderRadius: 10,
+                      border: '1.5px solid #e0e0e0',
+                      fontSize: 16,
+                      background: '#fafafa',
+                      outline: 'none',
+                      transition: 'border 0.2s',
+                      marginLeft: 12,
+                    }}
+                    onFocus={e => (e.target.style.border = '1.5px solid #17823c')}
+                    onBlur={e => (e.target.style.border = '1.5px solid #e0e0e0')}
+                  />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                  <div style={{ minWidth: 130, marginRight: 12 }}></div>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    style={{
+                      background: '#C92A15',
+                      color: 'white',
+                      width: '100%',
+                      border: 'none',
+                      borderRadius: 10,
+                      padding: '13px 0',
+                      fontWeight: 700,
+                      fontSize: 18,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 10,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px #C92A1533',
+                      letterSpacing: 0.1,
+                    }}
+                  >
+                    <span style={{ fontSize: 20, marginRight: 6 }}>✎</span> {t('update')}
+                  </button>
+                </div>
+              </form>
+            </div>
           )}
           {tab === 'password' && (
             <div className="account-info-box">

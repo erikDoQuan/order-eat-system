@@ -153,6 +153,18 @@ export default function Navbar() {
     setShowCartPopup(true);
   };
 
+  const handleNotificationClick = () => {
+    if (!showNotificationPopup) {
+      fetchLatestOrderNotification();
+    }
+    setShowNotificationPopup(v => !v);
+  };
+
+  const handleCloseNotification = () => {
+    setShowNotificationPopup(false);
+    // Không xóa notifications để lần sau mở nhanh
+  };
+
   // Menu phải nằm trong function component để dùng được t
   const navItems = [
     {
@@ -176,10 +188,6 @@ export default function Navbar() {
     {
       label: t('chicken'),
       path: '/?category=chicken',
-      dropdown: [
-        { label: t('bbq_chicken'), path: '/?category=bbq_chicken' },
-        { label: t('korean_chicken'), path: '/?category=korean_chicken' },
-      ],
     },
     {
       label: t('appetizer'),
@@ -431,18 +439,7 @@ export default function Navbar() {
             className="ml-auto flex items-center gap-2 rounded-full border-2 border-white bg-white px-4 py-2 transition hover:shadow-lg"
             style={{ cursor: 'pointer', position: 'relative' }}
           >
-            <div
-              onClick={() => {
-                if (showCartPopup) return;
-                if (!showNotificationPopup) {
-                  setShowNotificationPopup(true);
-                  fetchLatestOrderNotification();
-                } else {
-                  setShowNotificationPopup(false);
-                }
-              }}
-              style={{ display: 'inline-block', position: 'relative' }}
-            >
+            <div onClick={handleNotificationClick} style={{ display: 'inline-block', position: 'relative' }}>
               <FaBell size={22} style={{ marginRight: 18, cursor: 'pointer', color: '#C92A15', position: 'relative' }} />
               {hasOrderNotification && (
                 <span
@@ -465,7 +462,7 @@ export default function Navbar() {
                 <div style={{ position: 'absolute', top: 50, right: 0 }}>
                   <NotificationPopup
                     notifications={notifications}
-                    onClose={() => setShowNotificationPopup(false)}
+                    onClose={handleCloseNotification}
                     className="notification-popup"
                     loading={notificationLoading}
                   />

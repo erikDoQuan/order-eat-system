@@ -7,12 +7,12 @@ import { ModalConfirm } from '../../../../packages/react-web-ui-shadcn/src/compo
 import Navbar from '../components/Navbar';
 import { AuthContext } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { getAllDishes } from '../services/dish.api';
+import { useDishes } from '../context/DishContext';
 
 const CheckoutPage: React.FC = () => {
   const { user } = useContext(AuthContext);
   const { orderItems, addToCart, removeFromCart } = useCart();
-  const [dishes, setDishes] = useState<Dish[]>([]);
+  const dishes = useDishes();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState({
@@ -21,16 +21,6 @@ const CheckoutPage: React.FC = () => {
   });
 
   const navigate = useNavigate();
-  useEffect(() => {
-    let ignore = false;
-    getAllDishes().then(all => {
-      if (ignore) return;
-      setDishes(all);
-    });
-    return () => {
-      ignore = true;
-    };
-  }, []);
 
   const sizeOptions = [
     { value: 'small', price: 0 },
@@ -46,6 +36,11 @@ const CheckoutPage: React.FC = () => {
     let price = Number(dish.basePrice) || 0;
     if (item.size) {
       price += sizeOptions.find(s => s.value === item.size)?.price || 0;
+    }
+    // Thêm phần cộng giá base nếu base là topping (giống CartPopup)
+    if (item.base && item.base !== 'dày' && item.base !== 'mỏng') {
+      const topping = dishes.find(d => d.id === item.base);
+      if (topping) price += Number(topping.basePrice) || 0;
     }
     return price;
   };

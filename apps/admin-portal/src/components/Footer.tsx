@@ -60,7 +60,7 @@ const Footer: React.FC = () => {
           <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>{t('footer_quick_links')}</h3>
           <ul style={{ fontSize: 15, lineHeight: 2, listStyle: 'none', padding: 0 }}>
             {categories
-              .filter(cat => (cat.nameLocalized || cat.name).toLowerCase() !== 'món thử nghiệm')
+              .filter(cat => (cat.nameLocalized || cat.name).toLowerCase() !== 'món thử nghiệm' && cat.isActive !== false)
               .map(cat => (
                 <li key={cat.id}>
                   <Link to={`/menu?category=${cat.id}`} style={{ color: 'white', textDecoration: 'none' }}>

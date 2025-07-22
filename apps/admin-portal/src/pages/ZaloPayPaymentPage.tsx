@@ -49,6 +49,11 @@ const ZaloPayPaymentPage: React.FC = () => {
     if (item.size) {
       price += sizeOptions.find(s => s.value === item.size)?.price || 0;
     }
+    // Thêm phần cộng giá base nếu base là topping (giống CartPopup)
+    if (item.base && item.base !== 'dày' && item.base !== 'mỏng') {
+      const topping = dishes.find(d => d.id === item.base);
+      if (topping) price += Number(topping.basePrice) || 0;
+    }
     return price;
   };
 

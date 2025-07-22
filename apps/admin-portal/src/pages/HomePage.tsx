@@ -9,14 +9,14 @@ import type { Dish } from '../types/dish.type';
 import logo from '../assets/images/logo.svg';
 import { CartPopup } from '../components/CartPopup';
 import { AuthContext } from '../context/AuthContext';
+import { useDishes } from '../context/DishContext';
 import { getAllCategories } from '../services/category.api';
-import { getAllDishes } from '../services/dish.api';
 import { getOrderItemsByUserId } from '../services/user.api';
 import DishCard, { DishDetailModal } from './DishCard';
 import TeachableMachineTestPage from './TeachableMachineTestPage';
 
 export default function HomePage() {
-  const [dishes, setDishes] = useState<Dish[]>([]);
+  const dishes = useDishes();
   const [categories, setCategories] = useState<Category[]>([]);
   const [visiblePizzaCount, setVisiblePizzaCount] = useState(3);
   const [visibleChickenCount, setVisibleChickenCount] = useState(3);
@@ -71,7 +71,6 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    getAllDishes().then(d => setDishes(d || []));
     getAllCategories().then(c => setCategories(c || []));
   }, []);
 
@@ -181,6 +180,9 @@ export default function HomePage() {
   };
   const handleCloseCart = () => setShowCart(false);
 
+  // Memo hóa DishCard để tránh re-render không cần thiết
+  const MemoDishCard = React.memo(DishCard);
+
   return (
     <div className="min-h-screen bg-white py-8">
       <div className="mb-10 w-full">
@@ -202,11 +204,11 @@ export default function HomePage() {
       {/* Nếu có selectedCategory thì chỉ render đúng 1 category đó */}
       {selectedCategory === 'pizza' && filteredPizzaDishes.length > 0 && (
         <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
-          <div className="mb-6 flex items-center gap-4">
+          <div className="mb-6">
             <h2 className="flex-shrink-0 text-3xl font-extrabold text-black drop-shadow-lg">{pizzaTypeTitle()}</h2>
             {/* Nếu không có typeParam thì mới hiển thị các button filter */}
             {!typeParam && (
-              <div className="ml-4 flex flex-1 flex-wrap justify-end gap-2">
+              <div className="pizza-filter-bar mt-2">
                 <button
                   className={`rounded-full border px-4 py-1 text-sm font-bold shadow transition-all duration-150 ${filterPizzaType === 'Tất cả' ? 'border-[#C92A15] bg-[#C92A15] text-white' : 'border-gray-200 bg-white font-semibold text-[#C92A15]'}`}
                   onClick={() => setFilterPizzaType('Tất cả')}
@@ -235,9 +237,13 @@ export default function HomePage() {
             )}
           </div>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-            {filteredPizzaDishes.slice(0, visiblePizzaCount).map(dish => (
-              <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
-            ))}
+            {dishes.length === 0
+              ? Array.from({ length: 6 }).map((_, idx) => <div key={idx} className="h-48 w-full animate-pulse rounded-lg bg-gray-100" />)
+              : filteredPizzaDishes
+                  .slice(0, visiblePizzaCount)
+                  .map(dish => (
+                    <MemoDishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                  ))}
           </div>
           {visiblePizzaCount < filteredPizzaDishes.length && !typeParam && (
             <div className="mb-12 mt-4 flex justify-center">
@@ -252,15 +258,15 @@ export default function HomePage() {
           )}
         </div>
       )}
-      {selectedCategory === 'chicken' && filteredChickenDishes.length > 0 && (
+      {selectedCategory === 'chicken' && chickenDishes.length > 0 && (
         <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
-          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{chickenTypeTitle()}</h2>
+          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('chicken')}</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-            {filteredChickenDishes.slice(0, visibleChickenCount).map(dish => (
+            {chickenDishes.slice(0, visibleChickenCount).map(dish => (
               <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
             ))}
           </div>
-          {visibleChickenCount < filteredChickenDishes.length && !typeParam && (
+          {visibleChickenCount < chickenDishes.length && (
             <div className="mb-12 mt-4 flex justify-center">
               <a
                 className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
@@ -312,6 +318,48 @@ export default function HomePage() {
               >
                 {t('view_more')}
                 <em className="ri-add-line" />
+              </a>
+            </div>
+          )}
+        </div>
+      )}
+      {selectedCategory === 'salad' && saladDishes.length > 0 && (
+        <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('salad') || 'Salad'}</h2>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+            {saladDishes.slice(0, visibleSaladCount).map(dish => (
+              <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+            ))}
+          </div>
+          {saladDishes.length > 3 && visibleSaladCount < saladDishes.length && (
+            <div className="mb-6 mt-4 flex justify-center">
+              <a
+                className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                style={{ textDecoration: 'none' }}
+                onClick={() => setVisibleSaladCount(prev => prev + 3)}
+              >
+                Xem thêm
+              </a>
+            </div>
+          )}
+        </div>
+      )}
+      {selectedCategory === 'drink' && drinkDishes.length > 0 && (
+        <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('drink') || 'Thức uống'}</h2>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+            {drinkDishes.slice(0, visibleDrinkCount).map(dish => (
+              <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+            ))}
+          </div>
+          {drinkDishes.length > 3 && visibleDrinkCount < drinkDishes.length && (
+            <div className="mb-6 mt-4 flex justify-center">
+              <a
+                className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                style={{ textDecoration: 'none' }}
+                onClick={() => setVisibleDrinkCount(prev => prev + 3)}
+              >
+                Xem thêm
               </a>
             </div>
           )}
