@@ -99,11 +99,15 @@ export class OrderController {
         };
       }
 
+      // Kiểm tra user_transaction để xác định isPaid
+      const transactions = await this.orderService.userTransactionService.findByOrderId(order.id);
+      const hasSuccessfulTransaction = transactions.some(tx => tx.status === 'success');
+
       console.log('✅ Order found:', {
         id: order.id,
         status: order.status,
         appTransId: order.appTransId,
-        returnCode: null, // Tạm thời set null vì field chưa có trong DB
+        hasSuccessfulTransaction,
       });
 
       return {
@@ -117,7 +121,7 @@ export class OrderController {
           createdAt: order.createdAt,
         },
         status: order.status,
-        isPaid: order.status === 'completed', // Chỉ dựa vào status, không cần returnCode
+        isPaid: hasSuccessfulTransaction, // Kiểm tra user_transaction thay vì order.status
       };
     } catch (error) {
       console.error('❌ Error checking order status:', error);

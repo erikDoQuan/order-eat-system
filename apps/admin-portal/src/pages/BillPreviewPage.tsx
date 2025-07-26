@@ -69,16 +69,16 @@ export default function BillPreviewPage() {
       <div className="hide-on-print" style={{ width: 260, background: '#fff', borderRight: '1px solid #eee' }}>
         <AdminSidebar />
       </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#fff' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
         <div
           style={{
-            maxWidth: 700,
-            margin: '32px auto 0 auto',
+            maxWidth: 500,
+            margin: '36px auto 0 auto',
             fontFamily: 'Arial',
             width: '100%',
             border: '1.5px solid #e0e0e0',
             borderRadius: 16,
-            padding: 32,
+            padding: '40px 32px',
             background: '#fff',
             boxShadow: '0 2px 12px 0 rgba(0,0,0,0.04)',
           }}
@@ -92,17 +92,17 @@ export default function BillPreviewPage() {
                 (e.target as HTMLImageElement).src = '/logo.svg';
               }}
             />
-            <div style={{ fontSize: 28, fontWeight: 700, color: '#C92A15', letterSpacing: 2, marginBottom: 8 }}>BẾP CỦA MẸ</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#C92A15', letterSpacing: 2, marginBottom: 8, fontFamily: 'Arial' }}>BẾP CỦA MẸ</div>
           </div>
           <div style={{ marginBottom: 8 }}>
-            <h1 style={{ color: '#C8403B', fontSize: 28, margin: 0, textAlign: 'left', lineHeight: 1.1 }}>
-              HÓA ĐƠN{orderNumber ? ` #${orderNumber}` : ''}
+            <h1 style={{ color: '#222', fontSize: 22, margin: 0, textAlign: 'left', lineHeight: 1.1, fontFamily: 'Arial' }}>
+              PHIẾU THANH TOÁN{orderNumber ? ` #${orderNumber}` : ''}
             </h1>
-            <div style={{ textAlign: 'left', fontSize: 17, marginTop: 4 }}>
+            <div style={{ textAlign: 'left', fontSize: 17, marginTop: 4, fontFamily: 'Arial' }}>
               Ngày lập: <b>{date}</b>
             </div>
           </div>
-          <div style={{ margin: '24px 0 20px 0' }}>
+          <div style={{ margin: '24px 0 20px 0', fontFamily: 'Arial' }}>
             <div>
               <b>Hóa đơn cho:</b> {customer || ''}
             </div>
@@ -121,18 +121,18 @@ export default function BillPreviewPage() {
               <b>Phương thức thanh toán:</b> {paymentLabel}
             </div>
           </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 24 }} border={1} cellPadding={8}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 24, fontFamily: 'Arial' }} border={1} cellPadding={8}>
             <thead>
               <tr style={{ background: '#FFE5D0' }}>
-                <th style={{ textAlign: 'left' }}>Mô tả</th>
-                <th style={{ textAlign: 'center' }}>Số lượng</th>
-                <th style={{ textAlign: 'center' }}>Đơn giá</th>
-                <th style={{ textAlign: 'center' }}>Thành tiền</th>
+                <th style={{ textAlign: 'left', fontFamily: 'Arial' }}>Mô tả</th>
+                <th style={{ textAlign: 'center', fontFamily: 'Arial' }}>Số lượng</th>
+                <th style={{ textAlign: 'center', fontFamily: 'Arial' }}>Đơn giá</th>
+                <th style={{ textAlign: 'center', fontFamily: 'Arial' }}>Thành tiền</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item, idx) => (
-                <tr key={idx}>
+                <tr key={idx} style={{ fontFamily: 'Arial' }}>
                   <td>{!item.name || item.name.toLowerCase() === 'món ăn' ? 'Không rõ tên món' : item.name}</td>
                   <td style={{ textAlign: 'center' }}>{item.quantity ?? 0}</td>
                   <td style={{ textAlign: 'center' }}>{formatVND(Number(item.price) || 0)}</td>
@@ -147,7 +147,7 @@ export default function BillPreviewPage() {
               ))}
             </tbody>
           </table>
-          <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: 20, color: '#C8403B' }}>
+          <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: 20, color: '#C8403B', fontFamily: 'Arial' }}>
             Tổng cộng: {Number(totalAmount).toLocaleString()} VND
           </div>
           {/* Xóa dòng in đậm bên dưới tổng cộng */}
@@ -161,8 +161,11 @@ export default function BillPreviewPage() {
               <b>Chuyển khoản (zalopay):</b> {Number(totalAmount).toLocaleString()} VND
             </div>
           )} */}
+          <div style={{ textAlign: 'center', marginTop: 32, fontWeight: 500, fontSize: 16, color: '#333', letterSpacing: 1, fontFamily: 'Arial' }}>
+            Cảm ơn Quý Khách & Hẹn gặp lại!
+          </div>
         </div>
-        <div className="hide-on-print" style={{ display: 'flex', justifyContent: 'flex-end', maxWidth: 700, margin: '8px auto 0 auto' }}>
+        <div className="hide-on-print" style={{ display: 'flex', justifyContent: 'flex-end', maxWidth: 500, margin: '8px auto 0 auto' }}>
           <button
             onClick={() => window.print()}
             style={{ padding: '8px 24px', fontSize: 16, background: '#C8403B', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}

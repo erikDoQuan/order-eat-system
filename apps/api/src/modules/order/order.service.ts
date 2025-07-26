@@ -378,28 +378,31 @@ export class OrderService {
 
   // Thêm hàm này để cập nhật đơn pending thành completed khi thanh toán
   async completeOrder(dto: CompleteOrderDto) {
-    const { orderId, appTransId, zpTransToken } = dto;
-    // 1. Tìm đơn hàng đang pending theo orderId hoặc appTransId
+    // 1. Tìm đơn hàng pending theo appTransId
     let existingOrder = null;
-    if (orderId) {
-      existingOrder = await this.orderRepository.findFirst({
-        where: (order, { eq, and }) => and(eq(order.id, orderId), eq(order.status, 'pending')),
-      });
-    } else if (appTransId) {
-      existingOrder = await this.orderRepository.findFirst({
-        where: (order, { eq, and }) => and(eq(order.appTransId, appTransId), eq(order.status, 'pending')),
-      });
+    if (dto.appTransId) {
+      existingOrder = await this.orderRepository.findOneByAppTransId(dto.appTransId);
+    } else {
+      existingOrder = await this.orderRepository.findOne(dto.orderId);
     }
     if (!existingOrder) {
       throw new Error('Không tìm thấy đơn hàng pending để hoàn tất');
     }
+
     // 2. Gửi yêu cầu xác minh thanh toán ZaloPay (nếu cần)
     // TODO: Add ZaloPay verification logic here if needed
-    // 3. Cập nhật đơn hàng thành completed
-    await this.orderRepository.update(existingOrder.id, {
-      status: 'completed',
+
+    // 3. Cập nhật đơn hàng thành completed (chỉ cho cash orders, không cho ZaloPay)
+    const updateData: any = {
       updatedBy: existingOrder.userId,
-    });
+    };
+
+    // Chỉ update status thành completed nếu không phải ZaloPay order
+    if (!existingOrder.appTransId) {
+      updateData.status = 'completed';
+    }
+
+    await this.orderRepository.update(existingOrder.id, updateData);
     return { message: 'Cập nhật trạng thái thành công', orderId: existingOrder.id };
   }
 
@@ -609,7 +612,7 @@ export class OrderService {
     const order = await this.orderRepository.findOne(orderId);
     if (!order) throw new NotFoundException('Đơn hàng không tồn tại');
     await this.orderRepository.update(orderId, {
-      status: 'completed',
+      // Không update status nữa, chỉ update zpTransToken
       zpTransToken: opts.transactionId || order.zpTransToken,
     });
     // Có thể lưu thêm transaction vào bảng user_transaction nếu cần

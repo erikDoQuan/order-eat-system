@@ -22,6 +22,7 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<any>(null);
   const [dishes, setDishes] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [userLoaded, setUserLoaded] = useState(false);
 
   useEffect(() => {
     if (orderId) {
@@ -44,6 +45,15 @@ export default function OrderDetailPage() {
         });
     }
   }, [orderId]);
+
+  // Đảm bảo thông tin user được load đầy đủ
+  useEffect(() => {
+    if (order && user) {
+      console.log('🔍 OrderDetailPage - User loaded:', user);
+      console.log('🔍 OrderDetailPage - Order loaded:', order);
+      setUserLoaded(true);
+    }
+  }, [order, user]);
 
   useEffect(() => {
     getAllDishes().then(setDishes);
@@ -88,9 +98,16 @@ export default function OrderDetailPage() {
   const type = order.type;
   const pickupTime = order.pickupTime;
   const deliveryAddress = order.deliveryAddress;
-  const address = (typeof deliveryAddress === 'object' && deliveryAddress?.address) || user?.address || '-';
+  const address = (typeof deliveryAddress === 'object' && deliveryAddress?.address) || (userLoaded && user?.address) || '-';
   const phone =
-    order.user?.phone || (typeof deliveryAddress === 'object' && deliveryAddress?.phone) || user?.phoneNumber || user?.phone_number || '-';
+    order.user?.phone ||
+    (typeof deliveryAddress === 'object' && deliveryAddress?.phone) ||
+    (userLoaded && (user?.phoneNumber || user?.phone_number)) ||
+    '-';
+
+  console.log('🔍 OrderDetailPage - deliveryAddress:', deliveryAddress);
+  console.log('🔍 OrderDetailPage - address:', address);
+  console.log('🔍 OrderDetailPage - user address:', user?.address);
   const shippingFee = order.shippingFee !== undefined ? order.shippingFee : type === 'delivery' ? 25000 : 0;
   const paymentMethod = order.paymentMethod || 'Thanh toán khi nhận hàng';
 
@@ -149,6 +166,13 @@ export default function OrderDetailPage() {
               <br />
               {type === 'delivery' ? 'Giao hàng tận nơi' : 'Nhận hàng tại cửa hàng'}
             </div>
+            {type === 'pickup' && pickupTime && (
+              <div style={{ marginTop: 8 }}>
+                <b>Thời gian nhận hàng</b>
+                <br />
+                <span style={{ color: '#16a34a', fontWeight: 600 }}>{pickupTime}</span>
+              </div>
+            )}
             <div style={{ marginTop: 8 }}>
               <b>Phí vận chuyển</b>
               <br />

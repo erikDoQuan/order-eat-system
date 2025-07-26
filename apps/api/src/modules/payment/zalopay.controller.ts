@@ -3,6 +3,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 
 import { OrderService } from '../order/order.service';
+import { TransactionMethod, TransactionStatus } from '../user_transaction/dto/create-user-transaction.dto';
 import { UserTransactionService } from '../user_transaction/user-transaction.service';
 import { CreateZaloPayOrderDto } from './dto/create-zalopay-order.dto';
 import { ZaloPayCallbackDto } from './dto/zalopay-callback.dto';
@@ -97,8 +98,8 @@ export class ZaloPayController {
         userId: order.userId,
         orderId: order.id,
         amount: String(data.amount),
-        method: 'zalopay',
-        status: 'success',
+        method: TransactionMethod.ZALOPAY,
+        status: TransactionStatus.SUCCESS,
         transTime: new Date().toISOString(),
         transactionCode: data.zp_trans_id || data.zp_trans_token || '',
         description: `Thanh toán ZaloPay cho đơn hàng #${order.orderNumber || order.id}`,

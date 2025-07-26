@@ -175,12 +175,21 @@ const ZaloPayPaymentPage: React.FC = () => {
     setOrderId(usedOrderId);
     setLoading(true);
 
+    let deliveryAddressObj: any = null;
+    if (orderType === 'pickup' && store && store.address && store.name) {
+      deliveryAddressObj = { address: store.address, storeName: store.name };
+    } else if (typeof deliveryAddress === 'object' && deliveryAddress?.address) {
+      deliveryAddressObj = deliveryAddress;
+    } else if (typeof deliveryAddress === 'string' && deliveryAddress) {
+      deliveryAddressObj = { address: deliveryAddress };
+    }
+
     const payload = {
       amount: totalAmount,
       userId: user?.id || 'test_user_123',
       items: items,
       note: state.note || 'Đơn hàng qua ZaloPay',
-      deliveryAddress: deliveryAddress,
+      deliveryAddress: deliveryAddressObj,
       userPhone: user?.phoneNumber || user?.phone_number || '',
       userName: user?.name || '',
       type: orderType,
@@ -191,6 +200,9 @@ const ZaloPayPaymentPage: React.FC = () => {
     };
 
     console.log('🔍 Debug - Payload:', payload);
+    console.log('🔍 Debug - deliveryAddress:', deliveryAddressObj);
+    console.log('🔍 Debug - pickupTime:', state.pickupTime);
+    console.log('🔍 Debug - orderType:', orderType);
 
     fetch('/api/v1/zalopay/create-order', {
       method: 'POST',

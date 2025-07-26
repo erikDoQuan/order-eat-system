@@ -79,23 +79,17 @@ export class OrderRepository {
     if (data.appTransId) {
       const existed = await this.findOneByAppTransId(data.appTransId);
       if (existed) {
-        // Nếu status truyền lên là pending, chỉ cập nhật zpTransToken, appTransId, giữ nguyên status nếu đã completed
-        if (existed.status === 'completed') {
-          await this.update(existed.id, {
-            zpTransToken: data.zpTransToken,
-            appTransId: data.appTransId,
-          });
-        } else {
-          await this.update(existed.id, {
-            status: data.status,
-            zpTransToken: data.zpTransToken,
-            appTransId: data.appTransId,
-          });
+        // Nếu là ZaloPay order (có appTransId), không update status
+        const updateData = { ...data, totalAmount: String(data.totalAmount) };
+        if (data.appTransId) {
+          // ZaloPay orders luôn giữ status pending
+          delete updateData.status;
         }
+        await this.update(existed.id, updateData);
         return this.findOne(existed.id);
       }
     }
-    // Khi tạo mới, luôn lưu status là pending
+    // Khi tạo mới, luôn lưu status là pending cho ZaloPay orders
     const [created] = await this.drizzle.db
       .insert(orders)
       .values({ ...data, status: 'pending' } as OrderInsert)

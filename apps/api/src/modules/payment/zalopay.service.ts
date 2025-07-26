@@ -94,6 +94,16 @@ export class ZaloPayService {
     const data = `${app_id}|${app_trans_id}|${app_user}|${amount}|${app_time}|${embed_data}|${JSON.stringify(items)}`;
     const mac = crypto.createHmac('sha256', key1).update(data).digest('hex');
 
+    let deliveryAddress = null;
+    if (payload.deliveryAddress) {
+      if (typeof payload.deliveryAddress === 'string') {
+        deliveryAddress = { address: payload.deliveryAddress };
+      } else {
+        deliveryAddress = { ...payload.deliveryAddress };
+      }
+      if (payload.userPhone) deliveryAddress.phone = payload.userPhone;
+      if (payload.userName) deliveryAddress.name = payload.userName;
+    }
     const order = {
       app_id,
       app_user,
@@ -131,9 +141,7 @@ export class ZaloPayService {
           orderItems: { items: payload.items || [] },
           totalAmount: amount,
           type: payload.type || 'delivery',
-          deliveryAddress: payload.deliveryAddress
-            ? { ...payload.deliveryAddress, phone: payload.userPhone || '', name: payload.userName || '' }
-            : null,
+          deliveryAddress,
           pickupTime: payload.pickupTime || undefined,
           appTransId: app_trans_id, // ✅ Lưu appTransId
           zpTransToken: response.data.zp_trans_token || response.data.order_token || '',
@@ -141,8 +149,17 @@ export class ZaloPayService {
         };
 
         console.log('📦 Order data to save:', orderData);
+        console.log('📦 Payload deliveryAddress:', payload.deliveryAddress);
+        console.log('📦 Payload pickupTime:', payload.pickupTime);
+        console.log('📦 Payload type:', payload.type);
+        console.log('📦 Payload userPhone:', payload.userPhone);
+        console.log('📦 Payload userName:', payload.userName);
+
         const savedOrder = await this.orderRepository.create(orderData);
         console.log('✅ Đã lưu đơn hàng vào DB:', savedOrder.id, 'với appTransId:', app_trans_id);
+        console.log('📦 Saved deliveryAddress:', savedOrder.deliveryAddress);
+        console.log('📦 Saved pickupTime:', savedOrder.pickupTime);
+        console.log('📦 Saved status:', savedOrder.status);
 
         return {
           ...response.data,
@@ -184,6 +201,11 @@ export class ZaloPayService {
         try {
           embed = JSON.parse(data.embed_data || '{}');
           console.log('✅ Parse embed_data thành công:', embed);
+          console.log('🔍 Embed data keys:', Object.keys(embed));
+          console.log('🔍 Embed deliveryAddress:', embed.deliveryAddress);
+          console.log('🔍 Embed pickupTime:', embed.pickupTime);
+          console.log('🔍 Embed userPhone:', embed.userPhone);
+          console.log('🔍 Embed userName:', embed.userName);
         } catch (err) {
           console.error('❌ Lỗi parse embed_data:', err);
           embed = {};
@@ -194,41 +216,33 @@ export class ZaloPayService {
         console.log('🔍 Đơn hàng đã tồn tại:', !!existed);
 
         if (!existed) {
-          console.log('📝 Bắt đầu tạo đơn hàng mới...');
+          // Không tạo order mới ở callback nữa!
+          console.error('❌ Không tìm thấy order với appTransId, KHÔNG tạo mới!');
+          return;
+        } else {
+          // Chỉ tạo user_transaction, không update order
+          console.log('⚠️ Đơn hàng đã tồn tại, chỉ tạo user transaction:', data.app_trans_id);
+          console.log('📦 Existing order details:', {
+            id: existed.id,
+            status: existed.status,
+            deliveryAddress: existed.deliveryAddress,
+            pickupTime: existed.pickupTime,
+            appTransId: existed.appTransId,
+          });
 
-          // Tạo order data với đầy đủ thông tin
-          const orderData = {
-            appTransId: data.app_trans_id,
-            totalAmount: data.amount,
-            status: 'completed',
-            userId: embed.userId || 'user123',
-            orderItems: { items: embed.items || [] },
-            deliveryAddress: embed.deliveryAddress ? { ...embed.deliveryAddress, phone: embed.userPhone || '', name: embed.userName || '' } : null,
-            pickupTime: embed.pickupTime || undefined,
-            zpTransToken: data.zp_trans_token || data.order_token || '',
-            // returnCode tạm thời không lưu vì field chưa có trong DB
-          };
-
-          console.log('📦 Order data:', orderData);
-          const order = await this.orderRepository.create(orderData);
-          console.log('✅ Đã tạo đơn hàng vào DB từ callback ZaloPay:', data.app_trans_id);
-          console.log('📦 Order ID:', order.id);
-
-          // Tạo user_transaction với status success
+          // Chỉ tạo user_transaction, không tạo order mới
           console.log('💰 Bắt đầu tạo user transaction...');
           const transaction = await this.userTransactionService.create({
             userId: embed.userId || 'user123',
-            orderId: order.id,
+            orderId: existed.id,
             amount: String(data.amount),
             method: TransactionMethod.ZALOPAY,
             status: TransactionStatus.SUCCESS,
             transTime: new Date().toISOString(),
             transactionCode: data.zp_trans_token || data.order_token || '',
-            description: `Thanh toán ZaloPay cho đơn hàng #${order.id}`,
+            description: `Thanh toán ZaloPay cho đơn hàng #${existed.id}`,
           });
           console.log('✅ Đã tạo user transaction:', transaction.id);
-        } else {
-          console.log('⚠️ Đơn hàng đã tồn tại, không tạo lại:', data.app_trans_id);
         }
       }
     } catch (err) {

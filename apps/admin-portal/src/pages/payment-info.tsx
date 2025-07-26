@@ -160,6 +160,7 @@ const PaymentInfoPage: React.FC = () => {
           subtotal: computedSubtotal,
           totalAmount: totalAmountDisplay,
           userId: user?.id,
+          pickupTime: state?.pickupTime, // Thêm pickupTime
           // Không truyền orderNumber, orderId ở đây
         },
       });
@@ -222,6 +223,11 @@ const PaymentInfoPage: React.FC = () => {
                   <div className="payment-info-text">
                     <b>Khách hàng:</b> {customer.name} &nbsp; <b>Điện thoại:</b> {customer.phone}
                   </div>
+                  {state?.pickupTime && (
+                    <div className="payment-info-text">
+                      <b>Thời gian nhận hàng:</b> <span className="payment-info-highlight">{state.pickupTime}</span>
+                    </div>
+                  )}
                 </>
               )}
             </div>
