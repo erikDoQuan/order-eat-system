@@ -1,13 +1,17 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
+
 import AdminSidebar from '../components/AdminSidebar';
-import { getAllDishes, createDish, deleteDish, updateDish } from '../services/dish.api';
-import { getAllCategories, Category } from '../services/category.api';
+import { Category, getAllCategories } from '../services/category.api';
+import { createDish, deleteDish, getAllDishes, updateDish } from '../services/dish.api';
+
 import '../css/AdminDishPage.css';
-import { AuthContext } from '../context/AuthContext';
-import { LogOut, User, Edit, Trash2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { getAllUsers, User as UserType } from '../services/user.api';
+
 import axios from 'axios';
+import { Edit, LogOut, Trash2, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
+import { AuthContext } from '../context/AuthContext';
+import { getAllUsers, User as UserType } from '../services/user.api';
 
 type AdminDishPageProps = { showAddForm?: boolean };
 const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
@@ -33,6 +37,16 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
   const [search, setSearch] = useState('');
   const [users, setUsers] = useState<UserType[]>([]);
 
+  // State mới để lưu giá trị raw khi nhập:
+  const [rawBasePrice, setRawBasePrice] = useState('');
+
+  // Thêm state phân trang:
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  const filteredDishes = dishes.filter(dish => dish.name.toLowerCase().includes(search.toLowerCase()));
+  const totalPages = Math.ceil(filteredDishes.length / pageSize);
+  const paginatedDishes = filteredDishes.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   useEffect(() => {
     if (!authLoading && (!user || user.role !== 'admin')) {
       navigate('/login', { replace: true });
@@ -56,12 +70,14 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
     getAllUsers(1, 1000).then(res => setUsers(res.users));
   }, []);
 
+  // Sửa lại useEffect khi showAddForm để reset rawBasePrice:
   useEffect(() => {
     if (showAddForm) {
       setEditing(null);
       setName('');
       setDescription('');
       setBasePrice('');
+      setRawBasePrice('');
       setStatus('available');
       setCategoryId(categories[0]?.id || '');
       setImageUrl('');
@@ -84,11 +100,24 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
     setShowForm(true);
   };
 
+  // Khi mở form sửa, format basePrice:
+  const formatPrice = (value: string | number) => {
+    if (value === undefined || value === null) return '';
+    let num = typeof value === 'number' ? value : Number((value + '').replace(/\./g, ''));
+    if (isNaN(num)) return '';
+    num = Math.floor(num); // Bỏ phần thập phân
+    return num.toLocaleString('vi-VN');
+  };
+
+  // Sửa lại handleEdit để luôn format rawBasePrice đúng chuẩn:
   const handleEdit = (dish: any) => {
     setEditing(dish);
     setName(dish.name);
     setDescription(dish.description || '');
-    setBasePrice(dish.basePrice || '');
+    // Luôn lấy basePrice là số nguyên, rồi format lại
+    const priceNum = Math.floor(Number(dish.basePrice));
+    setBasePrice(formatPrice(priceNum));
+    setRawBasePrice(formatPrice(priceNum));
     setStatus(dish.status || 'available');
     setCategoryId(dish.categoryId || categories[0]?.id || '');
     setImageUrl(dish.imageUrl || '');
@@ -109,11 +138,12 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
     setSaving(false);
   };
 
+  // Sửa input giá trong form:
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
-      const dishData: any = { name, description, basePrice, status, categoryId, imageUrl, typeName };
+      const dishData: any = { name, description, basePrice: Number((rawBasePrice + '').replace(/\./g, '')), status, categoryId, imageUrl, typeName };
       if (showSize) dishData.size = size;
       if (editing) {
         if (!user?.id) throw new Error('Không xác định được người cập nhật');
@@ -150,7 +180,11 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
   };
 
   const selectedCategory = categories.find(c => c.id === categoryId);
-  const showSize = selectedCategory && selectedCategory.name.toLowerCase().includes('pizza') && !selectedCategory.name.toLowerCase().includes('mỳ ý') && !selectedCategory.name.toLowerCase().includes('gà');
+  const showSize =
+    selectedCategory &&
+    selectedCategory.name.toLowerCase().includes('pizza') &&
+    !selectedCategory.name.toLowerCase().includes('mỳ ý') &&
+    !selectedCategory.name.toLowerCase().includes('gà');
 
   // User dropdown logic
   const handleLogout = () => {
@@ -173,6 +207,11 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
     if (!user) return '-';
     return user.name || [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.email || '-';
   };
+
+  // Reset currentPage về 1 khi search thay đổi:
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   return (
     <div className="admin-layout bg-gray-50">
@@ -212,12 +251,9 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
             {!(user?.firstName || user?.lastName) && user?.email}
           </span>
         </div>
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-[#C92A15]">Dish Management</h1>
-          <button
-            onClick={handleAdd}
-            className="bg-[#C92A15] text-white px-4 py-2 rounded-lg shadow hover:bg-[#a81f0f] transition"
-          >
+          <button onClick={handleAdd} className="rounded-lg bg-[#C92A15] px-4 py-2 text-white shadow transition hover:bg-[#a81f0f]">
             + Add Dish
           </button>
         </div>
@@ -237,42 +273,44 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
             <table className="table-admin-dish">
               <thead>
                 <tr className="bg-gray-100 text-gray-700">
-                  <th className="py-2 px-3 border-b">No.</th>
-                  <th className="py-2 px-3 border-b">Dish Name</th>
-                  <th className="py-2 px-3 border-b">Price</th>
-                  <th className="py-2 px-3 border-b">Status</th>
-                  <th className="py-2 px-3 border-b">Category</th>
-                  <th className="py-2 px-3 border-b">Type</th>
-                  <th className="py-2 px-3 border-b">Created by</th>
-                  <th className="py-2 px-3 border-b">Action</th>
+                  <th className="border-b px-3 py-2">No.</th>
+                  <th className="border-b px-3 py-2">Dish Name</th>
+                  <th className="border-b px-3 py-2">Price</th>
+                  <th className="border-b px-3 py-2">Status</th>
+                  <th className="border-b px-3 py-2">Category</th>
+                  <th className="border-b px-3 py-2">Type</th>
+                  <th className="border-b px-3 py-2">Created by</th>
+                  <th className="border-b px-3 py-2">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {dishes.filter(dish => dish.name.toLowerCase().includes(search.toLowerCase())).map((dish, idx) => (
-                  <tr key={dish.id} className="hover:bg-gray-50 transition">
-                    <td className="py-2 px-3 border-b text-xs text-gray-500">{idx + 1}</td>
-                    <td className="py-2 px-3 border-b font-medium">{dish.name}</td>
-                    <td className="py-2 px-3 border-b">{dish.basePrice !== undefined && !isNaN(Number(dish.basePrice)) ? Number(dish.basePrice).toLocaleString('vi-VN') : dish.basePrice}</td>
-                    <td className="py-2 px-3 border-b flex justify-center items-center">
-                      <span className={`badge-status ${dish.status === 'available' ? 'active' : 'inactive'}`}>{dish.status === 'available' ? 'Available' : 'Unavailable'}</span>
+                {paginatedDishes.map((dish, idx) => (
+                  <tr key={dish.id} className="transition hover:bg-gray-50">
+                    <td className="border-b px-3 py-2 text-xs text-gray-500">{(currentPage - 1) * pageSize + idx + 1}</td>
+                    <td className="border-b px-3 py-2 font-medium">{dish.name}</td>
+                    <td className="border-b px-3 py-2">
+                      {dish.basePrice !== undefined && !isNaN(Number(dish.basePrice))
+                        ? Number(dish.basePrice).toLocaleString('vi-VN')
+                        : dish.basePrice}
                     </td>
-                    <td className="py-2 px-3 border-b">{categories.find(c => c.id === dish.categoryId)?.name || '-'}</td>
-                    <td className="py-2 px-3 border-b">{dish.typeName || '-'}</td>
-                    <td className="py-2 px-3 border-b">{getUserName(dish.createdBy)}</td>
-                    <td className="py-2 px-3 border-b">
+                    <td className="status-cell border-b px-3 py-2">
+                      <span className={`badge-status ${dish.status === 'available' ? 'active' : 'inactive'}`}>
+                        {dish.status === 'available' ? 'Available' : 'Unavailable'}
+                      </span>
+                    </td>
+                    <td className="border-b px-3 py-2">{categories.find(c => c.id === dish.categoryId)?.name || '-'}</td>
+                    <td className="border-b px-3 py-2">{dish.typeName || '-'}</td>
+                    <td className="border-b px-3 py-2">{getUserName(dish.createdBy)}</td>
+                    <td className="border-b px-3 py-2">
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEdit(dish)}
-                          title="Edit"
-                          className="p-2 rounded hover:bg-blue-100 text-blue-600"
-                        >
+                        <button onClick={() => handleEdit(dish)} title="Edit" className="rounded p-2 text-blue-600 hover:bg-blue-100">
                           <Edit size={18} />
                         </button>
                         <button
                           onClick={() => handleDelete(dish.id)}
                           disabled={saving}
                           title="Delete"
-                          className="p-2 rounded hover:bg-red-100 text-red-600 disabled:opacity-50"
+                          className="rounded p-2 text-red-600 hover:bg-red-100 disabled:opacity-50"
                         >
                           <Trash2 size={18} />
                         </button>
@@ -302,12 +340,10 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
               style={{
                 background: '#fff',
                 borderRadius: 16,
-                maxWidth: 420,
+                maxWidth: 600,
                 width: '100%',
-                maxHeight: '80vh',
                 boxShadow: '0 8px 32px #0002',
-                padding: 24,
-                overflow: 'hidden',
+                padding: 32,
                 display: 'flex',
                 flexDirection: 'column',
                 position: 'relative',
@@ -342,64 +378,106 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
                   maxHeight: '70vh',
                 }}
               >
-                <h2 className="text-lg font-semibold mb-4">{editing ? 'Edit Dish' : 'Add Dish'}</h2>
-                <form onSubmit={handleSubmit}>
-                  <div className="mb-4">
-                    <label className="block mb-1 font-medium">Dish Name</label>
+                <h2 className="mb-4 text-lg font-semibold">{editing ? 'Edit Dish' : 'Add Dish'}</h2>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <div>
+                    <label className="mb-1 block font-medium">Dish Name</label>
                     <input
                       value={name}
                       onChange={e => setName(e.target.value)}
                       required
-                      className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                      className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
                     />
                   </div>
-                  <div className="mb-4">
-                    <label className="block mb-1 font-medium">Description</label>
+                  <div>
+                    <label className="mb-1 block font-medium">Description</label>
                     <input
                       value={description}
                       onChange={e => setDescription(e.target.value)}
-                      className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                      className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
                     />
                   </div>
-                  <div className="mb-4">
-                    <label className="block mb-1 font-medium">Price</label>
-                    <input
-                      value={basePrice}
-                      onChange={e => setBasePrice(e.target.value)}
-                      required
-                      type="number"
-                      className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
-                    />
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    <div style={{ flex: 1 }}>
+                      <label className="mb-1 block font-medium">Price</label>
+                      <input
+                        value={rawBasePrice}
+                        onChange={e => {
+                          // Chỉ cho phép nhập số, không cho nhập dấu chấm
+                          let raw = e.target.value.replace(/[^\d]/g, '');
+                          setRawBasePrice(raw);
+                        }}
+                        onBlur={e => {
+                          // Khi blur, format lại thành 79.000
+                          let raw = e.target.value.replace(/[^\d]/g, '');
+                          setRawBasePrice(raw ? Number(raw).toLocaleString('vi-VN') : '');
+                        }}
+                        required
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label className="mb-1 block font-medium">Status</label>
+                      <select
+                        value={status}
+                        onChange={e => setStatus(e.target.value)}
+                        className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                      >
+                        <option value="available">Available</option>
+                        <option value="unavailable">Unavailable</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="mb-4">
-                    <label className="block mb-1 font-medium">Status</label>
-                    <select
-                      value={status}
-                      onChange={e => setStatus(e.target.value)}
-                      className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
-                    >
-                      <option value="available">Available</option>
-                      <option value="unavailable">Unavailable</option>
-                    </select>
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    <div style={{ flex: 1 }}>
+                      <label className="mb-1 block font-medium">Category</label>
+                      <select
+                        value={categoryId}
+                        onChange={e => setCategoryId(e.target.value)}
+                        className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                      >
+                        {categories
+                          .filter(cat => cat.isActive !== false)
+                          .map(cat => (
+                            <option key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label className="mb-1 block font-medium">Type</label>
+                      <input
+                        value={typeName}
+                        onChange={e => setTypeName(e.target.value)}
+                        className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                      />
+                    </div>
                   </div>
-                  <div className="mb-4">
-                    <label className="block mb-1 font-medium">Category</label>
-                    <select
-                      value={categoryId}
-                      onChange={e => setCategoryId(e.target.value)}
-                      className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
-                    >
-                      {categories.filter(cat => cat.isActive !== false).map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="mb-4">
-                    <label className="block mb-1 font-medium">Image</label>
+                  {showSize && (
+                    <div>
+                      <label className="mb-1 block font-medium">Size</label>
+                      <select
+                        value={size}
+                        onChange={e => setSize(e.target.value as any)}
+                        className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                      >
+                        <option value="">Select size</option>
+                        <option value="small">Small</option>
+                        <option value="medium">Medium</option>
+                        <option value="large">Large</option>
+                      </select>
+                    </div>
+                  )}
+                  <div>
+                    <label className="mb-1 block font-medium">Image</label>
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={async (e) => {
+                      onChange={async e => {
                         const file = e.target.files?.[0];
                         if (file) {
                           const formData = new FormData();
@@ -421,6 +499,7 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
                           }
                         }
                       }}
+                      className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
                     />
                     {imageUrl && (
                       <div className="mt-2">
@@ -429,47 +508,22 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
                           alt="Preview"
                           style={{ maxWidth: 180, maxHeight: 180, borderRadius: 8, border: '1px solid #eee' }}
                         />
-                        <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
-                          Ảnh hiện tại: {imageUrl}
-                        </div>
+                        <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>Ảnh hiện tại: {imageUrl}</div>
                       </div>
                     )}
                   </div>
-                  {showSize && (
-                    <div className="mb-4">
-                      <label className="block mb-1 font-medium">Size</label>
-                      <select
-                        value={size}
-                        onChange={e => setSize(e.target.value as any)}
-                        className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
-                      >
-                        <option value="">Select size</option>
-                        <option value="small">Small</option>
-                        <option value="medium">Medium</option>
-                        <option value="large">Large</option>
-                      </select>
-                    </div>
-                  )}
-                  <div className="mb-4">
-                    <label className="block mb-1 font-medium">Type (typeName)</label>
-                    <input
-                      value={typeName}
-                      onChange={e => setTypeName(e.target.value)}
-                      className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
-                    />
-                  </div>
-                  <div className="flex justify-end gap-2">
+                  <div className="mt-2 flex justify-end gap-2">
                     <button
                       type="button"
                       onClick={() => setShowForm(false)}
-                      className="px-4 py-2 rounded border border-gray-300 bg-gray-100 hover:bg-gray-200 transition"
+                      className="rounded border border-gray-300 bg-gray-100 px-4 py-2 transition hover:bg-gray-200"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={saving}
-                      className="px-4 py-2 rounded bg-[#C92A15] text-white hover:bg-[#a81f0f] transition disabled:opacity-50"
+                      className="rounded bg-[#C92A15] px-4 py-2 text-white transition hover:bg-[#a81f0f] disabled:opacity-50"
                     >
                       {saving ? 'Saving...' : 'Save'}
                     </button>
@@ -479,9 +533,36 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
             </div>
           </div>
         )}
+        {totalPages > 1 && (
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="rounded border bg-gray-100 px-3 py-1 hover:bg-gray-200 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`rounded border px-3 py-1 ${page === currentPage ? 'bg-[#C92A15] text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="rounded border bg-gray-100 px-3 py-1 hover:bg-gray-200 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default AdminDishPage; 
+export default AdminDishPage;

@@ -193,17 +193,20 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white py-8">
-      <div className="mb-10 w-full">
+      <div className="mb-10 w-full" style={{ display: 'flex', justifyContent: 'center' }}>
         <div
           className="mx-auto"
           style={{
             width: '100%',
-            maxWidth: 1536,
+            maxWidth: '80rem', // tương đương max-w-7xl
             aspectRatio: '1536/864',
             overflow: 'hidden',
             position: 'relative',
             background: '#fff',
             borderRadius: 24,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <img src="/banner.png" alt="Banner" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', borderRadius: 24 }} />

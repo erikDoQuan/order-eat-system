@@ -1,154 +1,185 @@
-import * as crypto from 'crypto';
-import { BadRequestException, Body, Controller, Get, HttpCode, Logger, Post, Query, Req, Res } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
-import { Request, Response } from 'express';
+import { Body, Controller, Get, HttpCode, Post, Query, Req, Res, UsePipes, ValidationPipe } from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { DrizzleService } from '../../database/drizzle/drizzle.service';
-import { orders } from '../../database/schema/orders';
-import { payments } from '../../database/schema/payments';
-import { userTransactions } from '../../database/schema/user_transactions';
-import { OrderService } from '../order/order.service';
-import { TransactionMethod, TransactionStatus } from '../user_transaction/dto/create-user-transaction.dto';
-import { UserTransactionService } from '../user_transaction/user-transaction.service';
+import { CreateZaloPayOrderDto } from './dto/create-zalopay-order.dto';
+import { ZaloPayCallbackDto } from './dto/zalopay-callback.dto';
 import { ZaloPayService } from './zalopay.service';
 
 @Controller('zalopay')
+@ApiTags('ZaloPay')
 export class ZaloPayController {
-  private zaloPayService = new ZaloPayService();
-  constructor(
-    private readonly drizzle: DrizzleService,
-    private readonly userTransactionService: UserTransactionService,
-    private readonly orderService: OrderService,
-  ) {}
-  private logger = new Logger('ZaloPayCallback');
+  constructor(private readonly zaloPayService: ZaloPayService) {}
 
-  @Get('create-order')
-  async createOrder(@Query('amount') amount: string, @Query('orderInfo') orderInfo: string) {
-    // orderInfo là JSON string chứa thông tin đơn hàng tạm (orderItems, userId, ...)
-    const total = Math.round(Number(amount));
+  @Post('create-order')
+  @ApiOperation({ summary: 'Create ZaloPay order' })
+  @UsePipes(
+    new ValidationPipe({
+      skipMissingProperties: true,
+      skipNullProperties: true,
+      skipUndefinedProperties: true,
+      whitelist: false,
+      forbidNonWhitelisted: false,
+    }),
+  )
+  async createOrder(@Body() body: any) {
+    console.log('🧠 Đã vào controller create-order');
+    console.log('📦 Body received:', JSON.stringify(body, null, 2));
+
+    if (!body) {
+      console.error('❌ Body is undefined or null');
+      return {
+        return_code: -1,
+        return_message: 'Request body is missing',
+        errorMessage: 'Body is undefined or null',
+      };
+    }
+
     try {
-      // Chỉ tạo QR, không tạo/lưu đơn hàng ở đây!
-      const result = await this.zaloPayService.createOrder(total, Date.now().toString(), `Thanh toán đơn hàng`, orderInfo);
-      return result; // Trả về URL QR và thông tin thanh toán
-    } catch (err: any) {
-      throw new BadRequestException(err.message || 'Tạo đơn hàng ZaloPay thất bại');
+      const result = await this.zaloPayService.createOrder(body);
+      console.log('✅ Đã tạo đơn hàng ZaloPay:', result);
+      // Đảm bảo trả về object có thể serialize được
+      return {
+        return_code: result.return_code || result.returncode || -1,
+        return_message: result.return_message || result.returnmessage || 'Unknown',
+        qrcode: result.qrcode,
+        order_url: result.order_url,
+        zp_trans_token: result.zp_trans_token,
+        app_trans_id: result.app_trans_id,
+      };
+    } catch (error) {
+      console.error('Lỗi trong createOrder controller:', error);
+      return {
+        return_code: -1,
+        return_message: 'Không thể tạo đơn hàng ZaloPay',
+        errorMessage: String(error),
+      };
     }
   }
 
   @Post('callback')
-  @HttpCode(200) // trả về 200 OK
-  async handleCallback(@Body() body: any) {
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Handle ZaloPay callback' })
+  async handleCallback(@Body() body: ZaloPayCallbackDto, @Req() req: any) {
+    console.log('🚨 CALLBACK RECEIVED - TIMESTAMP:', new Date().toISOString());
+    const userAgent = req.headers['user-agent'] || '';
+    const isRealZaloPay = !userAgent.includes('PowerShell') && !userAgent.includes('Invoke-WebRequest');
+
+    console.log('🔔 ZaloPay callback received!');
+    console.log('📧 Request method:', req.method);
+    console.log('📧 Request URL:', req.url);
+    console.log('📱 User-Agent:', userAgent);
+    console.log('🎯 Is Real ZaloPay:', isRealZaloPay ? '✅ YES' : '❌ NO (Test)');
+    console.log('📧 Request headers:', JSON.stringify(req.headers, null, 2));
+    console.log('📧 Request body:', JSON.stringify(body, null, 2));
+    console.log('🔍 Data field:', body?.data);
+    console.log('🔍 MAC:', body?.mac);
+    console.log('🔍 Type:', body?.type);
+
+    // Parse data field if exists (ZaloPay sends data as JSON string)
+    let parsedData: Record<string, any> = {};
+    if (body?.data) {
+      try {
+        parsedData = JSON.parse(body.data);
+        console.log('✅ Parsed data successfully:', parsedData);
+        console.log('🔍 App Trans ID from parsed data:', parsedData.app_trans_id);
+        console.log('🔍 Return Code from parsed data:', parsedData.return_code);
+        console.log('🔍 Amount from parsed data:', parsedData.amount);
+        console.log('🔍 Embed Data from parsed data:', parsedData.embed_data);
+      } catch (err) {
+        console.error('❌ Error parsing data field:', err);
+        parsedData = {};
+      }
+    }
+
+    // Use parsed data if available, otherwise use legacy fields
+    const callbackData = {
+      ...body,
+      ...parsedData,
+      app_trans_id: parsedData.app_trans_id || body.app_trans_id,
+      return_code: parsedData.return_code || body.return_code,
+      amount: parsedData.amount || body.amount,
+      embed_data: parsedData.embed_data || body.embed_data,
+      zp_trans_token: parsedData.zp_trans_token || body.zp_trans_token,
+    };
+
+    console.log('🔍 Final callback data:', callbackData);
+
+    // Validation cho real ZaloPay callbacks
+    if (isRealZaloPay && (!callbackData || !callbackData.app_trans_id)) {
+      console.error('❌ Real ZaloPay callback missing required data');
+      return {
+        return_code: 1,
+        return_message: 'Callback received (missing data)',
+      };
+    }
+
     try {
-      this.logger.log('📥 Nhận callback từ ZaloPay:');
-      this.logger.log(JSON.stringify(body, null, 2));
-
-      // Nếu body.data là JSON string, parse nó để lấy các trường thực sự
-      let data = body;
-      if (body.data && typeof body.data === 'string') {
-        try {
-          data = JSON.parse(body.data);
-        } catch (e) {
-          this.logger.error('Không parse được body.data:', e);
-          return { return_code: 1, return_message: 'Dữ liệu callback không hợp lệ' };
-        }
-      }
-      this.logger.log('ZaloPay callback data (sau parse): ' + JSON.stringify(data));
-      // Lấy appTransId từ data hoặc body (ưu tiên data)
-      let appTransIdValue = undefined;
-      if (data && (data.app_trans_id || data.appTransId)) {
-        appTransIdValue = data.app_trans_id || data.appTransId;
-      } else if (body && body.app_trans_id) {
-        appTransIdValue = body.app_trans_id;
-      }
-      this.logger.log('appTransId truyền vào orderService.create:', appTransIdValue);
-
-      // Chỉ xử lý khi thanh toán thành công
-      if (body.return_code == 1) {
-        // Lấy thông tin đơn hàng từ embed_data
-        let orderInfo = {};
-        if (data.embed_data) {
-          try {
-            orderInfo = JSON.parse(data.embed_data);
-          } catch (e) {
-            this.logger.error('Không parse được embed_data:', e);
-          }
-        }
-        // Validate orderInfo (orderItems, userId, ...)
-        if (orderInfo && orderInfo['userId'] && orderInfo['orderItems'] && orderInfo['totalAmount']) {
-          // Tìm đơn hàng theo appTransId
-          let order = null;
-          if (appTransIdValue) {
-            order = await this.orderService.findOneByAppTransId(appTransIdValue);
-          }
-
-          // Nếu không tìm thấy đơn hàng theo appTransId, không tạo đơn hàng mới
-          // Chỉ cập nhật đơn hàng đã tồn tại
-          if (order) {
-            this.logger.log('Tìm thấy đơn hàng, cập nhật trạng thái thành completed:', order.id);
-
-            // Cập nhật trạng thái đơn hàng thành completed
-            await this.orderService.update(order.id, {
-              status: 'completed',
-              updatedBy: order.userId,
-            });
-
-            // Cập nhật user_transaction hiện có thành SUCCESS
-            const existingTransactions = await this.drizzle.db
-              .select()
-              .from(userTransactions)
-              .where(aliases => and(eq(aliases.orderId, order.id), eq(aliases.method, 'zalopay')));
-
-            if (existingTransactions.length > 0) {
-              // Cập nhật transaction đầu tiên thành SUCCESS
-              await this.userTransactionService.updateByOrderId(order.id, {
-                status: TransactionStatus.SUCCESS,
-                transTime: new Date().toISOString(),
-                transactionCode: data.zp_trans_token || data.order_token || '',
-                description: `Thanh toán ZaloPay thành công cho đơn hàng #${order.orderNumber || order.id}`,
-                method: TransactionMethod.ZALOPAY,
-              });
-              this.logger.log('Cập nhật user_transaction thành SUCCESS cho orderId:', order.id);
-            } else {
-              // Tạo user_transaction mới nếu chưa có
-              await this.userTransactionService.create({
-                userId: order.userId,
-                orderId: order.id,
-                amount: String(order.totalAmount),
-                method: TransactionMethod.ZALOPAY,
-                status: TransactionStatus.SUCCESS,
-                transTime: new Date().toISOString(),
-                transactionCode: data.zp_trans_token || data.order_token || '',
-                description: `Thanh toán ZaloPay thành công cho đơn hàng #${order.orderNumber || order.id}`,
-              });
-              this.logger.log('Tạo user_transaction mới với status SUCCESS');
-            }
-          } else {
-            this.logger.log('Không tìm thấy đơn hàng với appTransId:', appTransIdValue);
-          }
-        } else {
-          this.logger.error('orderInfo thiếu thông tin cần thiết');
-        }
-      }
-      // Trả về mã thành công để ZaloPay không gọi lại
-      return { return_code: 1, return_message: 'OK' };
-    } catch (err: any) {
-      this.logger.error('Lỗi callback ZaloPay:', err);
-      return { return_code: 1, return_message: 'Lỗi xử lý callback: ' + (err?.message || err) };
+      await this.zaloPayService.handleCallback(callbackData);
+      console.log('✅ Đã nhận callback từ ZaloPay:', callbackData);
+      return {
+        return_code: 1,
+        return_message: 'Callback received successfully',
+      };
+    } catch (err) {
+      console.error('Lỗi callback ZaloPay:', err);
+      // Vẫn trả về 200 và return_code 1 để ZaloPay không retry
+      return {
+        return_code: 1,
+        return_message: 'Callback received (with error)',
+        errorMessage: String(err),
+      };
     }
   }
 
-  @Post('callback/express')
-  @HttpCode(200)
-  handleCallbackExpress(@Req() req: Request, @Res() res: Response) {
-    const body = req.body;
-    console.log('ZaloPay callback (express style):', body);
-    // TODO: xác thực và xử lý dữ liệu nếu cần
-    res.status(200).send({ return_code: 1, return_message: 'Success' });
+  // Route GET để handle redirect từ ZaloPay sau khi thanh toán thành công
+  @Get('callback')
+  async handleRedirect(@Query('appTransId') appTransId: string, @Query('return_code') returnCode: string) {
+    console.log('🔄 ZaloPay redirect received!');
+    console.log('🔍 App Trans ID:', appTransId);
+    console.log('🔍 Return Code:', returnCode);
+
+    // Redirect về frontend với thông tin thanh toán
+    return {
+      message: 'Redirect from ZaloPay',
+      appTransId: appTransId,
+      returnCode: returnCode,
+      redirectUrl: `https://fda84102a052.ngrok-free.app/order-success?appTransId=${appTransId}&return_code=${returnCode}`,
+    };
   }
 
-  // Endpoint test ngrok
+  @Get('check-status')
+  @HttpCode(200)
+  async checkStatus(@Query('appTransId') appTransId: string) {
+    if (!appTransId) {
+      throw new Error('Missing appTransId');
+    }
+    try {
+      const result = await this.zaloPayService.checkOrderStatus(appTransId);
+      // Đảm bảo trả về object có thể serialize được
+      return {
+        returncode: result.returncode || -1,
+        returnmessage: result.returnmessage || 'Unknown status',
+        ...(result.returncode === 1 && { amount: result.amount }),
+        ...(result.errorMessage && { errorMessage: result.errorMessage }),
+      };
+    } catch (error) {
+      console.error('Lỗi trong checkStatus controller:', error);
+      return {
+        returncode: -1,
+        returnmessage: 'Lỗi kiểm tra trạng thái',
+        errorMessage: String(error),
+      };
+    }
+  }
+
+  // Route test để kiểm tra callback có hoạt động không
   @Get('test-callback')
-  testCallback() {
-    return { message: 'Ngrok is working!' };
+  @HttpCode(200)
+  async testCallback() {
+    console.log('🧪 Test callback route được gọi');
+    return {
+      message: 'Callback route hoạt động bình thường',
+      timestamp: new Date().toISOString(),
+    };
   }
 }

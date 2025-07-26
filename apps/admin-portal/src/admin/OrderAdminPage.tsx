@@ -6,7 +6,7 @@ import AdminSidebar from '../components/AdminSidebar';
 import '../css/OrderAdminPage.css';
 
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import BillPreviewModal from '../components/BillPreviewModal';
 import RatingStars from '../components/RatingStars';
@@ -70,6 +70,31 @@ export default function OrderAdminPage() {
   const [detailOrder, setDetailOrder] = useState<any>(null);
   // Thêm state để lưu transactions
   const [transactions, setTransactions] = useState<any[]>([]);
+  // Thêm state phân trang:
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  const location = useLocation();
+  const [orderSuccess, setOrderSuccess] = useState<any>(null);
+  const [orderSuccessError, setOrderSuccessError] = useState<string | null>(null);
+
+  // Khi có appTransId trên URL, tự động fetch đơn hàng thành công
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const appTransId = params.get('appTransId');
+    if (appTransId) {
+      import('../services/order.api').then(api => {
+        api
+          .getOrderByAppTransId(appTransId)
+          .then(order => {
+            setOrderSuccess(order);
+            setOrderSuccessError(null);
+          })
+          .catch(() => {
+            setOrderSuccessError('Không tìm thấy đơn hàng thành công từ ZaloPay!');
+          });
+      });
+    }
+  }, [location.search]);
 
   useEffect(() => {
     if (!loading && (!user || user.role !== 'admin')) {
@@ -327,6 +352,15 @@ export default function OrderAdminPage() {
     navigate('/login');
   };
 
+  // Thêm state phân trang:
+  const totalPages = Math.ceil(filteredOrders.length / pageSize);
+  const paginatedOrders = filteredOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  // Reset currentPage về 1 khi search thay đổi:
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
   return (
     <div className="admin-layout bg-gray-50">
       <div className="admin-sidebar-fixed">
@@ -384,23 +418,23 @@ export default function OrderAdminPage() {
             <table className="table-admin-user" style={{ minWidth: 1200 }}>
               <thead>
                 <tr className="bg-gray-100 text-gray-700">
-                  <th className="border-b px-3 py-2">Order ID</th>
-                  <th className="border-b px-3 py-2">Order Date</th>
-                  <th className="border-b px-3 py-2">Customer</th>
-                  <th className="border-b px-3 py-2">Items</th>
-                  <th className="border-b px-3 py-2">Quantity</th>
-                  <th className="border-b px-3 py-2">Total</th>
-                  <th className="border-b px-3 py-2">Status</th>
-                  <th className="border-b px-3 py-2">Type</th>
-                  <th className="border-b px-3 py-2">Method</th>
-                  <th className="border-b px-3 py-2">Pickup Time</th>
-                  <th className="border-b px-3 py-2">Address</th>
-                  <th className="border-b px-3 py-2">Note</th>
-                  <th className="border-b px-3 py-2">Actions</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Order ID</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Order Date</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Customer</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Items</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Quantity</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Total</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Status</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Type</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Method</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Pickup Time</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Address</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Note</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredOrders.map((order, idx) => {
+                {paginatedOrders.map((order, idx) => {
                   const items = order.orderItems?.items || [];
                   const maxItems = Math.max(1, items.length);
                   const isCompleted = ['completed', 'hoàn thành'].includes((order.status || '').toLowerCase());
@@ -785,6 +819,53 @@ export default function OrderAdminPage() {
                 Đóng
               </button>
             </div>
+          </div>
+        )}
+        {orderSuccess && (
+          <div className="order-success-modal">
+            <div className="order-success-modal-content">
+              <h2>Đặt hàng ZaloPay thành công!</h2>
+              <p>
+                Mã đơn hàng: <b>{orderSuccess.orderNumber || orderSuccess.id}</b>
+              </p>
+              <button onClick={() => setOrderSuccess(null)}>Đóng</button>
+            </div>
+          </div>
+        )}
+        {orderSuccessError && (
+          <div className="order-success-modal">
+            <div className="order-success-modal-content">
+              <h2>Lỗi!</h2>
+              <p>{orderSuccessError}</p>
+              <button onClick={() => setOrderSuccessError(null)}>Đóng</button>
+            </div>
+          </div>
+        )}
+        {totalPages > 1 && (
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="rounded border bg-gray-100 px-3 py-1 hover:bg-gray-200 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`rounded border px-3 py-1 ${page === currentPage ? 'bg-[#C92A15] text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="rounded border bg-gray-100 px-3 py-1 hover:bg-gray-200 disabled:opacity-50"
+            >
+              Next
+            </button>
           </div>
         )}
       </div>

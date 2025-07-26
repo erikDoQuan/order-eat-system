@@ -1,8 +1,7 @@
 import 'reflect-metadata';
 import 'source-map-support/register';
-import * as dotenv from 'dotenv';
-dotenv.config();
 
+import { join } from 'path';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { ValidationError } from 'class-validator';
 import { BadRequestException, ClassSerializerInterceptor, ValidationPipe, VersioningType } from '@nestjs/common';
@@ -10,12 +9,14 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { useContainer } from 'class-validator';
-import helmet from 'helmet';
-import { join } from 'path';
+import * as dotenv from 'dotenv';
 import * as express from 'express';
+import helmet from 'helmet';
 
 import { AppConfigsService } from '~/config/config.service';
 import { AppModule } from './app.module';
+
+dotenv.config();
 
 process.env.TZ = 'UTC';
 
@@ -29,7 +30,7 @@ async function bootstrap() {
 
   // Bật CORS cho frontend
   app.enableCors({
-    origin: ['http://localhost:3001', 'http://localhost:3002'], 
+    origin: ['http://localhost:3001', 'http://localhost:3002'],
     credentials: true,
   });
 
@@ -42,11 +43,15 @@ async function bootstrap() {
       contentSecurityPolicy: {
         directives: {
           ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-          "frame-ancestors": ["'self'", "http://localhost:3001"],
+          'frame-ancestors': ["'self'", 'http://localhost:3001'],
         },
       },
-    })
+    }),
   );
+
+  // 🛠️ Thêm middleware để parse JSON body
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
@@ -71,6 +76,21 @@ async function bootstrap() {
   // ✅ Prefix + Versioning
   const excludePaths = ['/health', '/ping'];
   app.setGlobalPrefix('api', { exclude: excludePaths });
+
+  // Middleware để log tất cả request POST (debug callback)
+  app.use((req, res, next) => {
+    if (req.method === 'POST') {
+      console.log(`📨 POST ${req.url} - ${new Date().toISOString()}`);
+      console.log('📧 Headers:', JSON.stringify(req.headers, null, 2));
+
+      // Only log body for debugging, don't interfere with parsing
+      const originalBody = req.body;
+      if (originalBody) {
+        console.log('🔍 Body:', JSON.stringify(originalBody, null, 2));
+      }
+    }
+    next();
+  });
 
   app.enableVersioning({
     type: VersioningType.URI,
@@ -116,14 +136,12 @@ async function bootstrap() {
     res.sendFile(join(__dirname, '..', '..', 'admin-portal', 'dist', 'index.html'));
   });
 
-  await app.listen(appConfig.port, appConfig.host);
-
-  // Log server information
-  console.log(`==========================================================`);
-  console.log(`Http Server running on ${await app.getUrl()} Example System`);
-  console.log(`==========================================================`);
-  console.log(`Documentation: http://localhost:${appConfig.port}/api/v1/documentation`);
-  console.log(`==========================================================`);
+  await app.listen(3000);
+  console.log('==========================================================');
+  console.log('Http Server running on http://127.0.0.1:3000 Example System');
+  console.log('==========================================================');
+  console.log('Documentation: http://localhost:3000/api/v1/documentation');
+  console.log('==========================================================');
 
   return app;
 }

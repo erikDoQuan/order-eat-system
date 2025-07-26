@@ -5,14 +5,10 @@ import Navbar from '../components/Navbar';
 
 import '../css/OrderSuccessPage.css';
 
-import axios from 'axios';
-
 import { useCart } from '../context/CartContext';
-import { getAllDishes } from '../services/dish.api';
-import { createOrder, getOrderDetail } from '../services/order.api';
+import { getOrderDetail } from '../services/order.api';
 
 const OrderSuccessPage: React.FC = () => {
-  console.log('OrderSuccessPage rendered');
   const location = useLocation();
   const navigate = useNavigate();
   const { clearCart } = useCart();
@@ -24,35 +20,25 @@ const OrderSuccessPage: React.FC = () => {
   const order = location.state?.order;
   // Lấy orderId từ state, order, hoặc query string (ZaloPay redirect)
   const orderId = location.state?.orderId || order?.id || new URLSearchParams(location.search).get('orderId') || undefined;
-  // Lấy order_number từ app_trans_id trên URL nếu có (ZaloPay redirect)
-  const params = new URLSearchParams(location.search);
   // Lấy appTransId từ order nếu có, fallback sang URL params
+  const params = new URLSearchParams(location.search);
   let appTransId = order?.appTransId || order?.app_trans_id || params.get('app_trans_id');
-  // Nếu appTransId là số (orderNumber), không dùng cho getOrderByAppTransId
   if (appTransId && (!isNaN(Number(appTransId)) || String(appTransId).length < 10)) {
     appTransId = undefined;
   }
-  // Lấy paymentMethod từ order nếu có, fallback sang state hoặc appTransId
-  const paymentMethod = order?.paymentMethod || location.state?.paymentMethod || (appTransId ? 'zalopay' : undefined);
-  const orderUrl = location.state?.order_url;
+  const paymentMethod = order?.paymentMethod || location.state?.paymentMethod || (appTransId ? 'zalopay' : 'cash');
 
   useEffect(() => {
-    console.log('OrderSuccessPage useEffect - clearCart');
     clearCart();
-    // Xoá thông tin đơn hàng tạm của ZaloPay khỏi localStorage
     localStorage.removeItem('last_zalopay_order_url');
     localStorage.removeItem('last_zalopay_qr');
     localStorage.removeItem('last_zalopay_amount');
     localStorage.removeItem('last_zalopay_orderId');
-    // eslint-disable-next-line
   }, []);
 
   useEffect(() => {
-    console.log('OrderSuccessPage useEffect - location state:', location.state);
-    console.log('OrderSuccessPage useEffect - order:', order);
-    console.log('OrderSuccessPage useEffect - orderId:', orderId);
-    // Đã bỏ log orderNumberFromAppTransId vì không còn dùng
-
+    setError(null);
+    setOrderNumber('...');
     if (order) {
       setOrderNumber(order.order_number || order.orderNumber || order.id || '...');
       setError(null);
@@ -103,8 +89,6 @@ const OrderSuccessPage: React.FC = () => {
             <div className="order-success-orderid">
               Mã đơn hàng của bạn là: <span>#{loading ? '...' : orderNumber}</span>
             </div>
-
-            {/* Không render order-success-zalopay nữa */}
             {paymentMethod === 'cash' && (
               <div
                 className="order-success-cash"
@@ -122,7 +106,6 @@ const OrderSuccessPage: React.FC = () => {
                 </div>
               </div>
             )}
-
             <div className="order-success-track">
               Để kiểm tra tình trạng đơn hàng vui lòng click vào đây:
               <a

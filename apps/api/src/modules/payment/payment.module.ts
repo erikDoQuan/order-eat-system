@@ -1,19 +1,32 @@
-import { Module } from '@nestjs/common';
-import { ZaloPayController } from './zalopay.controller';
-import { ZaloPayService } from './zalopay.service';
-import { UserTransactionModule } from '../user_transaction/user-transaction.module';
-import { UserTransactionService } from '../user_transaction/user-transaction.service';
-import { OrderModule } from '../order/order.module';
-import { OrderService } from '../order/order.service';
-import { OrderRepository } from '../../database/repositories/order.repository';
+import { forwardRef, Module } from '@nestjs/common';
+
 import { DishSnapshotRepository } from '../../database/repositories/dish_snapshot.repository';
+import { OrderRepository } from '../../database/repositories/order.repository';
 import { UserRepository } from '../../database/repositories/user.repository';
 import { DishModule } from '../dish/dish.module';
 import { NotificationModule } from '../notification/notification.module';
+import { OrderModule } from '../order/order.module';
+import { OrderService } from '../order/order.service';
+import { UserTransactionModule } from '../user_transaction/user-transaction.module';
+import { UserTransactionService } from '../user_transaction/user-transaction.service';
+import { ZaloPayController } from './zalopay.controller';
+import { ZaloPayService } from './zalopay.service';
 
 @Module({
-  imports: [UserTransactionModule, OrderModule, DishModule, NotificationModule],
+  imports: [UserTransactionModule, forwardRef(() => OrderModule), DishModule, NotificationModule],
   controllers: [ZaloPayController],
-  providers: [ZaloPayService, UserTransactionService, OrderService, OrderRepository, DishSnapshotRepository, UserRepository],
+  providers: [
+    ZaloPayService,
+    UserTransactionService,
+    OrderService,
+    OrderRepository,
+    DishSnapshotRepository,
+    UserRepository,
+    {
+      provide: 'ZALOPAY_SERVICE',
+      useExisting: ZaloPayService,
+    },
+  ],
+  exports: [ZaloPayService, 'ZALOPAY_SERVICE'],
 })
-export class PaymentModule {} 
+export class PaymentModule {}

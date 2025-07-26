@@ -6,13 +6,14 @@ import authConfig from './auth.config';
 import awsConfig from './aws.config';
 import { AppConfigsService } from './config.service';
 import dbConfig from './db.config';
+import zalopayConfig from './zalopay.config';
 
 @Global()
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, authConfig, awsConfig, dbConfig],
+      load: [appConfig, authConfig, awsConfig, dbConfig, zalopayConfig],
       envFilePath: ['.env'],
     }),
   ],

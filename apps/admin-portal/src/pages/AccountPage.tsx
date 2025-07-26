@@ -81,7 +81,8 @@ export default function AccountPage() {
 
   useEffect(() => {
     setAddress(user?.address || '');
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   useEffect(() => {
     setDishesLoading(true);
@@ -520,7 +521,7 @@ export default function AccountPage() {
                                         setViewingReviewOrderId(order.id);
                                       }}
                                     >
-                                      Xem đánh giá
+                                      {t('view_review')}
                                     </a>
                                   </>
                                 )}

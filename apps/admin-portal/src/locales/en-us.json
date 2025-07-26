@@ -3,7 +3,7 @@
     "register": "Register",
     "account": "Account",
     "logout": "Logout",
-    "cart": "Cart",
+    "cart": "Shopping Cart",
     "pizza": "Pizza",
     "seafood_pizza": "Seafood Pizza",
     "traditional_pizza": "Traditional Pizza",
@@ -101,6 +101,7 @@
     "footer_branch": "Branches",
     "footer_contact": "Contact",
     "footer_rights": "All rights reserved.",
+    "view_review": "View Review",
     "menu": {
         "d4e464f8-c362-4907-8d4f-a6ae951d20f4": {
             "name": "Ham & Sausage Pizza",
@@ -281,6 +282,7 @@
         "d0372884-a918-429e-8112-74fce9817917": {
             "name": "Cheese Pizza",
             "desc": "Cheese, cheese, and more cheese."
-        }
+        },
+        "address_book": "ADDRESS"
     }
 }

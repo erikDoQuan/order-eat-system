@@ -14,7 +14,28 @@ const PaymentInfoPage: React.FC = () => {
   const location = useLocation();
   const state = (location.state as any) || {};
   const orderType = state?.orderType || 'pickup';
-  const store = state?.store || { name: 'Chưa chọn cửa hàng', address: '' };
+  const getStores = () => {
+    try {
+      const stores = JSON.parse(localStorage.getItem('bcm_stores') || '[]');
+      if (Array.isArray(stores) && stores.length > 0) return stores;
+    } catch {}
+    return [
+      {
+        id: 1,
+        name: 'Bếp của Mẹ - Chi nhánh 1',
+        address: '296/29 Lương Định Của, Nha Trang',
+        phone: '0909 123 456',
+      },
+      {
+        id: 2,
+        name: 'Bếp của Mẹ - Chi nhánh 2',
+        address: '01 Nguyễn Trãi, P. Phước Hải, Nha Trang, Khánh Hòa',
+        phone: '0909 123 456',
+      },
+    ];
+  };
+  const stores = getStores();
+  const store = state?.store || stores[0];
   const customer = state?.customer || { name: '', phone: '' };
   const { user } = useContext(AuthContext);
   const { orderItems, dishes } = useCart();

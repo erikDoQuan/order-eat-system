@@ -15,6 +15,28 @@ const Footer: React.FC = () => {
       .catch(() => {});
   }, []);
 
+  const getStores = () => {
+    try {
+      const stores = JSON.parse(localStorage.getItem('bcm_stores') || '[]');
+      if (Array.isArray(stores) && stores.length > 0) return stores;
+    } catch {}
+    return [
+      {
+        id: 1,
+        name: 'Bếp của Mẹ - Chi nhánh 1',
+        address: '296/29 Lương Định Của, Nha Trang',
+        phone: '0909 123 456',
+      },
+      {
+        id: 2,
+        name: 'Bếp của Mẹ - Chi nhánh 2',
+        address: '01 Nguyễn Trãi, P. Phước Hải, Nha Trang, Khánh Hòa',
+        phone: '0909 123 456',
+      },
+    ];
+  };
+  const stores = getStores();
+
   return (
     <footer style={{ background: '#c92a15', color: 'white', padding: '24px 32px 0 32px', marginTop: 32 }}>
       <div
@@ -76,27 +98,23 @@ const Footer: React.FC = () => {
           <div>
             <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>{t('footer_branch')}</h3>
             <ul style={{ fontSize: 15, listStyle: 'none', padding: 0, margin: 0 }}>
-              <li style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <FaMapMarkerAlt style={{ fontSize: 16, color: '#fff' }} />
-                <span>296/29 Lương Định Của, Nha Trang</span>
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 0 }}>
-                <FaMapMarkerAlt style={{ fontSize: 16, color: '#fff' }} />
-                <span>01 Nguyễn Trãi, P. Phước Hải, Nha Trang, Khánh Hòa</span>
-              </li>
+              {stores.map(store => (
+                <li key={store.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <FaMapMarkerAlt style={{ fontSize: 16, color: '#fff' }} />
+                  <span>{store.address}</span>
+                </li>
+              ))}
             </ul>
           </div>
           <div style={{ marginTop: 18, borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: 14 }}>
             <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 10 }}>{t('footer_contact')}</h3>
             <ul style={{ fontSize: 15, listStyle: 'none', padding: 0, margin: 0, marginBottom: 10 }}>
-              <li style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <FaPhoneAlt style={{ fontSize: 15, color: '#fff' }} />
-                <span>0909 123 456</span>
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <FaEnvelope style={{ fontSize: 15, color: '#fff' }} />
-                <span>support@bepcuame.vn</span>
-              </li>
+              {stores.map(store => (
+                <li key={store.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <FaPhoneAlt style={{ fontSize: 15, color: '#fff' }} />
+                  <span>{store.phone}</span>
+                </li>
+              ))}
             </ul>
             <div style={{ display: 'flex', gap: 16, marginTop: 4 }}>
               <a href="#" style={{ color: 'white', fontSize: 22 }} className="social-icon">

@@ -48,9 +48,14 @@ export default function OrderDetailPage() {
   if (!order) return <div>Đang tải...</div>;
 
   const items = order.orderItems?.items || [];
-  const getProductName = (item: any) => item.name || '-';
-  const getProductPrice = (item: any) => Number(item.price ?? 0);
-  const getProductImage = (item: any) => item.image || '/default-image.png';
+  const getProductName = (item: any) => item.dishSnapshot?.name || item.name || getDish(item.dishId)?.name || '-';
+  const getProductPrice = (item: any) => {
+    if (item.dishSnapshot?.basePrice !== undefined) return Number(item.dishSnapshot.basePrice);
+    if (item.price !== undefined) return Number(item.price);
+    const dish = getDish(item.dishId);
+    return dish ? Number(dish.basePrice) : 0;
+  };
+  const getProductImage = (item: any) => item.dishSnapshot?.imageUrl || item.image || getDish(item.dishId)?.imageUrl || '/default-image.png';
   const getProductQuantity = (item: any) => item.quantity ?? 0;
   const sizeOptions = [
     { value: 'small', price: 0 },
@@ -97,7 +102,7 @@ export default function OrderDetailPage() {
   }
   const mergedItems = mergeOrderItems(items);
 
-  const subtotal = mergedItems.reduce((sum, item) => sum + getItemPrice(item) * Number(item.quantity ?? 0), 0);
+  const subtotal = mergedItems.reduce((sum, item) => sum + getProductPrice(item) * Number(item.quantity ?? 0), 0);
   const total = subtotal + Number(shippingFee);
   return (
     <>
@@ -158,14 +163,17 @@ export default function OrderDetailPage() {
               ) : (
                 <div className="order-detail-product-list-items">
                   {mergedItems.map((item: any, idx: number) => {
-                    const dish = getDish(item.dishId);
-                    if (!dish) return null;
                     return (
                       <div key={idx} className="order-detail-product-item">
-                        {dish.imageUrl && <img src={getImageUrl(dish.imageUrl)} alt={dish.name} className="order-detail-product-img" />}
+                        {getProductImage(item) && (
+                          <img src={getImageUrl(getProductImage(item))} alt={getProductName(item)} className="order-detail-product-img" />
+                        )}
                         <div className="order-detail-product-info">
-                          <div className="order-detail-product-name">{dish.name || `Món: ${item.dishId}`}</div>
-                          {dish.description && <div className="order-detail-product-desc">{dish.description}</div>}
+                          <div className="order-detail-product-name">{getProductName(item)}</div>
+                          {/* Nếu có mô tả trong snapshot thì ưu tiên, nếu không thì lấy từ dish */}
+                          {(item.dishSnapshot?.description || getDish(item.dishId)?.description) && (
+                            <div className="order-detail-product-desc">{item.dishSnapshot?.description || getDish(item.dishId)?.description}</div>
+                          )}
                           {item.size && <div className="order-detail-product-size">Size: {item.size}</div>}
                           {item.base && (
                             <div className="order-detail-product-base">
@@ -180,7 +188,7 @@ export default function OrderDetailPage() {
                         <div className="order-detail-product-qtyprice">
                           <div className="order-detail-product-qty">×{item.quantity}</div>
                           <div className="order-detail-product-price">
-                            {(getItemPrice(item) * Number(item.quantity ?? 0)).toLocaleString('vi-VN')}₫
+                            {(getProductPrice(item) * Number(item.quantity ?? 0)).toLocaleString('vi-VN')}₫
                           </div>
                         </div>
                       </div>

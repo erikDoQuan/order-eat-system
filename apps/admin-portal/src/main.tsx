@@ -28,6 +28,7 @@ import RegisterPage from './pages/RegisterPage';
 import './i18n';
 
 import RevenueReportsPage from './admin/RevenueReportsPage';
+import SettingAdminPage from './admin/SettingAdminPage';
 import UserTransactionAdminPage from './admin/UserTransactionAdminPage';
 import { DishProvider } from './context/DishContext';
 import BillPreviewPage from './pages/BillPreviewPage';
@@ -152,7 +153,9 @@ function AppWithCartProvider() {
               <AdminPage />
             </AdminRoute>
           }
-        />
+        >
+          <Route path="settings" element={<SettingAdminPage />} />
+        </Route>
         <Route
           path="/admin/profile"
           element={
@@ -227,6 +230,7 @@ function AppWithCartProvider() {
         <Route path="/delivery-order" element={<DeliveryOrderPage />} />
         <Route path="/payment-info" element={<PaymentInfoPage />} />
         <Route path="/order-success" element={<OrderSuccessPage />} />
+        <Route path="/ordersuccesspage" element={<OrderSuccessPage />} />
         <Route path="/zalo-pay-payment" element={<ZaloPayPaymentPage />} />
         <Route path="/bill/generate" element={<BillPrintPage />} />
         <Route path="/bill/preview" element={<BillPreviewPage />} />
@@ -235,6 +239,7 @@ function AppWithCartProvider() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/teachable-test" element={<TeachableMachineTestPage />} />
+        <Route path="/orderadminpage" element={<OrderAdminPage />} />
       </Routes>
     </CartProvider>
   );

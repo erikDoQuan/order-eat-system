@@ -46,6 +46,39 @@ export default function ReviewAdminPage() {
   const [replyingReviewId, setReplyingReviewId] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
 
+  // Thêm state phân trang:
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  const getUserName = (userId: string) => {
+    if (!userId) return 'Unknown';
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      const name = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+      if (name) return name;
+      if (user.email) return user.email;
+      return user.id;
+    }
+    return userId;
+  };
+  const getOrderInfo = (orderId: string) => {
+    const order = orders.find((o: any) => o.id === orderId);
+    return order || {};
+  };
+
+  const filteredReviews = reviews
+    .filter(review => {
+      const userName = getUserName(review.userId) || '';
+      const orderInfo = getOrderInfo(review.orderId);
+      const orderNumber = orderInfo.orderNumber ? `#${orderInfo.orderNumber}` : '';
+      const matchSearch = userName.toLowerCase().includes(search.toLowerCase()) || orderNumber.toLowerCase().includes(search.toLowerCase());
+      const matchStar = starFilter ? review.rating === starFilter : true;
+      return matchSearch && matchStar;
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const totalPages = Math.ceil(filteredReviews.length / pageSize);
+  const paginatedReviews = filteredReviews.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   useEffect(() => {
     if (!loading && (!user || user.role !== 'admin')) {
       navigate('/login', { replace: true });
@@ -92,29 +125,9 @@ export default function ReviewAdminPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const getUserName = (userId: string) => {
-    if (!userId) return 'Unknown';
-    const user = users.find(u => u.id === userId);
-    if (user) {
-      const name = `${user.firstName || ''} ${user.lastName || ''}`.trim();
-      if (name) return name;
-      if (user.email) return user.email;
-      return user.id;
-    }
-    return userId;
-  };
-
-  const getOrderInfo = (orderId: string) => {
-    const order = orders.find(o => o.id === orderId);
-    if (order) {
-      return {
-        orderNumber: order.order_number || order.orderNumber,
-        totalAmount: order.totalAmount,
-        status: order.status,
-      };
-    }
-    return { orderNumber: 'Unknown', totalAmount: 0, status: 'Unknown' };
-  };
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
@@ -123,16 +136,16 @@ export default function ReviewAdminPage() {
   };
 
   // Filter reviews by customer name/order number and star rating
-  const filteredReviews = reviews
-    .filter(review => {
-      const userName = getUserName(review.userId) || '';
-      const orderInfo = getOrderInfo(review.orderId);
-      const orderNumber = orderInfo.orderNumber ? `#${orderInfo.orderNumber}` : '';
-      const matchSearch = userName.toLowerCase().includes(search.toLowerCase()) || orderNumber.toLowerCase().includes(search.toLowerCase());
-      const matchStar = starFilter ? review.rating === starFilter : true;
-      return matchSearch && matchStar;
-    })
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  // const filteredReviews = reviews
+  //   .filter(review => {
+  //     const userName = getUserName(review.userId) || '';
+  //     const orderInfo = getOrderInfo(review.orderId);
+  //     const orderNumber = orderInfo.orderNumber ? `#${orderInfo.orderNumber}` : '';
+  //     const matchSearch = userName.toLowerCase().includes(search.toLowerCase()) || orderNumber.toLowerCase().includes(search.toLowerCase());
+  //     const matchStar = starFilter ? review.rating === starFilter : true;
+  //     return matchSearch && matchStar;
+  //   })
+  //   .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this review?')) return;
@@ -310,12 +323,12 @@ export default function ReviewAdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredReviews.map((review, index) => {
+                {paginatedReviews.map((review, idx) => {
                   const orderInfo = getOrderInfo(review.orderId);
                   return (
                     <React.Fragment key={review.id}>
                       <tr className="transition hover:bg-gray-50">
-                        <td className="border-b px-3 py-2 font-medium">{index + 1}</td>
+                        <td className="border-b px-3 py-2 font-medium">{(currentPage - 1) * pageSize + idx + 1}</td>
                         <td className="border-b px-3 py-2">{formatDate(review.createdAt)}</td>
                         <td className="border-b px-3 py-2">{getUserName(review.userId)}</td>
                         <td className="border-b px-3 py-2">
@@ -496,6 +509,34 @@ export default function ReviewAdminPage() {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="rounded border bg-gray-100 px-3 py-1 hover:bg-gray-200 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`rounded border px-3 py-1 ${page === currentPage ? 'bg-[#C92A15] text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="rounded border bg-gray-100 px-3 py-1 hover:bg-gray-200 disabled:opacity-50"
+            >
+              Next
+            </button>
           </div>
         )}
 

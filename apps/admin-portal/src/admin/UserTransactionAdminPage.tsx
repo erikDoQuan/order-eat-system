@@ -26,6 +26,46 @@ export default function UserTransactionAdminPage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const location = useLocation();
 
+  // Thêm state phân trang:
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  const getUserName = (userId: string) => {
+    if (!userId) return 'Không rõ';
+    const user = users.find((u: any) => u.id === userId);
+    if (user) {
+      const name = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+      if (name) return name;
+      if (user.email) return user.email;
+      return user.id;
+    }
+    return userId;
+  };
+  const getOrderLabel = (orderId: string) => {
+    const order = orders.find((o: any) => o.id === orderId);
+    return order ? `#${order.orderNumber || order.id}` : orderId;
+  };
+  const filteredTransactions = transactions
+    .filter(tran => tran.method === 'zalopay')
+    .filter(tran => {
+      // Nếu search là orderId (UUID), so sánh trực tiếp tran.orderId === search
+      if (search && search.length >= 20 && /^[a-zA-Z0-9-]+$/.test(search)) {
+        return tran.orderId === search;
+      }
+      const userName = (getUserName(tran.userId) || '').toLowerCase();
+      const orderLabel = (getOrderLabel(tran.orderId) || '').toLowerCase();
+      const desc = (tran.description || '').toLowerCase();
+      const code = (tran.transactionCode || '').toLowerCase();
+      return (
+        userName.includes(search.toLowerCase()) ||
+        orderLabel.includes(search.toLowerCase()) ||
+        desc.includes(search.toLowerCase()) ||
+        code.includes(search.toLowerCase())
+      );
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const totalPages = Math.ceil(filteredTransactions.length / pageSize);
+  const paginatedTransactions = filteredTransactions.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   // Khi mount, nếu có orderId trên query param, setSearch
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -64,51 +104,16 @@ export default function UserTransactionAdminPage() {
     // eslint-disable-next-line
   }, [page, limit]);
 
+  // Reset currentPage về 1 khi search thay đổi:
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
     const d = new Date(dateStr);
     return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' ' + d.toLocaleDateString('vi-VN');
   };
-
-  const getUserName = (userId: string) => {
-    if (!userId) return 'Không rõ';
-    const user = users.find((u: any) => u.id === userId);
-    if (user) {
-      const name = `${user.firstName || ''} ${user.lastName || ''}`.trim();
-      if (name) return name;
-      if (user.email) return user.email;
-      return user.id;
-    }
-    return userId;
-  };
-
-  const getOrderLabel = (orderId: string) => {
-    const order = orders.find((o: any) => o.id === orderId);
-    return order ? `#${order.orderNumber || order.id}` : orderId;
-  };
-
-  // Filter/search thực sự hoạt động
-  const filteredTransactions = transactions
-    .filter(tran => tran.method === 'zalopay')
-    .filter(tran => {
-      // Nếu search là orderId (UUID), so sánh trực tiếp tran.orderId === search
-      if (search && search.length >= 20 && /^[a-zA-Z0-9-]+$/.test(search)) {
-        return tran.orderId === search;
-      }
-      const userName = (getUserName(tran.userId) || '').toLowerCase();
-      const orderLabel = (getOrderLabel(tran.orderId) || '').toLowerCase();
-      const desc = (tran.description || '').toLowerCase();
-      const code = (tran.transactionCode || '').toLowerCase();
-      return (
-        userName.includes(search.toLowerCase()) ||
-        orderLabel.includes(search.toLowerCase()) ||
-        desc.includes(search.toLowerCase()) ||
-        code.includes(search.toLowerCase())
-      );
-    })
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-  const totalPages = Math.ceil(total / limit);
 
   return (
     <div className="admin-layout bg-gray-50">
@@ -142,23 +147,23 @@ export default function UserTransactionAdminPage() {
                   <th className="border-b px-3 py-2">Amount</th>
                   <th className="border-b px-3 py-2">Method</th>
                   <th className="border-b px-3 py-2">Status</th>
-                  <th className="border-b px-3 py-2">Transaction Time</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Transaction Time</th>
                   <th className="border-b px-3 py-2">Transaction Code</th>
                   <th className="border-b px-3 py-2">Description</th>
                   <th className="border-b px-3 py-2">Created At</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredTransactions.length === 0 && (
+                {paginatedTransactions.length === 0 && (
                   <tr>
                     <td colSpan={11} className="p-4 text-center text-gray-500">
                       Không có giao dịch nào.
                     </td>
                   </tr>
                 )}
-                {filteredTransactions.map((tran, idx) => (
+                {paginatedTransactions.map((tran, idx) => (
                   <tr key={tran.id} className="transition hover:bg-gray-50">
-                    <td className="border-b px-3 py-2 text-xs text-gray-500">{idx + 1}</td>
+                    <td className="border-b px-3 py-2 text-xs text-gray-500">{(currentPage - 1) * pageSize + idx + 1}</td>
                     <td className="border-b px-3 py-2 font-medium">{getUserName(tran.userId)}</td>
                     <td className="border-b px-3 py-2">{getOrderLabel(tran.orderId)}</td>
                     <td className="border-b px-3 py-2 text-right">{Number(tran.amount).toLocaleString('vi-VN')}₫</td>
@@ -183,21 +188,33 @@ export default function UserTransactionAdminPage() {
               </tbody>
             </table>
             {/* PHÂN TRANG ĐƠN GIẢN */}
-            <div className="mt-4 flex items-center justify-center gap-2">
-              <button className="rounded border px-3 py-1 disabled:opacity-50" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
-                Trang trước
-              </button>
-              <span>
-                Trang {page} / {totalPages}
-              </span>
-              <button
-                className="rounded border px-3 py-1 disabled:opacity-50"
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-              >
-                Trang sau
-              </button>
-            </div>
+            {totalPages > 1 && (
+              <div className="mt-4 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="rounded border bg-gray-100 px-3 py-1 hover:bg-gray-200 disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`rounded border px-3 py-1 ${page === currentPage ? 'bg-[#C92A15] text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="rounded border bg-gray-100 px-3 py-1 hover:bg-gray-200 disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
