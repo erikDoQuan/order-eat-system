@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import Navbar from '../components/Navbar';
+import { AuthContext } from '../context/AuthContext';
 import { getAllDishes } from '../services/dish.api';
 import { getOrderDetail } from '../services/order.api';
 import { getOrderStatusText } from './orderStatus.utils';
@@ -17,6 +18,7 @@ const getImageUrl = (imageUrl: string | undefined | null) => {
 
 export default function OrderDetailPage() {
   const { orderId } = useParams();
+  const { user } = useContext(AuthContext);
   const [order, setOrder] = useState<any>(null);
   const [dishes, setDishes] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +27,9 @@ export default function OrderDetailPage() {
     if (orderId) {
       getOrderDetail(orderId)
         .then(data => {
+          console.log('🔍 OrderDetailPage - Full order data:', data);
+          console.log('🔍 OrderDetailPage - User info:', data?.user);
+          console.log('🔍 OrderDetailPage - Delivery address:', data?.deliveryAddress);
           if (!data || !data.id) {
             setError('Không tìm thấy đơn hàng hoặc bạn không có quyền xem đơn này.');
             setOrder(null);
@@ -83,7 +88,9 @@ export default function OrderDetailPage() {
   const type = order.type;
   const pickupTime = order.pickupTime;
   const deliveryAddress = order.deliveryAddress;
-  const phone = order.phone || (typeof deliveryAddress === 'object' ? deliveryAddress?.phone : undefined) || '-';
+  const address = (typeof deliveryAddress === 'object' && deliveryAddress?.address) || user?.address || '-';
+  const phone =
+    order.user?.phone || (typeof deliveryAddress === 'object' && deliveryAddress?.phone) || user?.phoneNumber || user?.phone_number || '-';
   const shippingFee = order.shippingFee !== undefined ? order.shippingFee : type === 'delivery' ? 25000 : 0;
   const paymentMethod = order.paymentMethod || 'Thanh toán khi nhận hàng';
 
@@ -127,7 +134,7 @@ export default function OrderDetailPage() {
             <div>
               <b>Địa chỉ</b>
               <br />
-              {typeof deliveryAddress === 'string' ? deliveryAddress : deliveryAddress?.address || '-'}
+              {address}
             </div>
             <div className="order-detail-info-phone">
               <b>Điện thoại</b>

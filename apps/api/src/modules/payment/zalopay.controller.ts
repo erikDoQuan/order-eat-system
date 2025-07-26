@@ -1,6 +1,9 @@
 import { Body, Controller, Get, HttpCode, Post, Query, Req, Res, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
 
+import { OrderService } from '../order/order.service';
+import { UserTransactionService } from '../user_transaction/user-transaction.service';
 import { CreateZaloPayOrderDto } from './dto/create-zalopay-order.dto';
 import { ZaloPayCallbackDto } from './dto/zalopay-callback.dto';
 import { ZaloPayService } from './zalopay.service';
@@ -8,7 +11,11 @@ import { ZaloPayService } from './zalopay.service';
 @Controller('zalopay')
 @ApiTags('ZaloPay')
 export class ZaloPayController {
-  constructor(private readonly zaloPayService: ZaloPayService) {}
+  constructor(
+    private readonly zaloPayService: ZaloPayService,
+    private readonly orderService: OrderService,
+    private readonly userTransactionService: UserTransactionService,
+  ) {}
 
   @Post('create-order')
   @ApiOperation({ summary: 'Create ZaloPay order' })
@@ -59,70 +66,50 @@ export class ZaloPayController {
   @Post('callback')
   @HttpCode(200)
   @ApiOperation({ summary: 'Handle ZaloPay callback' })
-  async handleCallback(@Body() body: ZaloPayCallbackDto, @Req() req: any) {
-    console.log('🚨 CALLBACK RECEIVED - TIMESTAMP:', new Date().toISOString());
-    const userAgent = req.headers['user-agent'] || '';
-    const isRealZaloPay = !userAgent.includes('PowerShell') && !userAgent.includes('Invoke-WebRequest');
-
-    console.log('🔔 ZaloPay callback received!');
-    console.log('📧 Request method:', req.method);
-    console.log('📧 Request URL:', req.url);
-    console.log('📱 User-Agent:', userAgent);
-    console.log('🎯 Is Real ZaloPay:', isRealZaloPay ? '✅ YES' : '❌ NO (Test)');
-    console.log('📧 Request headers:', JSON.stringify(req.headers, null, 2));
-    console.log('📧 Request body:', JSON.stringify(body, null, 2));
-    console.log('🔍 Data field:', body?.data);
-    console.log('🔍 MAC:', body?.mac);
-    console.log('🔍 Type:', body?.type);
-
-    // Parse data field if exists (ZaloPay sends data as JSON string)
-    let parsedData: Record<string, any> = {};
-    if (body?.data) {
-      try {
-        parsedData = JSON.parse(body.data);
-        console.log('✅ Parsed data successfully:', parsedData);
-        console.log('🔍 App Trans ID from parsed data:', parsedData.app_trans_id);
-        console.log('🔍 Return Code from parsed data:', parsedData.return_code);
-        console.log('🔍 Amount from parsed data:', parsedData.amount);
-        console.log('🔍 Embed Data from parsed data:', parsedData.embed_data);
-      } catch (err) {
-        console.error('❌ Error parsing data field:', err);
-        parsedData = {};
-      }
-    }
-
-    // Use parsed data if available, otherwise use legacy fields
-    const callbackData = {
-      ...body,
-      ...parsedData,
-      app_trans_id: parsedData.app_trans_id || body.app_trans_id,
-      return_code: parsedData.return_code || body.return_code,
-      amount: parsedData.amount || body.amount,
-      embed_data: parsedData.embed_data || body.embed_data,
-      zp_trans_token: parsedData.zp_trans_token || body.zp_trans_token,
-    };
-
-    console.log('🔍 Final callback data:', callbackData);
-
-    // Validation cho real ZaloPay callbacks
-    if (isRealZaloPay && (!callbackData || !callbackData.app_trans_id)) {
-      console.error('❌ Real ZaloPay callback missing required data');
-      return {
-        return_code: 1,
-        return_message: 'Callback received (missing data)',
-      };
-    }
-
+  async handleZaloCallback(@Body() body: any) {
     try {
-      await this.zaloPayService.handleCallback(callbackData);
-      console.log('✅ Đã nhận callback từ ZaloPay:', callbackData);
+      const data = typeof body.data === 'string' ? JSON.parse(body.data) : body.data;
+      const appTransId = data.app_trans_id;
+      console.log('🔍 Callback received with appTransId:', appTransId);
+      console.log('🔍 Full callback data:', JSON.stringify(data, null, 2));
+
+      if (!appTransId) throw new Error('appTransId missing in callback data');
+
+      // Tìm đơn hàng theo appTransId
+      const order = await this.orderService.findOneByAppTransId(appTransId);
+      if (!order) {
+        console.log('❌ Order not found with appTransId:', appTransId);
+        // Log tất cả appTransId có trong DB để debug
+        const allOrders = await this.orderService.findAll({ limit: 100, offset: 0 });
+        console.log('📋 All appTransIds in DB:', allOrders.data.map(o => o.appTransId).filter(Boolean));
+        throw new Error('Order not found with appTransId: ' + appTransId);
+      }
+
+      console.log('✅ Found order:', order.id, 'with appTransId:', appTransId);
+
+      await this.orderService.markAsPaid(order.id, {
+        method: 'zalopay',
+        transactionId: data.zp_trans_id,
+      });
+
+      // ✅ Thêm user_transaction
+      await this.userTransactionService.create({
+        userId: order.userId,
+        orderId: order.id,
+        amount: String(data.amount),
+        method: 'zalopay',
+        status: 'success',
+        transTime: new Date().toISOString(),
+        transactionCode: data.zp_trans_id || data.zp_trans_token || '',
+        description: `Thanh toán ZaloPay cho đơn hàng #${order.orderNumber || order.id}`,
+      });
+
       return {
         return_code: 1,
         return_message: 'Callback received successfully',
       };
     } catch (err) {
       console.error('Lỗi callback ZaloPay:', err);
-      // Vẫn trả về 200 và return_code 1 để ZaloPay không retry
       return {
         return_code: 1,
         return_message: 'Callback received (with error)',
@@ -131,7 +118,49 @@ export class ZaloPayController {
     }
   }
 
-  // Route GET để handle redirect từ ZaloPay sau khi thanh toán thành công
+  // ✅ Route GET để handle redirect từ ZaloPay sau khi thanh toán thành công
+  @Get('redirect-after-zalopay')
+  @ApiOperation({ summary: 'Handle redirect from ZaloPay after payment' })
+  async redirectAfterZaloPay(
+    @Query('appTransId') appTransId: string,
+    @Query('return_code') returnCode: string,
+    @Query('orderId') orderId: string,
+    @Res() res: Response,
+  ) {
+    console.log('🔄 ZaloPay redirect received!');
+    console.log('🔍 App Trans ID:', appTransId);
+    console.log('🔍 Return Code:', returnCode);
+    console.log('🔍 Order ID:', orderId);
+
+    try {
+      // Tìm order trong database để lấy thông tin chi tiết
+      let order = null;
+      if (appTransId) {
+        order = await this.zaloPayService.findOrderByAppTransId(appTransId);
+      } else if (orderId) {
+        order = await this.zaloPayService.findOrderById(orderId);
+      }
+
+      // Xác định return_code từ order hoặc query parameter
+      const finalReturnCode = order?.returnCode || returnCode || '1';
+      const finalAppTransId = order?.appTransId || appTransId || '';
+
+      // Tạo redirect URL với thông tin đầy đủ
+      const redirectUrl = `https://3ff7cf6a1456.ngrok-free.app/order-success?appTransId=${finalAppTransId}&return_code=${finalReturnCode}`;
+
+      console.log('🔗 Redirecting to:', redirectUrl);
+
+      // Redirect về frontend
+      return res.redirect(redirectUrl);
+    } catch (error) {
+      console.error('❌ Error in redirect handler:', error);
+      // Fallback redirect nếu có lỗi
+      const fallbackUrl = `https://3ff7cf6a1456.ngrok-free.app/order-success?appTransId=${appTransId || ''}&return_code=${returnCode || '1'}`;
+      return res.redirect(fallbackUrl);
+    }
+  }
+
+  // Route GET để handle redirect từ ZaloPay sau khi thanh toán thành công (legacy)
   @Get('callback')
   async handleRedirect(@Query('appTransId') appTransId: string, @Query('return_code') returnCode: string) {
     console.log('🔄 ZaloPay redirect received!');
@@ -143,7 +172,7 @@ export class ZaloPayController {
       message: 'Redirect from ZaloPay',
       appTransId: appTransId,
       returnCode: returnCode,
-      redirectUrl: `https://fda84102a052.ngrok-free.app/order-success?appTransId=${appTransId}&return_code=${returnCode}`,
+      redirectUrl: `https://3ff7cf6a1456.ngrok-free.app/order-success?appTransId=${appTransId}&return_code=${returnCode}`,
     };
   }
 

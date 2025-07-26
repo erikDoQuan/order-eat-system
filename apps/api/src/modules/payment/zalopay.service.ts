@@ -27,8 +27,8 @@ export class ZaloPayService {
     const app_id = this.config.get('zalopay.appId');
     const key1 = this.config.get('zalopay.key1');
     const endpoint = this.config.get('zalopay.endpoint');
-    const callbackUrl = this.config.get('zalopay.callbackUrl') || 'https://fda84102a052.ngrok-free.app/api/v1/zalopay/callback';
-    const redirectUrl = this.config.get('zalopay.redirectUrl') || 'https://fda84102a052.ngrok-free.app/order-success';
+    const callbackUrl = this.config.get('zalopay.callbackUrl') || 'https://3ff7cf6a1456.ngrok-free.app/api/v1/zalopay/callback';
+    const redirectUrl = this.config.get('zalopay.redirectUrl') || 'https://3ff7cf6a1456.ngrok-free.app/api/v1/zalopay/redirect-after-zalopay';
 
     // Sinh appTransId mỗi lần gọi, không trùng trong ngày
     const date = new Date();
@@ -61,6 +61,9 @@ export class ZaloPayService {
       totalAmount: payload.amount,
       note: payload.note,
       deliveryAddress: payload.deliveryAddress,
+      pickupTime: payload.pickupTime,
+      userPhone: payload.userPhone,
+      userName: payload.userName,
     });
 
     // Log callback URL để debug
@@ -118,46 +121,39 @@ export class ZaloPayService {
       response = await axios.post(endpoint, qs.stringify(order), {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
-      // Log response từ ZaloPay để debug (bắt buộc phải xuất hiện)
-      console.log('ZaloPay response:', response.data);
-      console.log('ZaloPay response type:', typeof response.data);
-      console.log('ZaloPay response keys:', Object.keys(response.data || {}));
 
-      if (typeof response.data === 'object' && response.data !== null) {
-        // Kiểm tra return_code
-        if ('return_code' in response.data) {
-          console.log('✅ ZaloPay response has return_code:', response.data.return_code);
+      console.log('📦 ZaloPay response:', response.data);
 
-          // Đảm bảo trả về object có thể serialize được
-          const result = {
-            return_code: response.data.return_code,
-            return_message: response.data.return_message || 'Unknown',
-            qrcode: response.data.qrcode || null,
-            order_url: response.data.order_url || null,
-            zp_trans_token: response.data.zp_trans_token || null,
-            app_trans_id: response.data.app_trans_id || null,
-          };
+      if (response.data.return_code === 1) {
+        // ✅ Lưu đơn hàng vào DB với appTransId
+        const orderData = {
+          userId: payload.userId || 'user123',
+          orderItems: { items: payload.items || [] },
+          totalAmount: amount,
+          type: payload.type || 'delivery',
+          deliveryAddress: payload.deliveryAddress
+            ? { ...payload.deliveryAddress, phone: payload.userPhone || '', name: payload.userName || '' }
+            : null,
+          pickupTime: payload.pickupTime || undefined,
+          appTransId: app_trans_id, // ✅ Lưu appTransId
+          zpTransToken: response.data.zp_trans_token || response.data.order_token || '',
+          status: 'pending', // ✅ Status pending
+        };
 
-          console.log('📦 Final result:', result);
-          return result;
-        } else {
-          console.error('❌ ZaloPay response missing return_code');
-          console.error('Response data:', response.data);
-          throw new Error('ZaloPay response missing return_code: ' + JSON.stringify(response.data));
-        }
+        console.log('📦 Order data to save:', orderData);
+        const savedOrder = await this.orderRepository.create(orderData);
+        console.log('✅ Đã lưu đơn hàng vào DB:', savedOrder.id, 'với appTransId:', app_trans_id);
+
+        return {
+          ...response.data,
+          app_trans_id: app_trans_id, // ✅ Trả về appTransId cho frontend
+        };
+      } else {
+        throw new Error(response.data.return_message || 'ZaloPay error');
       }
-
-      if (typeof response.data === 'string') {
-        if (response.data.startsWith('<!DOCTYPE')) {
-          throw new Error('ZaloPay trả về HTML, kiểm tra lại endpoint hoặc dữ liệu gửi đi!');
-        }
-        throw new Error('ZaloPay trả về string không hợp lệ: ' + response.data);
-      }
-
-      throw new Error('ZaloPay trả về dữ liệu không hợp lệ: ' + JSON.stringify(response.data));
-    } catch (err: any) {
-      console.error('Lỗi khi gọi ZaloPay:', err?.response?.data || err?.message || err);
-      throw new Error('Không thể tạo đơn hàng ZaloPay: ' + (err?.response?.data || err?.message || err));
+    } catch (error) {
+      console.error('❌ ZaloPay API error:', error);
+      throw error;
     }
   }
 
@@ -207,9 +203,10 @@ export class ZaloPayService {
             status: 'completed',
             userId: embed.userId || 'user123',
             orderItems: { items: embed.items || [] },
-            note: embed.note || 'Thanh toán qua ZaloPay',
-            deliveryAddress: embed.deliveryAddress || '',
+            deliveryAddress: embed.deliveryAddress ? { ...embed.deliveryAddress, phone: embed.userPhone || '', name: embed.userName || '' } : null,
+            pickupTime: embed.pickupTime || undefined,
             zpTransToken: data.zp_trans_token || data.order_token || '',
+            // returnCode tạm thời không lưu vì field chưa có trong DB
           };
 
           console.log('📦 Order data:', orderData);
@@ -274,6 +271,32 @@ export class ZaloPayService {
     } catch (err: any) {
       console.error('Lỗi khi kiểm tra trạng thái ZaloPay:', err?.response?.data || err?.message || err);
       throw new Error('Không thể kiểm tra trạng thái ZaloPay: ' + (err?.response?.data || err?.message || err));
+    }
+  }
+
+  // ✅ Tìm order theo appTransId
+  async findOrderByAppTransId(appTransId: string): Promise<any> {
+    try {
+      console.log('🔍 Tìm order theo appTransId:', appTransId);
+      const order = await this.orderRepository.findOneByAppTransId(appTransId);
+      console.log('🔍 Order found:', order ? 'YES' : 'NO');
+      return order;
+    } catch (error) {
+      console.error('❌ Lỗi khi tìm order theo appTransId:', error);
+      return null;
+    }
+  }
+
+  // ✅ Tìm order theo orderId
+  async findOrderById(orderId: string): Promise<any> {
+    try {
+      console.log('🔍 Tìm order theo orderId:', orderId);
+      const order = await this.orderRepository.findOne(orderId);
+      console.log('🔍 Order found:', order ? 'YES' : 'NO');
+      return order;
+    } catch (error) {
+      console.error('❌ Lỗi khi tìm order theo orderId:', error);
+      return null;
     }
   }
 }

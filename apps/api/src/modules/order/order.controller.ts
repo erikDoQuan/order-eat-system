@@ -44,16 +44,6 @@ export class OrderController {
     return this.orderService.findAll(query);
   }
 
-  @Get(':id')
-  @ApiOperation({
-    summary: 'Lấy chi tiết đơn hàng theo ID',
-    description: 'Trả về thông tin chi tiết của một đơn hàng dựa vào ID.',
-  })
-  @Response({ message: 'Lấy chi tiết đơn hàng thành công' })
-  findOne(@Param('id') id: string) {
-    return this.orderService.findOne(id);
-  }
-
   @Get('by-number/:orderNumber')
   @ApiOperation({
     summary: 'Lấy chi tiết đơn hàng theo orderNumber',
@@ -71,7 +61,82 @@ export class OrderController {
   })
   @Response({ message: 'Lấy chi tiết đơn hàng theo appTransId cho ZaloPay thành công' })
   async getOrderByZaloPay(@Param('appTransId') appTransId: string) {
-    return this.orderService.findOneByAppTransId(appTransId);
+    console.log('🔍 API by-zalopay called with appTransId:', appTransId);
+    const order = await this.orderService.findOneByAppTransId(appTransId);
+    console.log('🔍 Order found:', order ? 'YES' : 'NO');
+    if (order) {
+      console.log('🔍 Order details:', {
+        id: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        appTransId: order.appTransId,
+      });
+    }
+    return { data: order }; // ✅ Wrap trong data object
+  }
+
+  @Get('status')
+  @ApiOperation({ summary: 'Check order status by appTransId' })
+  async getOrderStatus(@Query('appTransId') appTransId: string) {
+    if (!appTransId) {
+      return {
+        success: false,
+        message: 'Missing appTransId parameter',
+      };
+    }
+
+    try {
+      console.log('🔍 Checking order status for appTransId:', appTransId);
+
+      // Tìm order theo appTransId
+      const order = await this.orderService.findOneByAppTransId(appTransId);
+
+      if (!order) {
+        return {
+          success: false,
+          message: 'Order not found',
+          status: 'NOT_FOUND',
+        };
+      }
+
+      console.log('✅ Order found:', {
+        id: order.id,
+        status: order.status,
+        appTransId: order.appTransId,
+        returnCode: null, // Tạm thời set null vì field chưa có trong DB
+      });
+
+      return {
+        success: true,
+        order: {
+          id: order.id,
+          status: order.status,
+          appTransId: order.appTransId,
+          returnCode: null, // Tạm thời set null vì field chưa có trong DB
+          totalAmount: order.totalAmount,
+          createdAt: order.createdAt,
+        },
+        status: order.status,
+        isPaid: order.status === 'completed', // Chỉ dựa vào status, không cần returnCode
+      };
+    } catch (error) {
+      console.error('❌ Error checking order status:', error);
+      return {
+        success: false,
+        message: 'Error checking order status',
+        error: String(error),
+      };
+    }
+  }
+
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Lấy chi tiết đơn hàng theo ID',
+    description: 'Trả về thông tin chi tiết của một đơn hàng dựa vào ID.',
+  })
+  @Response({ message: 'Lấy chi tiết đơn hàng thành công' })
+  findOne(@Param('id') id: string) {
+    return this.orderService.findOne(id);
   }
 
   @Post()

@@ -1,8 +1,9 @@
 /// <reference types="vite/client" />
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import Navbar from '../components/Navbar';
+import { AuthContext } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { getAllDishes } from '../services/dish.api';
 import { createOrder, getOrderDetail, getOrderDetailByAppTransId, getOrderDetailByNumber } from '../services/order.api';
@@ -14,6 +15,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 const ZaloPayPaymentPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const { clearCart } = useCart();
   const state = (location.state as any) || {};
   const items = state.items || [];
@@ -68,7 +70,7 @@ const ZaloPayPaymentPage: React.FC = () => {
   const [orderCreated, setOrderCreated] = useState(false);
   const [successOrder, setSuccessOrder] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  // const [paymentStatus, setPaymentStatus] = useState<string>('pending'); // Đã xóa polling nên không cần state này nữa
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
 
   // Luôn sinh appTransId mới mỗi lần vào trang hoặc reload (không reuse lại)
   const [appTransId, setAppTransId] = useState<string>('');
@@ -80,6 +82,57 @@ const ZaloPayPaymentPage: React.FC = () => {
     const newAppTransId = `${yymmdd}_${Date.now()}${Math.floor(Math.random() * 1000)}`;
     setAppTransId(newAppTransId);
   }, []);
+
+  // Polling để kiểm tra trạng thái thanh toán
+  useEffect(() => {
+    if (zalopayInfo?.order_url && appTransId) {
+      console.log('🔄 Bắt đầu polling trạng thái thanh toán cho appTransId:', appTransId);
+
+      const interval = setInterval(async () => {
+        try {
+          const response = await fetch(`/api/v1/orders/status?appTransId=${appTransId}`);
+          const data = await response.json();
+
+          console.log('📊 Polling result:', data);
+
+          if (data.success && data.isPaid) {
+            console.log('✅ Thanh toán thành công, chuyển sang OrderSuccessPage');
+            console.log('🔍 appTransId being passed:', appTransId);
+            clearInterval(interval);
+            setPollingInterval(null);
+
+            // Chuyển sang OrderSuccessPage
+            navigate('/order-success', {
+              state: {
+                appTransId: appTransId,
+                paymentMethod: 'zalopay',
+              },
+            });
+          }
+        } catch (error) {
+          console.error('❌ Lỗi polling:', error);
+        }
+      }, 3000); // Poll mỗi 3 giây
+
+      setPollingInterval(interval);
+
+      // Cleanup khi component unmount
+      return () => {
+        if (interval) {
+          clearInterval(interval);
+        }
+      };
+    }
+  }, [zalopayInfo, appTransId, navigate]);
+
+  // Cleanup polling khi component unmount
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [pollingInterval]);
 
   const orderNumber = state.orderNumber; // lấy orderNumber thật từ state
 
@@ -105,6 +158,11 @@ const ZaloPayPaymentPage: React.FC = () => {
   // Khi tạo QR ZaloPay, chỉ gọi API tạo QR, không tạo đơn hàng trong DB
   useEffect(() => {
     if (!appTransId || !totalAmount || totalAmount <= 0) return;
+
+    console.log('🔍 Debug - User:', user);
+    console.log('🔍 Debug - AppTransId:', appTransId);
+    console.log('🔍 Debug - TotalAmount:', totalAmount);
+
     let usedOrderId = '';
     if (orderNumber) {
       usedOrderId = String(orderNumber);
@@ -116,19 +174,28 @@ const ZaloPayPaymentPage: React.FC = () => {
     }
     setOrderId(usedOrderId);
     setLoading(true);
+
+    const payload = {
+      amount: totalAmount,
+      userId: user?.id || 'test_user_123',
+      items: items,
+      note: state.note || 'Đơn hàng qua ZaloPay',
+      deliveryAddress: deliveryAddress,
+      userPhone: user?.phoneNumber || user?.phone_number || '',
+      userName: user?.name || '',
+      type: orderType,
+      pickupTime: state.pickupTime,
+      orderId: usedOrderId,
+      appTransId: appTransId,
+      description: `Thanh toán đơn hàng #${usedOrderId}`,
+    };
+
+    console.log('🔍 Debug - Payload:', payload);
+
     fetch('/api/v1/zalopay/create-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        amount: totalAmount,
-        userId: state.userId || 'test_user_123',
-        items: items,
-        note: 'Test order',
-        deliveryAddress: deliveryAddress,
-        orderId: usedOrderId,
-        appTransId: appTransId,
-        description: `Thanh toán đơn hàng #${usedOrderId}`,
-      }),
+      body: JSON.stringify(payload),
     })
       .then(res => {
         if (!res.ok) throw new Error('API trả về lỗi: ' + res.status);
@@ -147,6 +214,10 @@ const ZaloPayPaymentPage: React.FC = () => {
           localStorage.setItem('last_zalopay_order_url', data.order_url);
           localStorage.setItem('last_zalopay_amount', String(totalAmount));
           localStorage.setItem('last_zalopay_orderId', usedOrderId);
+
+          // ✅ Chỉ lưu order_url, không tự động redirect
+          console.log('🔗 Order URL received:', data.order_url);
+          // Không tự động redirect, chỉ hiển thị nút cho user bấm
         } else {
           if (!zalopayInfo?.qrcode && !zalopayInfo?.order_url) {
             setError(data?.return_message || 'Không thể tạo mã QR ZaloPay.');
@@ -161,7 +232,7 @@ const ZaloPayPaymentPage: React.FC = () => {
         setLoading(false);
       });
     // eslint-disable-next-line
-  }, [totalAmount, orderNumber, appTransId]);
+  }, [totalAmount, orderNumber, appTransId, user]);
 
   // Đếm ngược thời gian giao dịch
   useEffect(() => {
@@ -183,7 +254,7 @@ const ZaloPayPaymentPage: React.FC = () => {
   const handleCompleteOrder = async () => {
     try {
       // Lấy userId từ state hoặc localStorage (tùy app lưu ở đâu)
-      const userId = state.userId || localStorage.getItem('userId');
+      const userId = user?.id || localStorage.getItem('userId');
       if (!userId) {
         setError('Không tìm thấy userId. Vui lòng đăng nhập lại!');
         return;
@@ -215,7 +286,7 @@ const ZaloPayPaymentPage: React.FC = () => {
     try {
       const zpTransToken = zalopayInfo?.zp_trans_token || zalopayInfo?.order_token || '';
       const payload = {
-        userId: state.userId,
+        userId: user?.id,
         orderItems: { items },
         totalAmount,
         type: orderType,
@@ -336,6 +407,21 @@ const ZaloPayPaymentPage: React.FC = () => {
                   99ZP24334000725953
                 </div>
               </div>
+              {zalopayInfo?.order_url && (
+                <div style={{ margin: '24px 0', textAlign: 'center' }}>
+                  <a
+                    href={zalopayInfo.order_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-lg bg-blue-600 px-6 py-3 text-lg font-semibold text-white transition hover:bg-blue-700"
+                  >
+                    Thanh toán với ZaloPay
+                  </a>
+                  <div style={{ fontSize: 12, color: '#888', marginTop: 8 }}>
+                    (Bấm vào nút trên để mở trang thanh toán ZaloPay. Không tự động chuyển trang)
+                  </div>
+                </div>
+              )}
               <div style={{ marginTop: 24, fontSize: 15, color: '#555' }}>
                 Mở ứng dụng có VietQR để thanh toán đơn hàng
                 <div style={{ marginTop: 8, display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center' }}>

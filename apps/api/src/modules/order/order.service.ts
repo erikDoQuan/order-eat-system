@@ -82,6 +82,23 @@ export class OrderService {
   async findOne(id: string) {
     const order = await this.orderRepository.findOne(id);
     if (!order) throw new NotFoundException('Đơn hàng không tồn tại');
+
+    // Enrich thông tin user
+    let userInfo = null;
+    if (order.userId) {
+      const user = await this.userRepository.findOne(order.userId);
+      if (user) {
+        userInfo = {
+          id: user.id,
+          email: user.email,
+          phone: (user as any).phone,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+        };
+      }
+    }
+
     // Enrich từng item với thông tin sản phẩm
     const orderItems = (order.orderItems as { items: any[] } | undefined)?.items;
     if (orderItems && Array.isArray(orderItems)) {
@@ -143,6 +160,7 @@ export class OrderService {
     }
     return {
       ...order,
+      user: userInfo,
       updatedByInfo,
       paymentMethod: order.zpTransToken || order.appTransId ? 'zalopay' : 'cash',
       order_number: order.orderNumber || order.id,
@@ -166,9 +184,80 @@ export class OrderService {
       console.log('❌ Không tìm thấy đơn hàng với appTransId:', appTransId);
       throw new NotFoundException('Đơn hàng không tồn tại');
     }
+
+    // Enrich thông tin user
+    let userInfo = null;
+    if (order.userId) {
+      const user = await this.userRepository.findOne(order.userId);
+      if (user) {
+        userInfo = {
+          id: user.id,
+          email: user.email,
+          phone: (user as any).phone,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+        };
+      }
+    }
+
+    // Enrich từng item với thông tin sản phẩm (giống findOne)
+    const orderItems = (order.orderItems as { items: any[] } | undefined)?.items;
+    if (orderItems && Array.isArray(orderItems)) {
+      const enrichedItems = await Promise.all(
+        orderItems.map(async item => {
+          let name = '-';
+          let image = '';
+          let price = 0;
+          let baseName = item.base;
+          let toppingPrice = 0;
+          // Ưu tiên lấy từ snapshot nếu có
+          if (item.dishSnapshotId) {
+            const snapshot = await this.dishSnapshotRepository.findOne(item.dishSnapshotId);
+            if (snapshot) {
+              name = snapshot.name || name;
+              image = snapshot.imageUrl || image;
+              price = Number(snapshot.basePrice) || price;
+            }
+          }
+          // Nếu không có snapshot, lấy từ dish
+          if ((!name || name === '-') && item.dishId) {
+            const dish = await this.dishRepository.findOne(item.dishId);
+            if (dish) {
+              name = dish.name || name;
+              image = dish.imageUrl || dish.image || image;
+              price = Number(dish.basePrice) || price;
+            }
+          }
+          // Nếu item.base là id topping, enrich tên và giá topping
+          if (item.base && !['dày', 'mỏng'].includes(item.base)) {
+            const topping = await this.dishRepository.findOne(item.base);
+            if (topping) {
+              baseName = topping.name;
+              toppingPrice = Number(topping.basePrice) || 0;
+            }
+          }
+          return {
+            ...item,
+            name,
+            image,
+            price,
+            baseName,
+            toppingPrice,
+          };
+        }),
+      );
+      (order.orderItems as { items: any[] }).items = enrichedItems;
+    }
+
     // Trả về đầy đủ các trường, đặc biệt là status
     console.log('✅ Đã tìm thấy đơn hàng:', JSON.stringify(order, null, 2));
-    return order;
+    return {
+      ...order,
+      user: userInfo,
+      paymentMethod: order.zpTransToken || order.appTransId ? 'zalopay' : 'cash',
+      order_number: order.orderNumber || order.id,
+    };
   }
 
   async create(dto: CreateOrderDto) {
@@ -514,5 +603,17 @@ export class OrderService {
       ...order,
       order_number: order.orderNumber,
     };
+  }
+
+  async markAsPaid(orderId: string, opts: { method?: string; transactionId?: string }) {
+    const order = await this.orderRepository.findOne(orderId);
+    if (!order) throw new NotFoundException('Đơn hàng không tồn tại');
+    await this.orderRepository.update(orderId, {
+      status: 'completed',
+      zpTransToken: opts.transactionId || order.zpTransToken,
+    });
+    // Có thể lưu thêm transaction vào bảng user_transaction nếu cần
+    // await this.userTransactionService.create({ ... })
+    return true;
   }
 }

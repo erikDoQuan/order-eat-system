@@ -27,6 +27,7 @@ export const orders = pgTable('orders', {
   updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
   appTransId: varchar('app_trans_id', { length: 32 }),
   zpTransToken: varchar('zp_trans_token', { length: 255 }),
+  // returnCode: varchar('return_code', { length: 10 }), // Tạm thời comment để tránh lỗi
   orderNumber: serial('order_number'),
 });
 
