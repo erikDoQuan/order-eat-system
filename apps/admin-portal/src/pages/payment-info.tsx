@@ -349,13 +349,6 @@ const PaymentInfoPage: React.FC = () => {
           </div>
           <div className="payment-info-right">
             <div className="payment-info-block">
-              <div className="payment-info-title">Voucher/ Code</div>
-              <div className="payment-info-input">
-                <input placeholder="Nhập mã khuyến mãi của bạn tại đây" />
-                <button>Áp dụng</button>
-              </div>
-            </div>
-            <div className="payment-info-block">
               <div className="payment-info-title">Đơn hàng của bạn</div>
               {items.length === 0 ? (
                 <div className="payment-info-empty">Chưa có sản phẩm trong giỏ hàng</div>

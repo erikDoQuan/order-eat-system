@@ -25,6 +25,17 @@ const ZaloPayPaymentPage: React.FC = () => {
   const shippingFee = orderType === 'delivery' ? (state.shippingFee ?? 25000) : 0;
   const deliveryAddress = state.deliveryAddress || '';
 
+  // Kiểm tra nếu user quay lại từ OrderSuccessPage thì redirect về trang chủ
+  useEffect(() => {
+    const hasCompletedPayment = localStorage.getItem('zalopay_payment_completed');
+    if (hasCompletedPayment === 'true') {
+      // Clear flag và redirect về trang chủ
+      localStorage.removeItem('zalopay_payment_completed');
+      navigate('/', { replace: true });
+      return;
+    }
+  }, [navigate]);
+
   // Debug: Log state và totalAmount khi vào trang
   useEffect(() => {
     console.log('ZaloPayPaymentPage state:', state);
@@ -76,6 +87,23 @@ const ZaloPayPaymentPage: React.FC = () => {
   const [appTransId, setAppTransId] = useState<string>('');
 
   useEffect(() => {
+    // Clear state cũ khi vào trang mới
+    setZaloPayInfo(null);
+    setOrderId('');
+    setError('');
+    setLoading(false);
+
+    // Clear localStorage liên quan đến ZaloPay khi vào trang mới
+    localStorage.removeItem('last_zalopay_qr');
+    localStorage.removeItem('last_zalopay_amount');
+    localStorage.removeItem('last_zalopay_orderId');
+    localStorage.removeItem('last_zalopay_order_url');
+
+    // Clear flag thanh toán thành công khi vào trang mới (trừ khi đang quay lại từ OrderSuccessPage)
+    if (!localStorage.getItem('zalopay_payment_completed')) {
+      localStorage.removeItem('zalopay_payment_completed');
+    }
+
     const now = new Date();
     const yymmdd = `${now.getFullYear().toString().slice(2)}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
     // Kết hợp Date.now() và random để đảm bảo không trùng
@@ -100,6 +128,22 @@ const ZaloPayPaymentPage: React.FC = () => {
             console.log('🔍 appTransId being passed:', appTransId);
             clearInterval(interval);
             setPollingInterval(null);
+
+            // Clear tất cả state trước khi chuyển trang
+            setZaloPayInfo(null);
+            setOrderId('');
+            setAppTransId('');
+            setError('');
+            setLoading(false);
+
+            // Clear localStorage liên quan đến ZaloPay
+            localStorage.removeItem('last_zalopay_qr');
+            localStorage.removeItem('last_zalopay_amount');
+            localStorage.removeItem('last_zalopay_orderId');
+            localStorage.removeItem('last_zalopay_order_url');
+
+            // Set flag để đánh dấu đã thanh toán thành công
+            localStorage.setItem('zalopay_payment_completed', 'true');
 
             // Chuyển sang OrderSuccessPage
             navigate('/order-success', {
@@ -145,6 +189,23 @@ const ZaloPayPaymentPage: React.FC = () => {
     // Nếu có appTransId từ URL (ZaloPay redirect về), tự động chuyển đến OrderSuccessPage
     if (appTransIdFromUrl && returnCode === '1') {
       console.log('✅ ZaloPay redirect về với appTransId:', appTransIdFromUrl);
+
+      // Clear tất cả state trước khi chuyển trang
+      setZaloPayInfo(null);
+      setOrderId('');
+      setAppTransId('');
+      setError('');
+      setLoading(false);
+
+      // Clear localStorage liên quan đến ZaloPay
+      localStorage.removeItem('last_zalopay_qr');
+      localStorage.removeItem('last_zalopay_amount');
+      localStorage.removeItem('last_zalopay_orderId');
+      localStorage.removeItem('last_zalopay_order_url');
+
+      // Set flag để đánh dấu đã thanh toán thành công
+      localStorage.setItem('zalopay_payment_completed', 'true');
+
       // Chuyển đến OrderSuccessPage với appTransId
       navigate('/order-success', {
         state: {
@@ -367,14 +428,6 @@ const ZaloPayPaymentPage: React.FC = () => {
                   </div>
                 </>
               )}
-              <div className="payment-info-block" style={{ marginTop: 12 }}>
-                <div className="payment-info-title">Mã khuyến mãi</div>
-                <div className="payment-info-input">
-                  <input placeholder="Nhập mã khuyến mãi" />
-                  <button>Áp dụng</button>
-                </div>
-                <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>*Áp dụng khi quét QR bằng ứng dụng ngân hàng</div>
-              </div>
               <div style={{ marginTop: 12, fontSize: 15, color: '#555', background: '#f8f8f8', padding: 8, borderRadius: 8 }}>
                 Giao dịch kết thúc trong{' '}
                 <span style={{ fontWeight: 600, color: '#C92A15', background: '#fff', padding: '2px 8px', borderRadius: 4 }}>
@@ -419,21 +472,7 @@ const ZaloPayPaymentPage: React.FC = () => {
                   99ZP24334000725953
                 </div>
               </div>
-              {zalopayInfo?.order_url && (
-                <div style={{ margin: '24px 0', textAlign: 'center' }}>
-                  <a
-                    href={zalopayInfo.order_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-lg bg-blue-600 px-6 py-3 text-lg font-semibold text-white transition hover:bg-blue-700"
-                  >
-                    Thanh toán với ZaloPay
-                  </a>
-                  <div style={{ fontSize: 12, color: '#888', marginTop: 8 }}>
-                    (Bấm vào nút trên để mở trang thanh toán ZaloPay. Không tự động chuyển trang)
-                  </div>
-                </div>
-              )}
+
               <div style={{ marginTop: 24, fontSize: 15, color: '#555' }}>
                 Mở ứng dụng có VietQR để thanh toán đơn hàng
                 <div style={{ marginTop: 8, display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center' }}>

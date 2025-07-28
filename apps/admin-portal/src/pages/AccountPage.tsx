@@ -61,15 +61,33 @@ export default function AccountPage() {
   const [showAddressSuccess, setShowAddressSuccess] = useState(false);
   const [showInfoSuccess, setShowInfoSuccess] = useState(false);
 
-  // Debug: Kiểm tra user và token
+  // Đảm bảo user data được load lại khi component mount
   useEffect(() => {
-    console.log('🔍 Debug - User:', user);
-    const token = localStorage.getItem('order-eat-access-token');
-    console.log('🔍 Debug - Token exists:', !!token);
-    if (token) {
-      console.log('🔍 Debug - Token:', token.substring(0, 20) + '...');
-    }
-  }, [user]);
+    const loadUserData = async () => {
+      if (!user?.id) {
+        const token = localStorage.getItem('order-eat-access-token');
+        if (token) {
+          try {
+            const me = await fetchMe();
+            if (me && me.email && setUser) {
+              setUser({
+                id: me.id,
+                email: me.email,
+                firstName: me.firstName,
+                lastName: me.lastName,
+                phoneNumber: me.phoneNumber,
+                address: me.address,
+                role: me.role,
+              });
+            }
+          } catch (error) {
+            console.error('Error loading user data:', error);
+          }
+        }
+      }
+    };
+    loadUserData();
+  }, [user?.id, setUser]);
 
   useEffect(() => {
     setForm({
@@ -77,12 +95,12 @@ export default function AccountPage() {
       phone: user?.phoneNumber || user?.phone_number || '',
       email: user?.email || '',
     });
-  }, [user]);
+  }, [user?.firstName, user?.lastName, user?.phoneNumber, user?.phone_number, user?.email]);
 
   useEffect(() => {
     setAddress(user?.address || '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.id, user?.address]);
 
   useEffect(() => {
     setDishesLoading(true);
@@ -375,7 +393,6 @@ export default function AccountPage() {
             <li className={tab === 'password' ? 'active' : ''} onClick={() => setTab('password')}>
               {t('change_password')}
             </li>
-            <li>{t('my_voucher')}</li>
           </ul>
         </div>
         <div className="account-main">
@@ -812,7 +829,9 @@ export default function AccountPage() {
                       <input
                         type="text"
                         value={address}
-                        onChange={e => setAddress(e.target.value)}
+                        onChange={e => {
+                          setAddress(e.target.value);
+                        }}
                         style={{
                           flex: 1,
                           minWidth: 0,
@@ -966,7 +985,9 @@ export default function AccountPage() {
                   <input
                     type="text"
                     value={address}
-                    onChange={e => setAddress(e.target.value)}
+                    onChange={e => {
+                      setAddress(e.target.value);
+                    }}
                     style={{
                       flex: 1,
                       minWidth: 0,

@@ -8,7 +8,12 @@ const STORAGE_KEY = 'order-eat-user';
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUserState] = useState<AuthUser | null>(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    const parsedUser = raw ? JSON.parse(raw) : null;
+    // Nếu user từ localStorage không có address, return null để force fetch từ API
+    if (parsedUser && !parsedUser.address) {
+      return null;
+    }
+    return parsedUser;
   });
   const [loading, setLoading] = useState(true);
 
@@ -29,8 +34,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         // Nếu là admin, không lưu vào localStorage
         localStorage.removeItem(STORAGE_KEY);
       }
-    }
-    else {
+    } else {
       localStorage.removeItem(STORAGE_KEY);
     }
   };
@@ -38,7 +42,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     const sync = () => {
       const raw = localStorage.getItem(STORAGE_KEY);
-      setUserState(raw ? JSON.parse(raw) : null);
+      const parsedUser = raw ? JSON.parse(raw) : null;
+      setUserState(parsedUser);
     };
     window.addEventListener('storage', sync);
     return () => window.removeEventListener('storage', sync);
@@ -56,37 +61,52 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       return;
     }
 
+    // Nếu user hiện tại không có address, force fetch từ API
+    if (user && !user.address) {
+    }
+
     let retry = 0;
     const tryFetchMe = () => {
-      fetchMe().then(me => {
-        if (me && me.email) {
-          setUserState({
-            id: me.id,
-            email: me.email,
-            firstName: me.firstName,
-            lastName: me.lastName,
-            phoneNumber: me.phoneNumber,
-            address: me.address,
-            role: me.role,
-          });
-          if (me.role !== 'admin') {
-            localStorage.setItem(
-              STORAGE_KEY,
-              JSON.stringify({
+      fetchMe()
+        .then(me => {
+          if (me && me.email) {
+            const userData = {
+              id: me.id,
+              email: me.email,
+              firstName: me.firstName,
+              lastName: me.lastName,
+              phoneNumber: me.phoneNumber,
+              address: me.address || '', // Đảm bảo address không undefined
+              role: me.role,
+            };
+            setUserState(userData);
+            if (me.role !== 'admin') {
+              const localStorageData = {
                 id: me.id,
                 email: me.email,
                 firstName: me.firstName,
                 lastName: me.lastName,
                 phoneNumber: me.phoneNumber,
-                address: me.address,
+                address: me.address || '', // Đảm bảo address không undefined
                 role: me.role,
-              }),
-            );
+              };
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(localStorageData));
+            } else {
+              localStorage.removeItem(STORAGE_KEY);
+            }
+            setLoading(false);
           } else {
-            localStorage.removeItem(STORAGE_KEY);
+            if (retry < 2) {
+              retry++;
+              setTimeout(tryFetchMe, 300);
+            } else {
+              setUser(null);
+              localStorage.removeItem(STORAGE_KEY);
+              setLoading(false);
+            }
           }
-          setLoading(false);
-        } else {
+        })
+        .catch(err => {
           if (retry < 2) {
             retry++;
             setTimeout(tryFetchMe, 300);
@@ -95,23 +115,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             localStorage.removeItem(STORAGE_KEY);
             setLoading(false);
           }
-        }
-      }).catch((err) => {
-        if (retry < 2) {
-          retry++;
-          setTimeout(tryFetchMe, 300);
-        } else {
-          setUser(null);
-          localStorage.removeItem(STORAGE_KEY);
-          setLoading(false);
-        }
-      });
+        });
     };
     tryFetchMe();
   }, []);
 
-  useEffect(() => {
-  }, [user]);
+  useEffect(() => {}, [user]);
 
   if (loading) return null;
 
