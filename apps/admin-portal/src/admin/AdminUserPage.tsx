@@ -1,15 +1,11 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { LogOut, User as UserIcon, Edit, Trash2 } from 'lucide-react';
+import { Edit, LogOut, Trash2, User as UserIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
 import AdminSidebar from '../components/AdminSidebar';
 import { AuthContext } from '../context/AuthContext';
-import {
-  getAllUsers,
-  createUser,
-  updateUser,
-  deleteUser,
-  User as UserType,
-} from '../services/user.api';
+import { createUser, deleteUser, getAllUsers, updateUser, User as UserType } from '../services/user.api';
+
 import '../css/AdminUserPage.css';
 
 const AdminUserPage: React.FC = () => {
@@ -26,8 +22,24 @@ const AdminUserPage: React.FC = () => {
   const [form, setForm] = useState<Partial<UserType> & { password?: string }>({});
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
-  const page = 1;
-  const pageSize = 1000;
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  const filteredUsers = users
+    .filter(
+      u =>
+        (u.name || `${u.firstName || ''} ${u.lastName || ''}` || '').toLowerCase().includes(search.toLowerCase()) ||
+        (u.email || '').toLowerCase().includes(search.toLowerCase()),
+    )
+    .sort((a, b) => {
+      // Active lên trên, trong mỗi nhóm thì user mới nhất lên trên
+      if ((b.isActive ? 1 : 0) !== (a.isActive ? 1 : 0)) {
+        return (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0);
+      }
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    });
+  const totalPages = Math.ceil(filteredUsers.length / pageSize);
+  const paginatedUsers = filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   // const [totalUsers, setTotalUsers] = useState(0);
   // const [totalPages, setTotalPages] = useState(1);
 
@@ -60,16 +72,9 @@ const AdminUserPage: React.FC = () => {
   // User logic
   const fetchUsers = () => {
     setPageLoading(true);
-    getAllUsers(page, pageSize, search)
+    getAllUsers(1, 1000) // Lấy tất cả users để filter ở frontend
       .then(({ users }) => {
-        // Sắp xếp: active lên trên, sau đó theo createdAt mới nhất
-        const sortedUsers = [...(users || [])].sort((a, b) => {
-          if ((b.isActive ? 1 : 0) !== (a.isActive ? 1 : 0)) {
-            return (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0);
-          }
-          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-        });
-        setUsers(sortedUsers);
+        setUsers(users || []);
       })
       .catch(() => setError('Không thể tải danh sách khách hàng'))
       .finally(() => setPageLoading(false));
@@ -78,7 +83,12 @@ const AdminUserPage: React.FC = () => {
   useEffect(() => {
     fetchUsers();
     // eslint-disable-next-line
-  }, [page, pageSize, search]);
+  }, []);
+
+  // Reset về trang 1 khi search thay đổi
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   const handleAdd = () => {
     setEditing(null);
@@ -177,146 +187,235 @@ const AdminUserPage: React.FC = () => {
           </span>
         </div>
         {/* User management content */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-[#C92A15]">User Management</h1>
-          <button
-            onClick={handleAdd}
-            className="bg-[#C92A15] text-white px-4 py-2 rounded-lg shadow hover:bg-[#a81f0f] transition"
-          >
+          <button onClick={handleAdd} className="rounded-lg bg-[#C92A15] px-4 py-2 text-white shadow transition hover:bg-[#a81f0f]">
             + Add User
           </button>
         </div>
         <div className="mb-4 flex justify-end">
           <input
             type="text"
-            placeholder="Search user..."
+            placeholder="Search by customer name..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => {
+              setSearch(e.target.value);
+              setCurrentPage(1); // Reset về trang 1 khi search
+            }}
             className="w-full max-w-xs rounded border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
           />
         </div>
         {pageLoading && <div>Loading...</div>}
         {error && <div style={{ color: 'red' }}>{error}</div>}
         {!pageLoading && !error && (
-          <div className="overflow-x-auto">
-            <table className="table-admin-user">
+          <div style={{ width: '100%', overflowX: 'auto' }}>
+            <table className="table-admin-user" style={{ minWidth: 1200 }}>
               <thead>
                 <tr className="bg-gray-100 text-gray-700">
-                  <th className="py-2 px-3 border-b">STT</th>
-                  <th className="py-2 px-3 border-b">Email</th>
-                  <th className="py-2 px-3 border-b">Name</th>
-                  <th className="py-2 px-3 border-b">SĐT</th>
-                  <th className="py-2 px-3 border-b">Địa chỉ</th>
-                  <th className="py-2 px-3 border-b">Role</th>
-                  <th className="py-2 px-3 border-b">Status</th>
-                  <th className="py-2 px-3 border-b">Action</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">STT</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Email</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Name</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Phone</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Address</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Role</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Status</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {users
-                  .filter(u => (u.name || `${u.firstName || ''} ${u.lastName || ''}` || '').toLowerCase().includes(search.toLowerCase()) || (u.email || '').toLowerCase().includes(search.toLowerCase()))
-                  .sort((a, b) => {
-                    // Active lên trên, trong mỗi nhóm thì user mới nhất lên trên
-                    if ((b.isActive ? 1 : 0) !== (a.isActive ? 1 : 0)) {
-                      return (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0);
-                    }
-                    return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-                  })
-                  .map((u, idx) => (
-                    <tr key={u.id} className="hover:bg-gray-50 transition">
-                      <td className="py-2 px-3 border-b text-xs text-gray-500">{idx + 1}</td>
-                      <td className="py-2 px-3 border-b font-medium">{u.email}</td>
-                      <td className="py-2 px-3 border-b">{u.name || [u.firstName, u.lastName].filter(Boolean).join(' ')}</td>
-                      <td className="py-2 px-3 border-b">{u.phoneNumber || '-'}</td>
-                      <td className="py-2 px-3 border-b">{u.address || '-'}</td>
-                      <td className="py-2 px-3 border-b">{u.role || '-'}</td>
-                      <td className="py-2 px-3 border-b">
-                        <span className={`badge-status ${u.isActive ? 'active' : 'inactive'}`}>{u.isActive ? 'Active' : 'Inactive'}</span>
-                      </td>
-                      <td className="py-2 px-3 border-b">
-                        <button className="mr-2 text-blue-600 hover:underline" onClick={() => handleEdit(u)}><Edit size={16} /></button>
-                        <button className="text-red-600 hover:underline" onClick={() => handleDelete(u.id)}><Trash2 size={16} /></button>
-                      </td>
-                    </tr>
-                  ))}
+                {paginatedUsers.map((u, idx) => (
+                  <tr key={u.id} className="transition hover:bg-gray-50">
+                    <td className="border-b px-3 py-2 font-medium">{(currentPage - 1) * pageSize + idx + 1}</td>
+                    <td className="border-b px-3 py-2">{u.email}</td>
+                    <td className="border-b px-3 py-2">{u.name || [u.firstName, u.lastName].filter(Boolean).join(' ')}</td>
+                    <td className="border-b px-3 py-2">{u.phoneNumber || '-'}</td>
+                    <td className="border-b px-3 py-2">{u.address || '-'}</td>
+                    <td className="border-b px-3 py-2">{u.role || '-'}</td>
+                    <td className="border-b px-3 py-2">
+                      <span
+                        className={`inline-block whitespace-nowrap rounded px-2 py-1 text-xs font-semibold ${
+                          u.isActive ? 'border border-green-200 bg-green-100 text-green-800' : 'border border-red-200 bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {u.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="border-b px-3 py-2">
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        <button onClick={() => handleEdit(u)} title="Edit" className="rounded p-2 text-blue-600 hover:bg-blue-100">
+                          <Edit size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(u.id)}
+                          disabled={saving}
+                          title="Delete"
+                          className="rounded p-2 text-red-600 hover:bg-red-100 disabled:opacity-50"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
-            {/* PHÂN TRANG DẠNG SỐ ĐƠN GIẢN */}
+            {/* PHÂN TRANG THÔNG MINH */}
+            {totalPages > 1 && (
+              <div className="mt-4 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="rounded border bg-gray-100 px-3 py-1 hover:bg-gray-200 disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                {(() => {
+                  const pages: React.ReactNode[] = [];
+
+                  // Luôn hiển thị trang đầu
+                  pages.push(
+                    <button
+                      key={1}
+                      onClick={() => setCurrentPage(1)}
+                      className={`rounded border px-3 py-1 ${1 === currentPage ? 'bg-[#C92A15] text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                    >
+                      1
+                    </button>,
+                  );
+
+                  // Hiển thị trang hiện tại và 2 trang xung quanh
+                  const startPage = Math.max(2, currentPage - 1);
+                  const endPage = Math.min(totalPages - 1, currentPage + 1);
+
+                  if (startPage > 2) {
+                    pages.push(
+                      <span key="ellipsis1" className="px-2">
+                        ...
+                      </span>,
+                    );
+                  }
+
+                  for (let i = startPage; i <= endPage; i++) {
+                    pages.push(
+                      <button
+                        key={i}
+                        onClick={() => setCurrentPage(i)}
+                        className={`rounded border px-3 py-1 ${i === currentPage ? 'bg-[#C92A15] text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                      >
+                        {i}
+                      </button>,
+                    );
+                  }
+
+                  if (endPage < totalPages - 1) {
+                    pages.push(
+                      <span key="ellipsis2" className="px-2">
+                        ...
+                      </span>,
+                    );
+                  }
+
+                  // Luôn hiển thị trang cuối
+                  if (totalPages > 1) {
+                    pages.push(
+                      <button
+                        key={totalPages}
+                        onClick={() => setCurrentPage(totalPages)}
+                        className={`rounded border px-3 py-1 ${totalPages === currentPage ? 'bg-[#C92A15] text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                      >
+                        {totalPages}
+                      </button>,
+                    );
+                  }
+
+                  return pages;
+                })()}
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="rounded border bg-gray-100 px-3 py-1 hover:bg-gray-200 disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         )}
         {showForm && (
           <div className="modal-admin">
             <div className="modal-content-admin">
-              <button className="modal-close-admin" onClick={() => setShowForm(false)} type="button">×</button>
-              <h2 className="text-lg font-semibold mb-4">{editing ? 'Edit User' : 'Add User'}</h2>
+              <button className="modal-close-admin" onClick={() => setShowForm(false)} type="button">
+                ×
+              </button>
+              <h2 className="mb-4 text-lg font-semibold">{editing ? 'Edit User' : 'Add User'}</h2>
               <form onSubmit={handleSubmit}>
                 <div className="mb-4">
-                  <label className="block mb-1 font-medium">Email</label>
+                  <label className="mb-1 block font-medium">Email</label>
                   <input
                     value={form.email || ''}
                     onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                     required
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                    className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
                     disabled={!!editing}
                   />
                 </div>
                 {!editing && (
                   <div className="mb-4">
-                    <label className="block mb-1 font-medium">Password</label>
+                    <label className="mb-1 block font-medium">Password</label>
                     <input
                       value={form.password || ''}
                       onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
                       required
                       type="password"
-                      className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                      className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
                     />
                   </div>
                 )}
                 <div className="mb-4">
-                  <label className="block mb-1 font-medium">Họ</label>
+                  <label className="mb-1 block font-medium">Họ</label>
                   <input
                     value={form.firstName || ''}
                     onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                    className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
                   />
                 </div>
                 <div className="mb-4">
-                  <label className="block mb-1 font-medium">Tên</label>
+                  <label className="mb-1 block font-medium">Tên</label>
                   <input
                     value={form.lastName || ''}
                     onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                    className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
                   />
                 </div>
                 <div className="mb-4">
-                  <label className="block mb-1 font-medium">Số điện thoại</label>
+                  <label className="mb-1 block font-medium">Số điện thoại</label>
                   <input
                     value={form.phoneNumber || ''}
                     onChange={e => setForm(f => ({ ...f, phoneNumber: e.target.value }))}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                    className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
                   />
                 </div>
                 <div className="mb-4">
-                  <label className="block mb-1 font-medium">Địa chỉ</label>
+                  <label className="mb-1 block font-medium">Địa chỉ</label>
                   <input
                     value={form.address || ''}
                     onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                    className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
                   />
                 </div>
                 <div className="mb-4">
-                  <label className="block mb-1 font-medium">Role</label>
+                  <label className="mb-1 block font-medium">Role</label>
                   <select
                     value={form.role || 'user'}
                     onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                    className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
                   >
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>
                 <div className="mb-4">
-                  <label className="block mb-1 font-medium">Status</label>
+                  <label className="mb-1 block font-medium">Status</label>
                   <input
                     type="checkbox"
                     checked={form.isActive !== false}
@@ -329,14 +428,14 @@ const AdminUserPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowForm(false)}
-                    className="px-4 py-2 rounded border border-gray-300 bg-gray-100 hover:bg-gray-200 transition"
+                    className="rounded border border-gray-300 bg-gray-100 px-4 py-2 transition hover:bg-gray-200"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={saving}
-                    className="px-4 py-2 rounded bg-[#C92A15] text-white hover:bg-[#a81f0f] transition disabled:opacity-50"
+                    className="rounded bg-[#C92A15] px-4 py-2 text-white transition hover:bg-[#a81f0f] disabled:opacity-50"
                   >
                     {saving ? 'Saving...' : 'Save'}
                   </button>
@@ -350,4 +449,4 @@ const AdminUserPage: React.FC = () => {
   );
 };
 
-export default AdminUserPage; 
+export default AdminUserPage;

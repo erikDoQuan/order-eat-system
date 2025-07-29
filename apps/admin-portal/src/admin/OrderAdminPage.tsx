@@ -165,18 +165,21 @@ export default function OrderAdminPage() {
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
     const d = new Date(dateStr);
-    return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + ' ' + d.toLocaleDateString('vi-VN');
+    return d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
   };
 
   const formatDeliveryAddress = (deliveryAddress: any) => {
     if (!deliveryAddress) return '';
     if (typeof deliveryAddress === 'string') return deliveryAddress;
     if (typeof deliveryAddress === 'object') {
-      // Ưu tiên address, storeName, name, phone
-      let str = deliveryAddress.address || '';
-      if (deliveryAddress.storeName) str += ` (${deliveryAddress.storeName})`;
-      if (deliveryAddress.name) str += ` - ${deliveryAddress.name}`;
-      if (deliveryAddress.phone) str += ` - ${deliveryAddress.phone}`;
+      // Chỉ hiển thị storeName
+      let str = deliveryAddress.storeName || '';
+
+      // Nếu storeName quá dài, cắt ngắn
+      if (str.length > 80) {
+        str = str.substring(0, 77) + '...';
+      }
+
       return str.trim();
     }
     return '';
@@ -249,7 +252,16 @@ export default function OrderAdminPage() {
     })
     .sort((a, b) => (b.order_number || 0) - (a.order_number || 0));
 
-  // Thêm mapping cho status
+  // Thêm mapping cho status với màu sắc
+  const STATUS_LABEL: Record<string, { label: string; color: string }> = {
+    pending: { label: 'Chờ xác nhận', color: 'bg-yellow-100 text-yellow-800 border border-yellow-200' },
+    confirmed: { label: 'Đã xác nhận', color: 'bg-blue-100 text-blue-800 border border-blue-200' },
+    preparing: { label: 'Đang chuẩn bị', color: 'bg-orange-100 text-orange-800 border border-orange-200' },
+    delivering: { label: 'Đang giao', color: 'bg-purple-100 text-purple-800 border border-purple-200' },
+    completed: { label: 'Hoàn thành', color: 'bg-green-100 text-green-800 border border-green-200' },
+    cancelled: { label: 'Đã hủy', color: 'bg-red-100 text-red-800 border border-red-200' },
+  };
+
   const statusLabel: Record<string, string> = {
     pending: 'Chờ xác nhận',
     confirmed: 'Đã xác nhận',
@@ -469,8 +481,49 @@ export default function OrderAdminPage() {
                           <td className="border-b px-3 py-2"></td>
                           <td className="border-b px-3 py-2"></td>
                           <td className="border-b px-3 py-2">{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
-                          <td className="border-b px-3 py-2">{order.status}</td>
-                          <td className="border-b px-3 py-2">{order.type}</td>
+                          <td className="border-b px-3 py-2">
+                            {order.status === 'completed' || order.status === 'cancelled' ? (
+                              <span
+                                className={`inline-block whitespace-nowrap rounded px-2 py-1 text-xs font-semibold ${
+                                  STATUS_LABEL[order.status]?.color || 'border border-gray-200 bg-gray-100 text-gray-800'
+                                }`}
+                              >
+                                {STATUS_LABEL[order.status]?.label || statusLabel[order.status] || order.status}
+                              </span>
+                            ) : (
+                              <select
+                                value={order.status}
+                                onChange={async e => {
+                                  try {
+                                    const newStatus = e.target.value;
+                                    const payload: any = { status: newStatus };
+                                    if (['completed', 'hoàn thành'].includes(newStatus.toLowerCase())) {
+                                      payload.updatedBy = user?.id;
+                                    }
+                                    await updateOrder(order.id, payload);
+                                    fetchOrders(); // Refresh danh sách
+                                  } catch (error) {
+                                    console.error('Lỗi cập nhật status:', error);
+                                    alert('Cập nhật trạng thái thất bại');
+                                  }
+                                }}
+                                className={`rounded border px-2 py-1 text-xs font-semibold ${
+                                  STATUS_LABEL[order.status]?.color || 'border border-gray-200 bg-gray-100 text-gray-800'
+                                }`}
+                                style={{ minWidth: '80px' }}
+                              >
+                                <option value="pending">Chờ xác nhận</option>
+                                <option value="confirmed">Đã xác nhận</option>
+                                <option value="preparing">Đang chuẩn bị</option>
+                                <option value="delivering">Đang giao</option>
+                                <option value="completed">Hoàn thành</option>
+                                <option value="cancelled">Đã hủy</option>
+                              </select>
+                            )}
+                          </td>
+                          <td className="border-b px-3 py-2">
+                            {order.type === 'pickup' ? 'Pickup' : order.type === 'delivery' ? 'Delivery' : order.type}
+                          </td>
                           <td className="border-b px-3 py-2">
                             {paymentMethod === 'zalopay' ? (
                               <a
@@ -488,66 +541,24 @@ export default function OrderAdminPage() {
                           <td className="border-b px-3 py-2">{formatDeliveryAddress(order.deliveryAddress)}</td>
                           <td className="border-b px-3 py-2">{order.note}</td>
                           <td className="border-b px-3 py-2">
-                            <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'center', width: 120 }}>
-                              <button
-                                title="Sửa"
-                                onClick={() => handleEdit(order)}
-                                style={{
-                                  width: 36,
-                                  height: 36,
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  border: 'none',
-                                  background: 'none',
-                                  color: '#2563eb',
-                                  cursor: 'pointer',
-                                  fontSize: 0,
-                                }}
-                              >
-                                <Edit size={18} />
-                              </button>
-                              <button
-                                title="Xóa"
-                                onClick={() => handleDelete(order.id)}
-                                disabled={saving}
-                                style={{
-                                  width: 36,
-                                  height: 36,
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  border: 'none',
-                                  background: 'none',
-                                  color: '#dc2626',
-                                  cursor: 'pointer',
-                                  fontSize: 0,
-                                }}
-                              >
-                                <Trash2 size={18} />
-                              </button>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 120 }}>
                               {isCompleted ? (
                                 <button
                                   title="In hóa đơn"
                                   onClick={() => printBill(order)}
                                   style={{
-                                    width: 36,
-                                    height: 36,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
                                     border: 'none',
                                     background: 'none',
-                                    color: '#16a34a',
+                                    color: '#2563eb',
                                     cursor: 'pointer',
-                                    fontSize: 0,
+                                    fontSize: 14,
+                                    fontWeight: 500,
+                                    textDecoration: 'underline',
                                   }}
                                 >
-                                  <Printer size={18} />
+                                  In hóa đơn
                                 </button>
-                              ) : (
-                                <span style={{ width: 36, height: 36, display: 'inline-block' }}></span>
-                              )}
+                              ) : null}
                             </div>
                           </td>
                         </tr>
@@ -577,10 +588,47 @@ export default function OrderAdminPage() {
                                   {Number(order.totalAmount).toLocaleString('vi-VN')}đ
                                 </td>
                                 <td className="border-b px-3 py-2" rowSpan={maxItems}>
-                                  {order.status}
+                                  {order.status === 'completed' || order.status === 'cancelled' ? (
+                                    <span
+                                      className={`inline-block whitespace-nowrap rounded px-2 py-1 text-xs font-semibold ${
+                                        STATUS_LABEL[order.status]?.color || 'border border-gray-200 bg-gray-100 text-gray-800'
+                                      }`}
+                                    >
+                                      {STATUS_LABEL[order.status]?.label || statusLabel[order.status] || order.status}
+                                    </span>
+                                  ) : (
+                                    <select
+                                      value={order.status}
+                                      onChange={async e => {
+                                        try {
+                                          const newStatus = e.target.value;
+                                          const payload: any = { status: newStatus };
+                                          if (['completed', 'hoàn thành'].includes(newStatus.toLowerCase())) {
+                                            payload.updatedBy = user?.id;
+                                          }
+                                          await updateOrder(order.id, payload);
+                                          fetchOrders(); // Refresh danh sách
+                                        } catch (error) {
+                                          console.error('Lỗi cập nhật status:', error);
+                                          alert('Cập nhật trạng thái thất bại');
+                                        }
+                                      }}
+                                      className={`rounded border px-2 py-1 text-xs font-semibold ${
+                                        STATUS_LABEL[order.status]?.color || 'border border-gray-200 bg-gray-100 text-gray-800'
+                                      }`}
+                                      style={{ minWidth: '80px' }}
+                                    >
+                                      <option value="pending">Chờ xác nhận</option>
+                                      <option value="confirmed">Đã xác nhận</option>
+                                      <option value="preparing">Đang chuẩn bị</option>
+                                      <option value="delivering">Đang giao</option>
+                                      <option value="completed">Hoàn thành</option>
+                                      <option value="cancelled">Đã hủy</option>
+                                    </select>
+                                  )}
                                 </td>
                                 <td className="border-b px-3 py-2" rowSpan={maxItems}>
-                                  {order.type}
+                                  {order.type === 'pickup' ? 'Pickup' : order.type === 'delivery' ? 'Delivery' : order.type}
                                 </td>
                                 <td className="border-b px-3 py-2" rowSpan={maxItems}>
                                   {paymentMethod === 'zalopay' ? (
@@ -605,66 +653,24 @@ export default function OrderAdminPage() {
                                   {order.note}
                                 </td>
                                 <td className="border-b px-3 py-2" rowSpan={maxItems}>
-                                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'center', width: 120 }}>
-                                    <button
-                                      title="Sửa"
-                                      onClick={() => handleEdit(order)}
-                                      style={{
-                                        width: 36,
-                                        height: 36,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        border: 'none',
-                                        background: 'none',
-                                        color: '#2563eb',
-                                        cursor: 'pointer',
-                                        fontSize: 0,
-                                      }}
-                                    >
-                                      <Edit size={18} />
-                                    </button>
-                                    <button
-                                      title="Xóa"
-                                      onClick={() => handleDelete(order.id)}
-                                      disabled={saving}
-                                      style={{
-                                        width: 36,
-                                        height: 36,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        border: 'none',
-                                        background: 'none',
-                                        color: '#dc2626',
-                                        cursor: 'pointer',
-                                        fontSize: 0,
-                                      }}
-                                    >
-                                      <Trash2 size={18} />
-                                    </button>
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 120 }}>
                                     {isCompleted ? (
                                       <button
                                         title="In hóa đơn"
                                         onClick={() => printBill(order)}
                                         style={{
-                                          width: 36,
-                                          height: 36,
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
                                           border: 'none',
                                           background: 'none',
-                                          color: '#16a34a',
+                                          color: '#2563eb',
                                           cursor: 'pointer',
-                                          fontSize: 0,
+                                          fontSize: 14,
+                                          fontWeight: 500,
+                                          textDecoration: 'underline',
                                         }}
                                       >
-                                        <Printer size={18} />
+                                        In hóa đơn
                                       </button>
-                                    ) : (
-                                      <span style={{ width: 36, height: 36, display: 'inline-block' }}></span>
-                                    )}
+                                    ) : null}
                                   </div>
                                 </td>
                               </>
@@ -697,72 +703,6 @@ export default function OrderAdminPage() {
                   <option value="completed">Completed</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
-              </div>
-              <div className="mb-3">
-                <label className="block text-sm font-medium">Type</label>
-                <select
-                  className="w-full rounded border px-2 py-1"
-                  value={editingOrder.type}
-                  onChange={e => setEditingOrder({ ...editingOrder, type: e.target.value })}
-                >
-                  <option value="pickup">Pickup</option>
-                  <option value="delivery">Delivery</option>
-                </select>
-              </div>
-              <div className="mb-3">
-                <label className="block text-sm font-medium">Address</label>
-                <input
-                  className="w-full rounded border px-2 py-1"
-                  value={
-                    typeof editingOrder.deliveryAddress === 'object' ? editingOrder.deliveryAddress.address || '' : editingOrder.deliveryAddress || ''
-                  }
-                  onChange={e =>
-                    setEditingOrder({
-                      ...editingOrder,
-                      deliveryAddress: {
-                        ...(typeof editingOrder.deliveryAddress === 'object' ? editingOrder.deliveryAddress : {}),
-                        address: e.target.value,
-                      },
-                    })
-                  }
-                />
-                {editingOrder.type === 'delivery' && (
-                  <div className="mt-2">
-                    <label className="block text-sm font-medium">Recipient Phone</label>
-                    <input
-                      className="w-full rounded border px-2 py-1"
-                      value={typeof editingOrder.deliveryAddress === 'object' ? editingOrder.deliveryAddress.phone || '' : ''}
-                      onChange={e =>
-                        setEditingOrder({
-                          ...editingOrder,
-                          deliveryAddress: {
-                            ...(typeof editingOrder.deliveryAddress === 'object' ? editingOrder.deliveryAddress : {}),
-                            phone: e.target.value,
-                          },
-                        })
-                      }
-                    />
-                  </div>
-                )}
-              </div>
-              <div className="mb-3">
-                <label className="block text-sm font-medium">Note</label>
-                <input
-                  className="w-full rounded border px-2 py-1"
-                  value={editingOrder.note || ''}
-                  onChange={e => setEditingOrder({ ...editingOrder, note: e.target.value })}
-                />
-              </div>
-              <div className="mb-3">
-                <label className="block text-sm font-medium">Total</label>
-                <input
-                  type="number"
-                  className="w-full rounded border px-2 py-1"
-                  value={editingOrder.totalAmount ?? ''}
-                  onChange={e => setEditingOrder({ ...editingOrder, totalAmount: e.target.value ? Number(e.target.value) : '' })}
-                  step="0.01"
-                  min="0"
-                />
               </div>
               <div className="mt-4 flex justify-end gap-2">
                 <button type="button" className="rounded bg-gray-200 px-4 py-2" onClick={() => setShowEdit(false)} disabled={saving}>
@@ -850,15 +790,67 @@ export default function OrderAdminPage() {
             >
               Previous
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`rounded border px-3 py-1 ${page === currentPage ? 'bg-[#C92A15] text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
-              >
-                {page}
-              </button>
-            ))}
+            {(() => {
+              const pages: React.ReactNode[] = [];
+
+              // Luôn hiển thị trang đầu
+              pages.push(
+                <button
+                  key={1}
+                  onClick={() => setCurrentPage(1)}
+                  className={`rounded border px-3 py-1 ${1 === currentPage ? 'bg-[#C92A15] text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                >
+                  1
+                </button>,
+              );
+
+              // Hiển thị trang hiện tại và 2 trang xung quanh
+              const startPage = Math.max(2, currentPage - 1);
+              const endPage = Math.min(totalPages - 1, currentPage + 1);
+
+              if (startPage > 2) {
+                pages.push(
+                  <span key="ellipsis1" className="px-2">
+                    ...
+                  </span>,
+                );
+              }
+
+              for (let i = startPage; i <= endPage; i++) {
+                pages.push(
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPage(i)}
+                    className={`rounded border px-3 py-1 ${i === currentPage ? 'bg-[#C92A15] text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                  >
+                    {i}
+                  </button>,
+                );
+              }
+
+              if (endPage < totalPages - 1) {
+                pages.push(
+                  <span key="ellipsis2" className="px-2">
+                    ...
+                  </span>,
+                );
+              }
+
+              // Luôn hiển thị trang cuối
+              if (totalPages > 1) {
+                pages.push(
+                  <button
+                    key={totalPages}
+                    onClick={() => setCurrentPage(totalPages)}
+                    className={`rounded border px-3 py-1 ${totalPages === currentPage ? 'bg-[#C92A15] text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                  >
+                    {totalPages}
+                  </button>,
+                );
+              }
+
+              return pages;
+            })()}
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}

@@ -9,7 +9,7 @@ import { useCart } from '../context/CartContext';
 import { useDishes } from '../context/DishContext';
 
 export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const { orderItems, removeFromCart } = useCart();
+  const { orderItems, removeFromCart, addToCart } = useCart();
   const dishes = useDishes();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -57,6 +57,27 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     return sum + getItemPrice(item) * (item.quantity || 1);
   }, 0);
 
+  // Hàm tăng/giảm số lượng
+  const decreaseQuantity = async (item: any) => {
+    if (item.quantity > 1) {
+      await addToCart(item.dishId, {
+        quantity: -1,
+        size: item.size,
+        base: item.base,
+        note: item.note,
+      });
+    }
+  };
+
+  const increaseQuantity = async (item: any) => {
+    await addToCart(item.dishId, {
+      quantity: 1,
+      size: item.size,
+      base: item.base,
+      note: item.note,
+    });
+  };
+
   // Xử lý xóa item khỏi cart hiện tại, cập nhật UI trước, đồng bộ localStorage qua context
   const handleRemove = async (itemToRemove: any) => {
     const dish = getDish(itemToRemove.dishId);
@@ -75,6 +96,7 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   return (
     <div
       className="cart-popup-modal"
+      onClick={e => e.stopPropagation()}
       style={{
         position: 'absolute',
         top: 50,
@@ -83,7 +105,7 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         background: '#fff',
         borderRadius: 16,
         boxShadow: '0 4px 32px #0003',
-        zIndex: 100,
+        zIndex: 101,
         padding: 32,
         display: 'flex',
         flexDirection: 'column',
@@ -116,7 +138,78 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 600, fontSize: 16 }}>{dish.name}</div>
                     {dish.description && <div style={{ color: '#666', fontSize: 14 }}>{dish.description}</div>}
-                    <div style={{ color: '#666', fontSize: 15 }}>Số lượng: {item.quantity}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                      <span style={{ color: '#666', fontSize: 14 }}>Số lượng:</span>
+                      {/* Bộ đếm số lượng */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          border: '1px solid #ddd',
+                          borderRadius: 6,
+                          background: '#fff',
+                          width: 80,
+                          height: 28,
+                          justifyContent: 'space-between',
+                          padding: '0 4px',
+                        }}
+                      >
+                        <button
+                          type="button"
+                          style={{
+                            border: 'none',
+                            background: 'none',
+                            fontSize: 14,
+                            fontWeight: 700,
+                            color: item.quantity <= 1 ? '#bbb' : '#C92A15',
+                            cursor: item.quantity <= 1 ? 'not-allowed' : 'pointer',
+                            width: 20,
+                            height: 20,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: 3,
+                            transition: 'color 0.2s',
+                          }}
+                          disabled={item.quantity <= 1}
+                          onClick={() => decreaseQuantity(item)}
+                        >
+                          -
+                        </button>
+                        <span
+                          style={{
+                            fontWeight: 600,
+                            fontSize: 12,
+                            width: 16,
+                            textAlign: 'center',
+                            userSelect: 'none',
+                          }}
+                        >
+                          {item.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          style={{
+                            border: 'none',
+                            background: 'none',
+                            fontSize: 14,
+                            fontWeight: 700,
+                            color: '#C92A15',
+                            cursor: 'pointer',
+                            width: 20,
+                            height: 20,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: 3,
+                            transition: 'color 0.2s',
+                          }}
+                          onClick={() => increaseQuantity(item)}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
                     {item.size && <div style={{ color: '#666', fontSize: 14 }}>Size: {item.size}</div>}
                     {item.base && (
                       <div style={{ color: '#666', fontSize: 14 }}>

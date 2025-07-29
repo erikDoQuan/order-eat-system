@@ -490,7 +490,23 @@ export default function Navbar() {
               style={{ display: 'inline-block', position: 'relative' }}
             >
               <CartIcon />
-              {showCartPopup && <CartPopup onClose={() => setShowCartPopup(false)} />}
+              {showCartPopup && (
+                <>
+                  {/* Overlay để xử lý click ra ngoài */}
+                  <div
+                    onClick={() => setShowCartPopup(false)}
+                    style={{
+                      position: 'fixed',
+                      top: 0,
+                      left: 0,
+                      width: '100vw',
+                      height: '100vh',
+                      zIndex: 99,
+                    }}
+                  />
+                  <CartPopup onClose={() => setShowCartPopup(false)} />
+                </>
+              )}
             </div>
             <span className="text-sm font-bold text-[#a01f10]">{t('cart')}</span>
           </div>

@@ -47,38 +47,20 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     const accessToken = localStorage.getItem('order-eat-access-token');
-  }, []);
-
-  useEffect(() => {
-    const accessToken = localStorage.getItem('order-eat-access-token');
     if (!accessToken) {
       setUser(null);
       setLoading(false);
       return;
     }
 
-    // Nếu user hiện tại không có address, force fetch từ API
-    if (user && !user.address) {
-      // Không làm gì, để useEffect bên dưới xử lý
-    }
-
-    let retry = 0;
-    const tryFetchMe = () => {
-      fetchMe()
-        .then(me => {
-          if (me && me.email) {
-            const userData = {
-              id: me.id,
-              email: me.email,
-              firstName: me.firstName,
-              lastName: me.lastName,
-              phoneNumber: me.phoneNumber,
-              address: me.address || '', // Đảm bảo address không undefined
-              role: me.role,
-            };
-            setUserState(userData);
-            if (me.role !== 'admin') {
-              const localStorageData = {
+    // Chỉ fetch nếu chưa có user hoặc user không có address
+    if (!user || !user.address) {
+      let retry = 0;
+      const tryFetchMe = () => {
+        fetchMe()
+          .then(me => {
+            if (me && me.email) {
+              const userData = {
                 id: me.id,
                 email: me.email,
                 firstName: me.firstName,
@@ -87,12 +69,34 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
                 address: me.address || '', // Đảm bảo address không undefined
                 role: me.role,
               };
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(localStorageData));
+              setUserState(userData);
+              if (me.role !== 'admin') {
+                const localStorageData = {
+                  id: me.id,
+                  email: me.email,
+                  firstName: me.firstName,
+                  lastName: me.lastName,
+                  phoneNumber: me.phoneNumber,
+                  address: me.address || '', // Đảm bảo address không undefined
+                  role: me.role,
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(localStorageData));
+              } else {
+                localStorage.removeItem(STORAGE_KEY);
+              }
+              setLoading(false);
             } else {
-              localStorage.removeItem(STORAGE_KEY);
+              if (retry < 2) {
+                retry++;
+                setTimeout(tryFetchMe, 300);
+              } else {
+                setUser(null);
+                localStorage.removeItem(STORAGE_KEY);
+                setLoading(false);
+              }
             }
-            setLoading(false);
-          } else {
+          })
+          .catch(err => {
             if (retry < 2) {
               retry++;
               setTimeout(tryFetchMe, 300);
@@ -101,21 +105,13 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
               localStorage.removeItem(STORAGE_KEY);
               setLoading(false);
             }
-          }
-        })
-        .catch(err => {
-          if (retry < 2) {
-            retry++;
-            setTimeout(tryFetchMe, 300);
-          } else {
-            setUser(null);
-            localStorage.removeItem(STORAGE_KEY);
-            setLoading(false);
-          }
-        });
-    };
-    tryFetchMe();
-  }, []);
+          });
+      };
+      tryFetchMe();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
 
   useEffect(() => {}, [user]);
 

@@ -27,29 +27,44 @@ export default function AdminPage() {
   const [todayRevenue, setTodayRevenue] = useState<number>(0);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [recentDishes, setRecentDishes] = useState<any[]>([]);
+  const [dashboardLoading, setDashboardLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    getAllDishes().then(dishes => setDishCount(dishes.length));
-    getAllUsers(1, 1000).then(res => {
-      console.log('All users:', res.users); // Kiểm tra dữ liệu thực tế trả về
-      // Lọc user có role là 'user' và isActive hoặc is_active là true
-      const filteredUsers = res.users.filter(u => (u.role === 'user' || u.role === 'USER') && u.isActive === true);
-      setUserCount(filteredUsers.length);
-    });
-    getAllOrders().then(orders => {
-      const today = new Date();
-      const isToday = (dateStr: string) => {
-        const d = new Date(dateStr);
-        return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
-      };
-      const todayOrders = orders.filter((o: any) => o.createdAt && isToday(o.createdAt));
-      setTodayOrderCount(todayOrders.length);
-      setTodayRevenue(todayOrders.reduce((sum: number, o: any) => sum + (isToday(o.createdAt) ? parseFloat(o.totalAmount) || 0 : 0), 0));
-      // Sắp xếp và lấy 3 đơn hàng gần nhất
-      const sorted = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setRecentOrders(sorted.slice(0, 3));
-    });
-    getAllDishes().then(setRecentDishes);
+    // Load tất cả data cùng lúc để tránh load trước load sau
+    const loadDashboardData = async () => {
+      setDashboardLoading(true);
+      try {
+        const [dishes, usersRes, orders] = await Promise.all([getAllDishes(), getAllUsers(1, 1000), getAllOrders()]);
+
+        // Set dish count và recent dishes
+        setDishCount(dishes.length);
+        setRecentDishes(dishes);
+
+        // Set user count
+        const filteredUsers = usersRes.users.filter(u => (u.role === 'user' || u.role === 'USER') && u.isActive === true);
+        setUserCount(filteredUsers.length);
+
+        // Set today's orders và revenue
+        const today = new Date();
+        const isToday = (dateStr: string) => {
+          const d = new Date(dateStr);
+          return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+        };
+        const todayOrders = orders.filter((o: any) => o.createdAt && isToday(o.createdAt));
+        setTodayOrderCount(todayOrders.length);
+        setTodayRevenue(todayOrders.reduce((sum: number, o: any) => sum + (isToday(o.createdAt) ? parseFloat(o.totalAmount) || 0 : 0), 0));
+
+        // Set recent orders
+        const sorted = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setRecentOrders(sorted.slice(0, 3));
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      } finally {
+        setDashboardLoading(false);
+      }
+    };
+
+    loadDashboardData();
   }, []);
 
   useEffect(() => {
@@ -151,26 +166,42 @@ export default function AdminPage() {
         </div>
         {location.pathname === '/admin' ? (
           <>
-            <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                { label: 'Total Dishes', value: dishCount, bg: 'bg-blue-500', icon: '🍕' },
-                { label: "Today's Orders", value: todayOrderCount, bg: 'bg-green-500', icon: '📦' },
-                { label: "Today's Revenue", value: todayRevenue.toLocaleString('vi-VN') + '₫', bg: 'bg-yellow-500', icon: '💰' },
-                { label: 'New Customer', value: userCount, bg: 'bg-purple-500', icon: '👥' },
-              ].map(card => (
-                <div key={card.label} className="rounded-lg bg-white p-6 shadow-sm">
-                  <div className="flex items-center">
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-md ${card.bg}`}>
-                      <span className="text-sm font-medium text-white">{card.icon}</span>
-                    </div>
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-500">{card.label}</p>
-                      <p className="text-2xl font-semibold text-gray-900">{card.value}</p>
+            {dashboardLoading ? (
+              <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="rounded-lg bg-white p-6 shadow-sm">
+                    <div className="flex items-center">
+                      <div className="h-8 w-8 animate-pulse rounded-md bg-gray-200"></div>
+                      <div className="ml-4">
+                        <div className="h-4 w-20 animate-pulse rounded bg-gray-200"></div>
+                        <div className="mt-2 h-8 w-16 animate-pulse rounded bg-gray-200"></div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                  { label: 'Total Dishes', value: dishCount, bg: 'bg-blue-500', icon: '🍕' },
+                  { label: "Today's Orders", value: todayOrderCount, bg: 'bg-green-500', icon: '📦' },
+                  { label: "Today's Revenue", value: todayRevenue.toLocaleString('vi-VN') + '₫', bg: 'bg-yellow-500', icon: '💰' },
+                  { label: 'New Customer', value: userCount, bg: 'bg-purple-500', icon: '👥' },
+                ].map(card => (
+                  <div key={card.label} className="rounded-lg bg-white p-6 shadow-sm">
+                    <div className="flex items-center">
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-md ${card.bg}`}>
+                        <span className="text-sm font-medium text-white">{card.icon}</span>
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm font-medium text-gray-500">{card.label}</p>
+                        <p className="text-2xl font-semibold text-gray-900">{card.value}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {/* ---------- QUICK ACTIONS ---------- */}
             <div className="mb-8">
               <h2 className="mb-4 text-lg font-medium text-gray-900">Quick Actions</h2>

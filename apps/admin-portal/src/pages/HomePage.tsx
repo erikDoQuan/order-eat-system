@@ -288,6 +288,17 @@ export default function HomePage() {
               </a>
             </div>
           )}
+          {visiblePizzaCount >= filteredPizzaDishes.length && visiblePizzaCount > 3 && !typeParam && (
+            <div className="mb-12 mt-4 flex justify-center">
+              <a
+                className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
+                style={{ textDecoration: 'none' }}
+                onClick={() => setVisiblePizzaCount(3)}
+              >
+                Thu gọn
+              </a>
+            </div>
+          )}
         </div>
       )}
       {selectedCategory === 'chicken' && chickenDishes.length > 0 && (
@@ -310,6 +321,17 @@ export default function HomePage() {
               </a>
             </div>
           )}
+          {visibleChickenCount >= chickenDishes.length && visibleChickenCount > 3 && (
+            <div className="mb-12 mt-4 flex justify-center">
+              <a
+                className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
+                style={{ textDecoration: 'none' }}
+                onClick={() => setVisibleChickenCount(3)}
+              >
+                Thu gọn
+              </a>
+            </div>
+          )}
         </div>
       )}
       {selectedCategory === 'spaghetti' && filteredSpaghettiDishes.length > 0 && (
@@ -328,6 +350,17 @@ export default function HomePage() {
                 onClick={() => setVisibleSpaghettiCount(prev => prev + 3)}
               >
                 Xem thêm
+              </a>
+            </div>
+          )}
+          {visibleSpaghettiCount >= filteredSpaghettiDishes.length && visibleSpaghettiCount > 3 && (
+            <div className="mb-12 mt-4 flex justify-center">
+              <a
+                className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
+                style={{ textDecoration: 'none' }}
+                onClick={() => setVisibleSpaghettiCount(3)}
+              >
+                Thu gọn
               </a>
             </div>
           )}
@@ -353,6 +386,17 @@ export default function HomePage() {
               </a>
             </div>
           )}
+          {visibleAppetizerCount >= filteredAppetizerDishes.length && visibleAppetizerCount > 3 && !typeParam && (
+            <div className="mb-12 mt-4 flex justify-center">
+              <a
+                className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
+                style={{ textDecoration: 'none' }}
+                onClick={() => setVisibleAppetizerCount(3)}
+              >
+                Thu gọn
+              </a>
+            </div>
+          )}
         </div>
       )}
       {selectedCategory === 'baked_macaroni' && bakedMacaroniDishes.length > 0 && (
@@ -371,6 +415,17 @@ export default function HomePage() {
                 onClick={() => setVisibleBakedMacaroniCount(prev => prev + 3)}
               >
                 Xem thêm
+              </a>
+            </div>
+          )}
+          {visibleBakedMacaroniCount >= bakedMacaroniDishes.length && visibleBakedMacaroniCount > 3 && (
+            <div className="mb-12 mt-4 flex justify-center">
+              <a
+                className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
+                style={{ textDecoration: 'none' }}
+                onClick={() => setVisibleBakedMacaroniCount(3)}
+              >
+                Thu gọn
               </a>
             </div>
           )}
@@ -395,6 +450,17 @@ export default function HomePage() {
               </a>
             </div>
           )}
+          {visibleSaladCount >= saladDishes.length && visibleSaladCount > 3 && (
+            <div className="mb-6 mt-4 flex justify-center">
+              <a
+                className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
+                style={{ textDecoration: 'none' }}
+                onClick={() => setVisibleSaladCount(3)}
+              >
+                Thu gọn
+              </a>
+            </div>
+          )}
         </div>
       )}
       {selectedCategory === 'drink' && drinkDishes.length > 0 && (
@@ -413,6 +479,17 @@ export default function HomePage() {
                 onClick={() => setVisibleDrinkCount(prev => prev + 3)}
               >
                 Xem thêm
+              </a>
+            </div>
+          )}
+          {visibleDrinkCount >= drinkDishes.length && visibleDrinkCount > 3 && (
+            <div className="mb-6 mt-4 flex justify-center">
+              <a
+                className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
+                style={{ textDecoration: 'none' }}
+                onClick={() => setVisibleDrinkCount(3)}
+              >
+                Thu gọn
               </a>
             </div>
           )}
@@ -468,6 +545,17 @@ export default function HomePage() {
                   </a>
                 </div>
               )}
+              {visiblePizzaCount >= filteredPizzaDishes.length && visiblePizzaCount > 3 && (
+                <div className="mb-12 mt-4 flex justify-center">
+                  <a
+                    className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
+                    style={{ textDecoration: 'none' }}
+                    onClick={() => setVisiblePizzaCount(3)}
+                  >
+                    Thu gọn
+                  </a>
+                </div>
+              )}
             </div>
           )}
           {chickenDishes.length > 0 && (
@@ -487,6 +575,17 @@ export default function HomePage() {
                   >
                     {t('view_more')}
                     <em className="ri-add-line" />
+                  </a>
+                </div>
+              )}
+              {visibleChickenCount >= chickenDishes.length && visibleChickenCount > 3 && (
+                <div className="mb-12 mt-4 flex justify-center">
+                  <a
+                    className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
+                    style={{ textDecoration: 'none' }}
+                    onClick={() => setVisibleChickenCount(3)}
+                  >
+                    Thu gọn
                   </a>
                 </div>
               )}
@@ -511,6 +610,17 @@ export default function HomePage() {
                   </a>
                 </div>
               )}
+              {visibleSpaghettiCount >= spaghettiDishes.length && visibleSpaghettiCount > 3 && (
+                <div className="mb-12 mt-4 flex justify-center">
+                  <a
+                    className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
+                    style={{ textDecoration: 'none' }}
+                    onClick={() => setVisibleSpaghettiCount(3)}
+                  >
+                    Thu gọn
+                  </a>
+                </div>
+              )}
             </div>
           )}
           {bakedMacaroniDishes.length > 0 && (
@@ -529,6 +639,17 @@ export default function HomePage() {
                     onClick={() => setVisibleBakedMacaroniCount(prev => prev + 3)}
                   >
                     Xem thêm
+                  </a>
+                </div>
+              )}
+              {visibleBakedMacaroniCount >= bakedMacaroniDishes.length && visibleBakedMacaroniCount > 3 && (
+                <div className="mb-12 mt-4 flex justify-center">
+                  <a
+                    className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
+                    style={{ textDecoration: 'none' }}
+                    onClick={() => setVisibleBakedMacaroniCount(3)}
+                  >
+                    Thu gọn
                   </a>
                 </div>
               )}
@@ -555,6 +676,18 @@ export default function HomePage() {
                     </a>
                   </div>
                 )}
+              {visibleAppetizerCount >= (appetizerDishes.length > 0 ? appetizerDishes.length : appetizerDishesFallback.length) &&
+                visibleAppetizerCount > 3 && (
+                  <div className="mb-12 mt-4 flex justify-center">
+                    <a
+                      className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
+                      style={{ textDecoration: 'none' }}
+                      onClick={() => setVisibleAppetizerCount(3)}
+                    >
+                      Thu gọn
+                    </a>
+                  </div>
+                )}
               {/* Thêm phần hiển thị salad nếu có */}
               {saladDishes.length > 0 && (
                 <>
@@ -572,6 +705,17 @@ export default function HomePage() {
                         onClick={() => setVisibleSaladCount(prev => prev + 3)}
                       >
                         Xem thêm
+                      </a>
+                    </div>
+                  )}
+                  {visibleSaladCount >= saladDishes.length && visibleSaladCount > 3 && (
+                    <div className="mb-6 mt-4 flex justify-center">
+                      <a
+                        className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
+                        style={{ textDecoration: 'none' }}
+                        onClick={() => setVisibleSaladCount(3)}
+                      >
+                        Thu gọn
                       </a>
                     </div>
                   )}

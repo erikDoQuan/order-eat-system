@@ -43,6 +43,7 @@ export default function AccountPage() {
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [dishesLoading, setDishesLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [searchResult, setSearchResult] = useState<any[] | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -61,10 +62,11 @@ export default function AccountPage() {
   const [showAddressSuccess, setShowAddressSuccess] = useState(false);
   const [showInfoSuccess, setShowInfoSuccess] = useState(false);
 
-  // Đảm bảo user data được load lại khi component mount
+  // Chỉ load user data nếu user chưa có address
   useEffect(() => {
     const loadUserData = async () => {
-      if (!user?.id) {
+      // Chỉ fetch nếu user hiện tại không có address
+      if (user && !user.address) {
         const token = localStorage.getItem('order-eat-access-token');
         if (token) {
           try {
@@ -82,6 +84,7 @@ export default function AccountPage() {
               setUser(userData);
               // Cập nhật address ngay lập tức
               setAddress(userData.address || '');
+              console.log('🔍 AccountPage - loaded user data:', userData);
             }
           } catch (error) {
             console.error('Error loading user data:', error);
@@ -90,7 +93,7 @@ export default function AccountPage() {
       }
     };
     loadUserData();
-  }, [user?.id, setUser]);
+  }, [user, setUser]);
 
   useEffect(() => {
     setForm({
@@ -100,7 +103,9 @@ export default function AccountPage() {
     });
   }, [user?.firstName, user?.lastName, user?.phoneNumber, user?.phone_number, user?.email]);
 
+  // useEffect riêng cho address để đảm bảo reactive
   useEffect(() => {
+    console.log('🔍 AccountPage - user address:', user?.address);
     setAddress(user?.address || '');
   }, [user?.address]);
 
@@ -114,34 +119,28 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (user?.id) {
-      getOrdersByUserId(user.id).then(orders => {
-        const sorted = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setRecentOrders(sorted);
-      });
+      setOrdersLoading(true);
+      getOrdersByUserId(user.id)
+        .then(orders => {
+          const sorted = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setRecentOrders(sorted);
+          setOrdersLoading(false);
+
+          // Kiểm tra notification ngay sau khi load orders
+          const confirmedOrderIds = orders.filter((o: any) => o.status === 'confirmed').map((o: any) => o.id);
+          const notifiedOrderIds = JSON.parse(localStorage.getItem('notified-confirmed-orders') || '[]');
+          const newConfirmedIds = confirmedOrderIds.filter((id: string) => !notifiedOrderIds.includes(id));
+          if (newConfirmedIds.length > 0) {
+            setShowNewOrderNotification(true);
+            setTimeout(() => setShowNewOrderNotification(false), 10000); // 10s
+            localStorage.setItem('notified-confirmed-orders', JSON.stringify([...notifiedOrderIds, ...newConfirmedIds]));
+          }
+        })
+        .catch(() => {
+          setOrdersLoading(false);
+        });
     }
   }, [user?.id]);
-
-  useEffect(() => {
-    let timeout: any;
-    const checkOrderNotification = async () => {
-      if (!user?.id) return;
-      const orders = await getOrdersByUserId(user.id);
-      // Lấy danh sách id các đơn hàng đã xác nhận
-      const confirmedOrderIds = orders.filter((o: any) => o.status === 'confirmed').map((o: any) => o.id);
-      // Lấy danh sách id đã thông báo từ localStorage
-      const notifiedOrderIds = JSON.parse(localStorage.getItem('notified-confirmed-orders') || '[]');
-      // Tìm id mới được xác nhận
-      const newConfirmedIds = confirmedOrderIds.filter((id: string) => !notifiedOrderIds.includes(id));
-      if (newConfirmedIds.length > 0) {
-        setShowNewOrderNotification(true);
-        timeout = setTimeout(() => setShowNewOrderNotification(false), 10000); // 10s
-        // Cập nhật lại localStorage
-        localStorage.setItem('notified-confirmed-orders', JSON.stringify([...notifiedOrderIds, ...newConfirmedIds]));
-      }
-    };
-    checkOrderNotification();
-    return () => clearTimeout(timeout);
-  }, [user]);
 
   const handleEdit = () => {
     setEditing(true);
@@ -296,7 +295,18 @@ export default function AccountPage() {
       const phone = order.phoneNumber || order.phone_number || '';
       const orderNum = String(order.order_number || order.orderNumber || '');
       const id = String(order.id || '');
-      return phone.includes(value) || orderNum.includes(value) || id.includes(value);
+
+      // So sánh chính xác cho order_number và id
+      if (orderNum === value || id === value) {
+        return true;
+      }
+
+      // Với phone number, vẫn dùng includes để tìm kiếm linh hoạt hơn
+      if (phone.includes(value)) {
+        return true;
+      }
+
+      return false;
     });
     setSearchResult(filtered);
   };
@@ -932,68 +942,86 @@ export default function AccountPage() {
               <div className="account-orders-box">
                 <span className="account-orders-title">{t('recent_orders')}</span>
                 <div className="account-recent-orders">
-                  {recentOrders.length === 0 && <div className="text-gray-500">{t('no_orders')}</div>}
-                  <table className="table-recent-orders" style={{ width: '100%', marginTop: 8 }}>
-                    <thead>
-                      <tr>
-                        <th>{t('order_code')}</th>
-                        <th>{t('product')}</th>
-                        <th>{t('order_date')}</th>
-                        <th>{t('total_amount')}</th>
-                        <th>{t('status')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentOrders.slice(0, 3).map(order => {
-                        const items = order.orderItems?.items || [];
-                        const dishNames = items
-                          .map(
-                            (item: any) => item.dishSnapshot?.name || item.name || getDishName(item.dishId) || item.dish?.name || 'Không rõ tên món',
-                          )
-                          .join(', ');
-                        const orderNumber = order.order_number || order.orderNumber || '-';
-                        const orderLink = `/orders/${order.id}`;
-                        const date = new Date(order.createdAt);
-                        const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                        let statusText = '';
-                        if (order.status === 'cancelled') statusText = t('order_cancelled');
-                        else if (order.status === 'completed') statusText = t('order_completed');
-                        else if (order.status === 'confirmed') statusText = t('order_confirmed');
-                        else if (order.status === 'pending') statusText = t('order_pending');
-                        else if (order.status === 'delivering') statusText = 'Đang giao hàng';
-                        else statusText = order.status;
-                        return (
-                          <tr key={order.id}>
-                            <td>
-                              <Link to={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>
-                                {orderNumber}
-                              </Link>
-                            </td>
-                            <td style={{ whiteSpace: 'pre-line' }}>{dishNames}</td>
-                            <td>{dateStr}</td>
-                            <td>{Number(order.totalAmount).toLocaleString('vi-VN')}₫</td>
-                            <td
-                              className={
-                                order.status === 'cancelled'
-                                  ? 'order-status-cancelled'
-                                  : order.status === 'completed'
-                                    ? 'order-status-completed'
-                                    : order.status === 'confirmed'
-                                      ? 'order-status-confirmed'
-                                      : order.status === 'delivering'
-                                        ? 'order-status-delivering'
-                                        : order.status === 'pending'
-                                          ? 'order-status-pending'
-                                          : ''
-                              }
-                            >
-                              {statusText}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  {ordersLoading && (
+                    <div className="text-gray-500" style={{ textAlign: 'center', padding: '20px' }}>
+                      <div
+                        style={{
+                          display: 'inline-block',
+                          width: '20px',
+                          height: '20px',
+                          border: '2px solid #f3f3f3',
+                          borderTop: '2px solid #3498db',
+                          borderRadius: '50%',
+                        }}
+                      ></div>
+                      <div style={{ marginTop: '10px' }}>Đang tải đơn hàng...</div>
+                    </div>
+                  )}
+                  {!ordersLoading && recentOrders.length === 0 && <div className="text-gray-500">{t('no_orders')}</div>}
+                  {!ordersLoading && recentOrders.length > 0 && (
+                    <table className="table-recent-orders" style={{ width: '100%', marginTop: 8 }}>
+                      <thead>
+                        <tr>
+                          <th>{t('order_code')}</th>
+                          <th>{t('product')}</th>
+                          <th>{t('order_date')}</th>
+                          <th>{t('total_amount')}</th>
+                          <th>{t('status')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {recentOrders.slice(0, 3).map(order => {
+                          const items = order.orderItems?.items || [];
+                          const dishNames = items
+                            .map(
+                              (item: any) =>
+                                item.dishSnapshot?.name || item.name || getDishName(item.dishId) || item.dish?.name || 'Không rõ tên món',
+                            )
+                            .join(', ');
+                          const orderNumber = order.order_number || order.orderNumber || '-';
+                          const orderLink = `/orders/${order.id}`;
+                          const date = new Date(order.createdAt);
+                          const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                          let statusText = '';
+                          if (order.status === 'cancelled') statusText = t('order_cancelled');
+                          else if (order.status === 'completed') statusText = t('order_completed');
+                          else if (order.status === 'confirmed') statusText = t('order_confirmed');
+                          else if (order.status === 'pending') statusText = t('order_pending');
+                          else if (order.status === 'delivering') statusText = 'Đang giao hàng';
+                          else statusText = order.status;
+                          return (
+                            <tr key={order.id}>
+                              <td>
+                                <Link to={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>
+                                  {orderNumber}
+                                </Link>
+                              </td>
+                              <td style={{ whiteSpace: 'pre-line' }}>{dishNames}</td>
+                              <td>{dateStr}</td>
+                              <td>{Number(order.totalAmount).toLocaleString('vi-VN')}₫</td>
+                              <td
+                                className={
+                                  order.status === 'cancelled'
+                                    ? 'order-status-cancelled'
+                                    : order.status === 'completed'
+                                      ? 'order-status-completed'
+                                      : order.status === 'confirmed'
+                                        ? 'order-status-confirmed'
+                                        : order.status === 'delivering'
+                                          ? 'order-status-delivering'
+                                          : order.status === 'pending'
+                                            ? 'order-status-pending'
+                                            : ''
+                                }
+                              >
+                                {statusText}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
             </>
