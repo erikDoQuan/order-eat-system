@@ -70,15 +70,18 @@ export default function AccountPage() {
           try {
             const me = await fetchMe();
             if (me && me.email && setUser) {
-              setUser({
+              const userData = {
                 id: me.id,
                 email: me.email,
                 firstName: me.firstName,
                 lastName: me.lastName,
                 phoneNumber: me.phoneNumber,
-                address: me.address,
+                address: me.address || '',
                 role: me.role,
-              });
+              };
+              setUser(userData);
+              // Cập nhật address ngay lập tức
+              setAddress(userData.address || '');
             }
           } catch (error) {
             console.error('Error loading user data:', error);
@@ -99,8 +102,7 @@ export default function AccountPage() {
 
   useEffect(() => {
     setAddress(user?.address || '');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, user?.address]);
+  }, [user?.address]);
 
   useEffect(() => {
     setDishesLoading(true);
@@ -231,6 +233,55 @@ export default function AccountPage() {
     if (dishesLoading) return 'Đang tải...';
     const dish = dishes.find(d => d.id === dishId);
     return dish ? dish.name : '';
+  };
+
+  // Hàm tính giá item giống như trong OrderDetailPage
+  const getItemPrice = (item: any) => {
+    // CHỈ lấy giá từ snapshot hoặc item đã được enrich từ backend
+    if (item.dishSnapshot?.basePrice !== undefined) {
+      let price = Number(item.dishSnapshot.basePrice);
+      // Tính thêm giá size nếu có
+      if (item.size) {
+        const sizeOptions = [
+          { value: 'small', price: 0 },
+          { value: 'medium', price: 90000 },
+          { value: 'large', price: 190000 },
+        ];
+        price += sizeOptions.find(s => s.value === item.size)?.price || 0;
+      }
+      // Tính thêm giá topping nếu có
+      if (item.toppingPrice !== undefined) {
+        price += Number(item.toppingPrice);
+      }
+      return price;
+    }
+
+    // Nếu không có snapshot, lấy từ item.price đã được enrich từ backend
+    if (item.price !== undefined) {
+      let price = Number(item.price);
+      // Tính thêm giá size nếu có
+      if (item.size) {
+        const sizeOptions = [
+          { value: 'small', price: 0 },
+          { value: 'medium', price: 90000 },
+          { value: 'large', price: 190000 },
+        ];
+        price += sizeOptions.find(s => s.value === item.size)?.price || 0;
+      }
+      // Tính thêm giá topping nếu có
+      if (item.toppingPrice !== undefined) {
+        price += Number(item.toppingPrice);
+      }
+      return price;
+    }
+
+    // Nếu không có snapshot và không có item.price, trả về 0
+    return 0;
+  };
+
+  // Hàm tính tổng tiền từ order.totalAmount (giữ nguyên giá đã lưu)
+  const calculateOrderTotal = (order: any) => {
+    return Number(order.totalAmount);
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -490,7 +541,7 @@ export default function AccountPage() {
                               </td>
                               <td style={{ whiteSpace: 'pre-line' }}>{dishNames}</td>
                               <td className="order-date">{dateStr}</td>
-                              <td>{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
+                              <td>{calculateOrderTotal(order).toLocaleString('vi-VN')}₫</td>
                               <td
                                 style={{
                                   width: 400,
@@ -920,7 +971,7 @@ export default function AccountPage() {
                             </td>
                             <td style={{ whiteSpace: 'pre-line' }}>{dishNames}</td>
                             <td>{dateStr}</td>
-                            <td>{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
+                            <td>{Number(order.totalAmount).toLocaleString('vi-VN')}₫</td>
                             <td
                               className={
                                 order.status === 'cancelled'

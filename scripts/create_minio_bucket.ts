@@ -13,7 +13,7 @@ const s3Client = new S3Client({
 async function createBucket() {
   const command = new CreateBucketCommand({ Bucket: 'uploads' });
   await s3Client.send(command);
-  console.log('✅ Bucket "uploads" đã được tạo');
+  console.log(' Bucket "uploads" đã được tạo');
 }
 
 createBucket(); 

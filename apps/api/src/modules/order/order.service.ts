@@ -26,10 +26,113 @@ export class OrderService {
     private readonly dishSnapshotRepository: DishSnapshotRepository, // thêm dòng này
     private readonly userRepository: UserRepository,
     private notificationGateway: NotificationGateway,
-    private readonly userTransactionService: UserTransactionService, // thêm dòng này
+    public readonly userTransactionService: UserTransactionService, // thêm dòng này
     @Inject('ZALOPAY_SERVICE')
     private readonly zaloPayService: any,
   ) {}
+
+  // Helper function để enrich order items với snapshot
+  private async enrichOrderItems(orderItems: any[]) {
+    return Promise.all(
+      orderItems.map(async item => {
+        let name = '-';
+        let image = '';
+        let price = 0;
+        let baseName = item.base;
+        let toppingPrice = 0;
+        let description = '';
+
+        // BẮT BUỘC lấy từ snapshot nếu có dishSnapshotId
+        if (item.dishSnapshotId) {
+          console.log('🔍 Looking for snapshot:', item.dishSnapshotId);
+          const snapshot = await this.dishSnapshotRepository.findOne(item.dishSnapshotId);
+          if (snapshot) {
+            console.log('🔍 Found snapshot:', {
+              id: snapshot.id,
+              name: snapshot.name,
+              basePrice: snapshot.basePrice,
+              price: Number(snapshot.basePrice),
+            });
+            name = snapshot.name || name;
+            image = snapshot.imageUrl || image;
+            price = Number(snapshot.basePrice) || price;
+            description = snapshot.description || description;
+          } else {
+            console.log('❌ Snapshot not found:', item.dishSnapshotId);
+          }
+        }
+
+        // Nếu không có snapshot, thử lấy từ item data trước
+        if (!item.dishSnapshotId) {
+          name = item.name || name;
+          image = item.image || image;
+          price = item.price !== undefined ? Number(item.price) : price;
+          description = item.description || description;
+
+          // Nếu vẫn không có thông tin, fallback về dish hiện tại để đảm bảo hiển thị được
+          if ((!name || name === '-') && item.dishId) {
+            console.log('🔍 Fallback to current dish for display:', item.dishId);
+            const currentDish = await this.dishRepository.findOne(item.dishId);
+            if (currentDish) {
+              console.log('🔍 Found current dish for fallback:', currentDish.name);
+              name = currentDish.name || name;
+              image = currentDish.imageUrl || currentDish.image || image;
+              price = Number(currentDish.basePrice) || price;
+              description = currentDish.description || description;
+            } else {
+              console.log('❌ Current dish not found for fallback:', item.dishId);
+            }
+          }
+        } else {
+          // Nếu có snapshot, KHÔNG fallback về dish hiện tại
+          console.log('🔍 Using snapshot data, no fallback to current dish');
+        }
+
+        // Nếu item.base là id topping, enrich tên và giá topping
+        if (item.base && !['dày', 'mỏng'].includes(item.base)) {
+          const topping = await this.dishRepository.findOne(item.base);
+          if (topping) {
+            baseName = topping.name;
+            toppingPrice = Number(topping.basePrice) || 0;
+          }
+        }
+
+        // Log topping enrichment
+        if (item.base && !['dày', 'mỏng'].includes(item.base)) {
+          console.log('🔍 Topping enrichment:', {
+            base: item.base,
+            baseName,
+            toppingPrice,
+          });
+        }
+
+        const result = {
+          ...item,
+          name,
+          image,
+          price,
+          baseName,
+          toppingPrice,
+          description,
+        };
+
+        console.log('🔍 Final item result:', {
+          dishId: item.dishId,
+          dishSnapshotId: item.dishSnapshotId,
+          name: result.name,
+          price: result.price,
+          originalPrice: item.price,
+          snapshotPrice: item.dishSnapshotId ? 'from snapshot' : 'no snapshot',
+          hasName: !!result.name && result.name !== '-',
+          hasPrice: !!result.price && result.price > 0,
+          finalPrice: result.price,
+          priceSource: item.dishSnapshotId ? 'snapshot' : item.price ? 'item' : 'fallback',
+        });
+
+        return result;
+      }),
+    );
+  }
 
   async findAll(dto: FetchOrdersDto) {
     const result = await this.orderRepository.find(dto);
@@ -57,25 +160,37 @@ export class OrderService {
       }
     }
 
-    // Thêm trường tên admin và method vào từng order
-    const ordersWithAdminName = orders.map((order: any) => {
-      let method = undefined;
-      const txs = transactionsByOrderId[order.id] || [];
-      // Ưu tiên transaction có status = 'success', nếu không có thì lấy transaction đầu tiên
-      const successTx = txs.find((t: any) => t.status === 'success');
-      if (successTx) method = successTx.method;
-      else if (txs.length > 0) method = txs[0].method;
-      return {
-        ...order,
-        createdByName: order.createdBy ? userMap.get(order.createdBy) : null,
-        updatedByName: order.updatedBy ? userMap.get(order.updatedBy) : null,
-        method,
-      };
-    });
+    // Enrich từng order với thông tin sản phẩm từ snapshot
+    const ordersWithEnrichedItems = await Promise.all(
+      orders.map(async (order: any) => {
+        // Enrich order items với snapshot
+        const orderItems = (order.orderItems as { items: any[] } | undefined)?.items;
+        console.log('🔍 findAll - Order items before enrich:', JSON.stringify(orderItems, null, 2));
+        if (orderItems && Array.isArray(orderItems)) {
+          const enrichedItems = await this.enrichOrderItems(orderItems);
+          console.log('🔍 findAll - Order items after enrich:', JSON.stringify(enrichedItems, null, 2));
+          order.orderItems = { items: enrichedItems };
+        }
+
+        // Thêm trường tên admin và method
+        let method = undefined;
+        const txs = transactionsByOrderId[order.id] || [];
+        const successTx = txs.find((t: any) => t.status === 'success');
+        if (successTx) method = successTx.method;
+        else if (txs.length > 0) method = txs[0].method;
+
+        return {
+          ...order,
+          createdByName: order.createdBy ? userMap.get(order.createdBy) : null,
+          updatedByName: order.updatedBy ? userMap.get(order.updatedBy) : null,
+          method,
+        };
+      }),
+    );
 
     return {
       ...result,
-      data: ordersWithAdminName,
+      data: ordersWithEnrichedItems,
     };
   }
 
@@ -101,50 +216,23 @@ export class OrderService {
 
     // Enrich từng item với thông tin sản phẩm
     const orderItems = (order.orderItems as { items: any[] } | undefined)?.items;
+    console.log('🔍 findOne - Order items before enrich:', JSON.stringify(orderItems, null, 2));
     if (orderItems && Array.isArray(orderItems)) {
-      const enrichedItems = await Promise.all(
-        orderItems.map(async item => {
-          let name = '-';
-          let image = '';
-          let price = 0;
-          let baseName = item.base;
-          let toppingPrice = 0;
-          // Ưu tiên lấy từ snapshot nếu có
-          if (item.dishSnapshotId) {
-            const snapshot = await this.dishSnapshotRepository.findOne(item.dishSnapshotId);
-            if (snapshot) {
-              name = snapshot.name || name;
-              image = snapshot.imageUrl || image;
-              price = Number(snapshot.basePrice) || price;
-            }
-          }
-          // Nếu không có snapshot, lấy từ dish
-          if ((!name || name === '-') && item.dishId) {
-            const dish = await this.dishRepository.findOne(item.dishId);
-            if (dish) {
-              name = dish.name || name;
-              image = dish.imageUrl || dish.image || image;
-              price = Number(dish.basePrice) || price;
-            }
-          }
-          // Nếu item.base là id topping, enrich tên và giá topping
-          if (item.base && !['dày', 'mỏng'].includes(item.base)) {
-            const topping = await this.dishRepository.findOne(item.base);
-            if (topping) {
-              baseName = topping.name;
-              toppingPrice = Number(topping.basePrice) || 0;
-            }
-          }
-          return {
-            ...item,
-            name,
-            image,
-            price,
-            baseName,
-            toppingPrice,
-          };
-        }),
-      );
+      // Log dishSnapshotId của từng item
+      orderItems.forEach((item, index) => {
+        console.log(`🔍 findOne - Item ${index}:`, {
+          dishId: item.dishId,
+          dishSnapshotId: item.dishSnapshotId,
+          name: item.name,
+          price: item.price,
+          hasSnapshot: !!item.dishSnapshotId,
+          hasName: !!item.name && item.name !== '-',
+          hasPrice: !!item.price && item.price > 0,
+        });
+      });
+
+      const enrichedItems = await this.enrichOrderItems(orderItems);
+      console.log('🔍 findOne - Order items after enrich:', JSON.stringify(enrichedItems, null, 2));
       (order.orderItems as { items: any[] }).items = enrichedItems;
     }
     // Bổ sung thông tin admin cập nhật đơn hàng
@@ -170,7 +258,14 @@ export class OrderService {
   async findOneByOrderNumber(orderNumber: number) {
     const order = await this.orderRepository.findOneByOrderNumber(orderNumber);
     if (!order) throw new NotFoundException('Đơn hàng không tồn tại');
-    // Enrich từng item với thông tin sản phẩm (reuse logic từ findOne nếu muốn)
+
+    // Enrich từng item với thông tin sản phẩm từ snapshot
+    const orderItems = (order.orderItems as { items: any[] } | undefined)?.items;
+    if (orderItems && Array.isArray(orderItems)) {
+      const enrichedItems = await this.enrichOrderItems(orderItems);
+      (order.orderItems as { items: any[] }).items = enrichedItems;
+    }
+
     return {
       ...order,
       order_number: order.orderNumber || order.id,
@@ -204,49 +299,7 @@ export class OrderService {
     // Enrich từng item với thông tin sản phẩm (giống findOne)
     const orderItems = (order.orderItems as { items: any[] } | undefined)?.items;
     if (orderItems && Array.isArray(orderItems)) {
-      const enrichedItems = await Promise.all(
-        orderItems.map(async item => {
-          let name = '-';
-          let image = '';
-          let price = 0;
-          let baseName = item.base;
-          let toppingPrice = 0;
-          // Ưu tiên lấy từ snapshot nếu có
-          if (item.dishSnapshotId) {
-            const snapshot = await this.dishSnapshotRepository.findOne(item.dishSnapshotId);
-            if (snapshot) {
-              name = snapshot.name || name;
-              image = snapshot.imageUrl || image;
-              price = Number(snapshot.basePrice) || price;
-            }
-          }
-          // Nếu không có snapshot, lấy từ dish
-          if ((!name || name === '-') && item.dishId) {
-            const dish = await this.dishRepository.findOne(item.dishId);
-            if (dish) {
-              name = dish.name || name;
-              image = dish.imageUrl || dish.image || image;
-              price = Number(dish.basePrice) || price;
-            }
-          }
-          // Nếu item.base là id topping, enrich tên và giá topping
-          if (item.base && !['dày', 'mỏng'].includes(item.base)) {
-            const topping = await this.dishRepository.findOne(item.base);
-            if (topping) {
-              baseName = topping.name;
-              toppingPrice = Number(topping.basePrice) || 0;
-            }
-          }
-          return {
-            ...item,
-            name,
-            image,
-            price,
-            baseName,
-            toppingPrice,
-          };
-        }),
-      );
+      const enrichedItems = await this.enrichOrderItems(orderItems);
       (order.orderItems as { items: any[] }).items = enrichedItems;
     }
 
@@ -265,56 +318,157 @@ export class OrderService {
     if (dto.type === 'delivery' && !dto.deliveryAddress) {
       throw new Error('Địa chỉ giao hàng là bắt buộc khi chọn hình thức giao hàng (delivery)');
     }
+
+    // Đảm bảo có userId
+    if (!dto.userId) {
+      throw new Error('UserId is required');
+    }
     // Đảm bảo mỗi item có id và enrich snapshot
     if (dto.orderItems && dto.orderItems.items) {
+      console.log('🔍 Creating order with items:', dto.orderItems.items.length);
       dto.orderItems.items = await Promise.all(
         dto.orderItems.items.map(async item => {
           const dish = await this.dishRepository.findOne(item.dishId);
+          if (!dish) {
+            throw new Error(`Dish not found with id: ${item.dishId}`);
+          }
           // Tạo snapshot
           const validSizes = ['small', 'medium', 'large'];
           const validSize = item.size && validSizes.includes(item.size) ? item.size : null;
           // Tạo snapshot
-          const snapshot = await this.dishSnapshotRepository.create({
+          console.log('🔍 Creating snapshot for dish:', {
             dishId: dish.id,
             name: dish.name,
             basePrice: dish.basePrice,
-            description: dish.description,
-            imageUrl: dish.imageUrl || dish.image, // tuỳ schema
-            status: dish.status,
-            size: validSize,
-            typeName: dish.typeName,
-            categoryId: dish.categoryId,
-            createdBy: dish.createdBy,
-            updatedBy: dish.updatedBy,
+            createdBy: dish.createdBy || dto.userId,
+            updatedBy: dish.updatedBy || dto.userId,
           });
-          return {
+
+          let snapshotId = null;
+
+          try {
+            console.log('🔍 Attempting to create snapshot for dish:', dish.id);
+
+            // Validate required fields
+            if (!dish.id) {
+              throw new Error('Dish ID is required');
+            }
+            if (!dto.userId) {
+              throw new Error('User ID is required');
+            }
+
+            const snapshotData = {
+              dishId: dish.id,
+              name: dish.name || 'Unknown Dish',
+              basePrice: dish.basePrice || '0',
+              imageUrl: dish.imageUrl || dish.image || null,
+              status: dish.status || 'available',
+              size: validSize,
+              typeName: dish.typeName || null,
+              categoryId: dish.categoryId || null,
+              createdBy: dto.userId || null,
+              updatedBy: dto.userId || null,
+            } as any;
+
+            console.log('🔍 Snapshot data:', snapshotData);
+            const snapshot = await this.dishSnapshotRepository.create(snapshotData);
+
+            snapshotId = snapshot.id;
+            console.log('🔍 Snapshot created successfully:', snapshotId);
+          } catch (error) {
+            console.error('❌ Error creating snapshot:', error);
+            console.error('❌ Error details:', {
+              message: error.message,
+              stack: error.stack,
+              dishId: dish.id,
+              userId: dto.userId,
+            });
+            // Không throw error, chỉ log và tiếp tục với snapshotId = null
+            console.log('⚠️ Continuing without snapshot for dish:', dish.id);
+          }
+
+          const enrichedItem = {
             ...item,
             id: item.id || uuidv4(),
-            dishSnapshotId: snapshot.id, // lưu id snapshot vào item
+            dishSnapshotId: snapshotId, // lưu id snapshot vào item
+            // Thêm thông tin từ dish để đảm bảo hiển thị được
+            name: dish.name || 'Unknown Dish',
+            price: dish.basePrice || '0',
+            image: dish.imageUrl || dish.image || null,
+            description: dish.description || null,
           };
+
+          console.log('🔍 Enriched item created:', {
+            dishId: enrichedItem.dishId,
+            dishSnapshotId: enrichedItem.dishSnapshotId,
+            name: enrichedItem.name,
+            price: enrichedItem.price,
+            hasSnapshot: !!enrichedItem.dishSnapshotId,
+            hasName: !!enrichedItem.name && enrichedItem.name !== '-',
+            hasPrice: !!enrichedItem.price && enrichedItem.price > 0,
+          });
+
+          return enrichedItem;
         }),
       );
-      // Tính tổng tiền giống frontend
+
+      console.log(
+        '🔍 Order items after snapshot creation:',
+        dto.orderItems.items.map(item => ({
+          dishId: item.dishId,
+          dishSnapshotId: item.dishSnapshotId,
+          name: item.name,
+          price: item.price,
+        })),
+      );
+      console.log('🔍 Full order items data:', JSON.stringify(dto.orderItems, null, 2));
+      console.log(
+        '🔍 Order items with snapshot IDs:',
+        dto.orderItems.items.map(item => ({
+          dishId: item.dishId,
+          dishSnapshotId: item.dishSnapshotId,
+          name: item.name,
+          price: item.price,
+          hasSnapshot: !!item.dishSnapshotId,
+          hasName: !!item.name && item.name !== '-',
+          hasPrice: !!item.price && item.price > 0,
+        })),
+      );
+      // Tính tổng tiền từ item đã enrich (không lấy từ dish hiện tại)
       let total = 0;
       for (const item of dto.orderItems.items) {
-        const dish = await this.dishRepository.findOne(item.dishId);
-        let price = dish?.basePrice ? parseFloat(dish.basePrice) : 0;
+        // Sử dụng giá từ item đã enrich
+        let price = Number(item.price) || 0;
+
         // Tính thêm giá size
         if (item.size) {
           if (item.size === 'medium') price += 90000;
           if (item.size === 'large') price += 190000;
         }
-        // Tính thêm giá topping (nếu base là id topping)
-        if (item.base && !['dày', 'mỏng'].includes(item.base)) {
+
+        // Tính thêm giá topping (nếu có toppingPrice đã enrich)
+        if (item.toppingPrice !== undefined) {
+          price += Number(item.toppingPrice);
+        } else if (item.base && !['dày', 'mỏng'].includes(item.base)) {
+          // Fallback: lấy từ dish hiện tại nếu chưa enrich toppingPrice
           const topping = await this.dishRepository.findOne(item.base);
           if (topping) price += topping.basePrice ? parseFloat(topping.basePrice) : 0;
         }
+
         total += price * (item.quantity || 1);
+        console.log('🔍 Item price calculation:', {
+          dishId: item.dishId,
+          itemPrice: item.price,
+          calculatedPrice: price,
+          quantity: item.quantity,
+          subtotal: price * (item.quantity || 1),
+        });
       }
       if (dto.type === 'delivery') {
         total += 25000;
       }
       dto.totalAmount = total;
+      console.log('🔍 Total amount calculated:', total);
     }
     // Xử lý pickupTime cho đơn pickup
     let pickupTime: string | undefined = dto.pickupTime;
@@ -342,6 +496,20 @@ export class OrderService {
     // Chỉ truyền các trường hợp lệ vào DB
     const { note, appTransId, ...rest } = dto;
     this.logger?.log?.('orderRepository.create object:', { ...rest, appTransId });
+    console.log('🔍 Creating order with items:', dto.orderItems?.items?.length);
+    console.log('🔍 Order items before save:', JSON.stringify(dto.orderItems, null, 2));
+    console.log(
+      '🔍 Order items validation before save:',
+      dto.orderItems.items.map(item => ({
+        dishId: item.dishId,
+        dishSnapshotId: item.dishSnapshotId,
+        name: item.name,
+        price: item.price,
+        hasSnapshot: !!item.dishSnapshotId,
+        hasName: !!item.name && item.name !== '-',
+        hasPrice: !!item.price && item.price > 0,
+      })),
+    );
     const order = await this.orderRepository.create({
       ...rest,
       appTransId, // đảm bảo luôn truyền appTransId
@@ -349,12 +517,26 @@ export class OrderService {
       note: note, // nếu muốn lưu note tổng
       pickupTime,
     });
+    console.log('🔍 Order created successfully:', order.id);
     // Lấy lại order từ DB để chắc chắn có trường orderNumber
     const orderFull = await this.orderRepository.findOne(order.id);
 
     // Log appTransId và orderFull để debug
     console.log('AppTransId:', appTransId);
     console.log('Saved Order:', JSON.stringify(orderFull, null, 2));
+    console.log('🔍 Order items from DB:', JSON.stringify(orderFull?.orderItems, null, 2));
+    console.log(
+      '🔍 Order items in saved order:',
+      (orderFull?.orderItems as any)?.items?.map((item: any) => ({
+        dishId: item.dishId,
+        dishSnapshotId: item.dishSnapshotId,
+        name: item.name,
+        price: item.price,
+        hasSnapshot: !!item.dishSnapshotId,
+        hasName: !!item.name && item.name !== '-',
+        hasPrice: !!item.price && item.price > 0,
+      })),
+    );
 
     // Lưu user_transaction với status phù hợp khi tạo đơn hàng
     if (orderFull && dto.userId) {
@@ -454,7 +636,6 @@ export class OrderService {
             dishId: dish.id,
             name: dish.name,
             basePrice: dish.basePrice,
-            description: dish.description,
             imageUrl: dish.imageUrl || dish.image,
             status: dish.status,
             size: validSize,
@@ -462,7 +643,7 @@ export class OrderService {
             categoryId: dish.categoryId,
             createdBy: dish.createdBy,
             updatedBy: dish.updatedBy,
-          });
+          } as any);
           currentItems.push({ ...newItem, dishSnapshotId: snapshot.id });
         }
       }
@@ -618,5 +799,10 @@ export class OrderService {
     // Có thể lưu thêm transaction vào bảng user_transaction nếu cần
     // await this.userTransactionService.create({ ... })
     return true;
+  }
+
+  async checkOrderPaymentStatus(orderId: string) {
+    const transactions = await this.userTransactionService.findByOrderId(orderId);
+    return transactions.some(tx => tx.status === 'success');
   }
 }

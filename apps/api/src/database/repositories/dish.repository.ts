@@ -33,6 +33,7 @@ export class DishRepository {
     }
 
     baseConditions.push(eq(dishes['isActive'], true));
+    baseConditions.push(eq(dishes['status'], 'available'));
 
     const whereCondition = baseConditions.length ? and(...baseConditions) : undefined;
 
@@ -46,7 +47,6 @@ export class DishRepository {
       this.drizzle.db.select({ count: count() }).from(dishes).where(whereCondition),
     ]);
 
-  
     const mapped = query.map((dish: any) => ({
       ...dish,
       createdAt: dish.createdAt instanceof Date ? dish.createdAt.toISOString() : dish.createdAt,
@@ -60,13 +60,20 @@ export class DishRepository {
     };
   }
 
-  async findOne(id: string): Promise<any | null> {
+  async findOne(id: string): Promise<any> {
     return this.drizzle.db.query.dishes.findFirst({
-      where: eq(dishes.id, id),
+      where: and(eq(dishes.id, id), eq(dishes['isActive'], true)),
     });
   }
 
   async findAll(): Promise<any[]> {
+    return this.drizzle.db.query.dishes.findMany({
+      where: and(eq(dishes['isActive'], true), eq(dishes['status'], 'available')),
+      orderBy: desc(dishes.createdAt),
+    });
+  }
+
+  async findAllForAdmin(): Promise<any[]> {
     return this.drizzle.db.query.dishes.findMany({
       where: eq(dishes['isActive'], true),
       orderBy: desc(dishes.createdAt),
@@ -78,7 +85,7 @@ export class DishRepository {
     return this.findOne(dish.id);
   }
 
-  async update(id: string, data: UpdateDishDto): Promise<any | null> {
+  async update(id: string, data: UpdateDishDto): Promise<any> {
     const [updated] = await this.drizzle.db
       .update(dishes)
       .set(data as any)
@@ -88,7 +95,7 @@ export class DishRepository {
     return updated ? this.findOne(updated.id) : null;
   }
 
-  async delete(id: string): Promise<any | null> {
+  async delete(id: string): Promise<any> {
     const [deleted] = await this.drizzle.db
       .update(dishes)
       .set({ isActive: false } as any)

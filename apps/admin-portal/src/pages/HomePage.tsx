@@ -24,6 +24,7 @@ export default function HomePage() {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const selectedCategory = queryParams.get('category');
+  const selectedCategoryId = queryParams.get('category');
   const [showCart, setShowCart] = useState(false);
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [cartLoading, setCartLoading] = useState(false);
@@ -177,6 +178,9 @@ export default function HomePage() {
       categories.find(cat => (cat.nameLocalized || cat.name).toLowerCase().includes('nui bỏ lò') && cat.id === d.categoryId),
   );
 
+  // Filter dishes theo categoryId nếu có
+  const filteredDishesByCategory = selectedCategoryId ? dishes.filter(d => d.status === 'available' && d.categoryId === selectedCategoryId) : [];
+
   const handleOpenCart = () => {
     if (user?.id) {
       setCartLoading(true);
@@ -212,6 +216,23 @@ export default function HomePage() {
           <img src="/banner.png" alt="Banner" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', borderRadius: 24 }} />
         </div>
       </div>
+      {/* Nếu có selectedCategoryId thì chỉ render đúng 1 category đó */}
+      {selectedCategoryId && filteredDishesByCategory.length > 0 && (
+        <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+          <div className="mb-6">
+            <h2 className="flex-shrink-0 text-3xl font-extrabold text-black drop-shadow-lg">
+              {categories.find(cat => cat.id === selectedCategoryId)?.nameLocalized ||
+                categories.find(cat => cat.id === selectedCategoryId)?.name ||
+                'Danh mục'}
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+            {filteredDishesByCategory.map(dish => (
+              <MemoDishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+            ))}
+          </div>
+        </div>
+      )}
       {/* Nếu có selectedCategory thì chỉ render đúng 1 category đó */}
       {selectedCategory === 'pizza' && filteredPizzaDishes.length > 0 && (
         <div className="mx-auto max-w-7xl bg-white px-4 pb-4">

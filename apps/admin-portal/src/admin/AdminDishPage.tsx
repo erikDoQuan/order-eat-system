@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 
 import AdminSidebar from '../components/AdminSidebar';
 import { Category, getAllCategories } from '../services/category.api';
-import { createDish, deleteDish, getAllDishes, updateDish } from '../services/dish.api';
+import { createDish, deleteDish, getAllDishesForAdmin, updateDish } from '../services/dish.api';
 
 import '../css/AdminDishPage.css';
 
@@ -58,7 +58,7 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
 
   const fetchDishes = () => {
     setLoading(true);
-    getAllDishes()
+    getAllDishesForAdmin()
       .then(setDishes)
       .catch(() => setError('Không thể tải danh sách món ăn'))
       .finally(() => setLoading(false));
@@ -143,8 +143,24 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
     e.preventDefault();
     setSaving(true);
     try {
-      const dishData: any = { name, description, basePrice: Number((rawBasePrice + '').replace(/\./g, '')), status, categoryId, imageUrl, typeName };
-      if (showSize) dishData.size = size;
+      // Đảm bảo basePrice chỉ chứa số và là string
+      const basePriceString = String(rawBasePrice).replace(/[^\d]/g, '');
+      console.log('Debug - rawBasePrice:', rawBasePrice);
+      console.log('Debug - basePriceString:', basePriceString);
+      console.log('Debug - typeof basePriceString:', typeof basePriceString);
+      console.log('Debug - dishData:', { name, description, basePrice: basePriceString, status, categoryId, imageUrl, typeName });
+      const dishData: any = { name, description, basePrice: basePriceString, status, categoryId, imageUrl, typeName };
+
+      // Log thêm để debug
+      console.log('Debug - Final dishData:', JSON.stringify(dishData, null, 2));
+      // Chỉ gửi categoryId nếu nó có giá trị
+      if (!categoryId) {
+        delete dishData.categoryId;
+      }
+      // Chỉ gửi size nếu nó có giá trị và showSize = true
+      if (showSize && size) {
+        dishData.size = size;
+      }
       if (editing) {
         if (!user?.id) throw new Error('Không xác định được người cập nhật');
         dishData.updatedBy = user.id;
@@ -160,6 +176,9 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
     } catch (err: any) {
       const errorData = err?.response?.data;
       console.error('Lỗi lưu món ăn:', errorData || err);
+      console.error('Full error object:', err);
+      console.error('Response data:', err?.response?.data);
+      console.error('Response status:', err?.response?.status);
       let message = 'Lưu thất bại';
       if (Array.isArray(errorData?.message)) {
         if (typeof errorData.message[0] === 'object') {
@@ -403,19 +422,23 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
                       <input
                         value={rawBasePrice}
                         onChange={e => {
-                          // Chỉ cho phép nhập số, không cho nhập dấu chấm
-                          let raw = e.target.value.replace(/[^\d]/g, '');
+                          // Cho phép nhập số và dấu chấm, nhưng loại bỏ tất cả ký tự khác
+                          let raw = e.target.value.replace(/[^\d.]/g, '');
+                          // Chỉ cho phép một dấu chấm
+                          const parts = raw.split('.');
+                          if (parts.length > 2) {
+                            raw = parts[0] + '.' + parts.slice(1).join('');
+                          }
                           setRawBasePrice(raw);
                         }}
                         onBlur={e => {
-                          // Khi blur, format lại thành 79.000
+                          // Khi blur, format lại thành 80.000
                           let raw = e.target.value.replace(/[^\d]/g, '');
                           setRawBasePrice(raw ? Number(raw).toLocaleString('vi-VN') : '');
                         }}
                         required
                         type="text"
                         inputMode="numeric"
-                        pattern="[0-9]*"
                         className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
                       />
                     </div>

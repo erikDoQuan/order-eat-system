@@ -9,10 +9,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [user, setUserState] = useState<AuthUser | null>(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
     const parsedUser = raw ? JSON.parse(raw) : null;
-    // Nếu user từ localStorage không có address, return null để force fetch từ API
-    if (parsedUser && !parsedUser.address) {
-      return null;
-    }
     return parsedUser;
   });
   const [loading, setLoading] = useState(true);
@@ -63,6 +59,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     // Nếu user hiện tại không có address, force fetch từ API
     if (user && !user.address) {
+      // Không làm gì, để useEffect bên dưới xử lý
     }
 
     let retry = 0;

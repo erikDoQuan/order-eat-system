@@ -29,6 +29,7 @@ export default function OrderDetailPage() {
       getOrderDetail(orderId)
         .then(data => {
           console.log('🔍 OrderDetailPage - Full order data:', data);
+          console.log('🔍 OrderDetailPage - Order items:', data?.orderItems?.items);
           console.log('🔍 OrderDetailPage - User info:', data?.user);
           console.log('🔍 OrderDetailPage - Delivery address:', data?.deliveryAddress);
           if (!data || !data.id) {
@@ -63,14 +64,34 @@ export default function OrderDetailPage() {
   if (!order) return <div>Đang tải...</div>;
 
   const items = order.orderItems?.items || [];
-  const getProductName = (item: any) => item.dishSnapshot?.name || item.name || getDish(item.dishId)?.name || '-';
-  const getProductPrice = (item: any) => {
-    if (item.dishSnapshot?.basePrice !== undefined) return Number(item.dishSnapshot.basePrice);
-    if (item.price !== undefined) return Number(item.price);
-    const dish = getDish(item.dishId);
-    return dish ? Number(dish.basePrice) : 0;
+  const getProductName = (item: any) => {
+    // CHỈ lấy từ snapshot hoặc item đã được enrich từ backend
+    if (item.dishSnapshot?.name) return item.dishSnapshot.name;
+    if (item.name) return item.name;
+    return '-';
   };
-  const getProductImage = (item: any) => item.dishSnapshot?.imageUrl || item.image || getDish(item.dishId)?.imageUrl || '/default-image.png';
+
+  const getProductImage = (item: any) => {
+    // CHỈ lấy từ snapshot hoặc item đã được enrich từ backend
+    if (item.dishSnapshot?.imageUrl) return item.dishSnapshot.imageUrl;
+    if (item.image) return item.image;
+    return '/default-image.png';
+  };
+
+  const getProductDescription = (item: any) => {
+    // CHỈ lấy từ snapshot hoặc item đã được enrich từ backend
+    if (item.dishSnapshot?.description) return item.dishSnapshot.description;
+    if (item.description) return item.description;
+    return null;
+  };
+
+  const getToppingName = (item: any) => {
+    // CHỈ lấy từ baseName đã được enrich từ backend
+    if (item.baseName) return item.baseName;
+    // Nếu không có baseName, trả về item.base
+    return item.base;
+  };
+
   const getProductQuantity = (item: any) => item.quantity ?? 0;
   const sizeOptions = [
     { value: 'small', price: 0 },
@@ -79,17 +100,36 @@ export default function OrderDetailPage() {
   ];
   const getDish = (dishId: string) => dishes.find(d => d.id === dishId);
   const getItemPrice = (item: any) => {
-    const dish = getDish(item.dishId);
-    if (!dish) return 0;
-    let price = Number(dish.basePrice) || 0;
-    if (item.size) {
-      price += sizeOptions.find(s => s.value === item.size)?.price || 0;
+    // CHỈ lấy giá từ snapshot hoặc item đã được enrich từ backend
+    if (item.dishSnapshot?.basePrice !== undefined) {
+      let price = Number(item.dishSnapshot.basePrice);
+      // Tính thêm giá size nếu có
+      if (item.size) {
+        price += sizeOptions.find(s => s.value === item.size)?.price || 0;
+      }
+      // Tính thêm giá topping nếu có
+      if (item.toppingPrice !== undefined) {
+        price += Number(item.toppingPrice);
+      }
+      return price;
     }
-    if (item.base && item.base !== 'dày' && item.base !== 'mỏng') {
-      const topping = dishes.find(d => d.id === item.base);
-      if (topping) price += Number(topping.basePrice) || 0;
+
+    // Nếu không có snapshot, lấy từ item.price đã được enrich từ backend
+    if (item.price !== undefined) {
+      let price = Number(item.price);
+      // Tính thêm giá size nếu có
+      if (item.size) {
+        price += sizeOptions.find(s => s.value === item.size)?.price || 0;
+      }
+      // Tính thêm giá topping nếu có
+      if (item.toppingPrice !== undefined) {
+        price += Number(item.toppingPrice);
+      }
+      return price;
     }
-    return price;
+
+    // Nếu không có snapshot và không có item.price, trả về 0
+    return 0;
   };
   const orderNumber = order.order_number || order.orderNumber || order.id;
   const createdAt = order.createdAt;
@@ -109,7 +149,14 @@ export default function OrderDetailPage() {
   console.log('🔍 OrderDetailPage - address:', address);
   console.log('🔍 OrderDetailPage - user address:', user?.address);
   const shippingFee = order.shippingFee !== undefined ? order.shippingFee : type === 'delivery' ? 25000 : 0;
-  const paymentMethod = order.paymentMethod || 'Thanh toán khi nhận hàng';
+  const getPaymentMethodDisplay = (method: string) => {
+    if (method === 'zalopay') return 'Thanh toán bằng ZaloPay';
+    if (method === 'cash') return 'Thanh toán bằng tiền mặt';
+    if (method === 'cod') return 'Thanh toán khi nhận hàng';
+    return method || 'Thanh toán khi nhận hàng';
+  };
+
+  const paymentMethod = getPaymentMethodDisplay(order.paymentMethod);
 
   // Gộp các item giống nhau (cùng dishId, size, base, note)
   function mergeOrderItems(items: any[]) {
@@ -126,8 +173,28 @@ export default function OrderDetailPage() {
   }
   const mergedItems = mergeOrderItems(items);
 
-  const subtotal = mergedItems.reduce((sum, item) => sum + getProductPrice(item) * Number(item.quantity ?? 0), 0);
-  const total = subtotal + Number(shippingFee);
+  // Sử dụng totalAmount từ order thay vì tính toán lại
+  const total = Number(order.totalAmount);
+  const subtotal = total - Number(shippingFee);
+
+  // Hàm lấy giá đã lưu của item
+  const getItemSavedPrice = (item: any) => {
+    // Nếu chỉ có 1 item, sử dụng tổng tiền đã lưu
+    if (mergedItems.length === 1) {
+      return total - Number(shippingFee);
+    }
+
+    // Ưu tiên lấy từ item.price đã được lưu
+    if (item.price !== undefined && item.price !== null) {
+      return Number(item.price);
+    }
+    // Nếu không có, lấy từ dishSnapshot.price
+    if (item.dishSnapshot?.price !== undefined && item.dishSnapshot?.price !== null) {
+      return Number(item.dishSnapshot.price);
+    }
+    // Cuối cùng mới tính toán từ snapshot
+    return getItemPrice(item);
+  };
   return (
     <>
       <Navbar />
@@ -176,7 +243,7 @@ export default function OrderDetailPage() {
             <div style={{ marginTop: 8 }}>
               <b>Phí vận chuyển</b>
               <br />
-              {Number(shippingFee).toLocaleString('vi-VN')}đ
+              {Number(shippingFee).toLocaleString('vi-VN')}₫
             </div>
           </div>
           <div className="order-detail-info-block">
@@ -201,17 +268,15 @@ export default function OrderDetailPage() {
                         )}
                         <div className="order-detail-product-info">
                           <div className="order-detail-product-name">{getProductName(item)}</div>
-                          {/* Nếu có mô tả trong snapshot thì ưu tiên, nếu không thì lấy từ dish */}
-                          {(item.dishSnapshot?.description || getDish(item.dishId)?.description) && (
-                            <div className="order-detail-product-desc">{item.dishSnapshot?.description || getDish(item.dishId)?.description}</div>
-                          )}
+                          {/* Ưu tiên lấy description từ dishSnapshot trước tiên */}
+                          {getProductDescription(item) && <div className="order-detail-product-desc">{getProductDescription(item)}</div>}
                           {item.size && <div className="order-detail-product-size">Size: {item.size}</div>}
                           {item.base && (
                             <div className="order-detail-product-base">
                               Đế:{' '}
                               {item.base === 'dày' || item.base === 'mỏng'
                                 ? item.base.charAt(0).toUpperCase() + item.base.slice(1)
-                                : dishes.find(d => d.id === item.base)?.name || item.base}
+                                : getToppingName(item)}
                             </div>
                           )}
                           {item.note?.trim() && <div className="order-detail-product-note">Ghi chú: {item.note}</div>}
@@ -219,7 +284,7 @@ export default function OrderDetailPage() {
                         <div className="order-detail-product-qtyprice">
                           <div className="order-detail-product-qty">×{item.quantity}</div>
                           <div className="order-detail-product-price">
-                            {(getProductPrice(item) * Number(item.quantity ?? 0)).toLocaleString('vi-VN')}₫
+                            {(getItemSavedPrice(item) * Number(item.quantity ?? 0)).toLocaleString('vi-VN')}₫
                           </div>
                         </div>
                       </div>
@@ -233,20 +298,20 @@ export default function OrderDetailPage() {
             <div className="order-detail-summary-inner">
               <div className="order-detail-summary-row">
                 <span>Tạm tính (x{mergedItems.reduce((sum, i) => sum + i.quantity, 0)})</span>
-                <span className="order-detail-summary-subtotal">{subtotal.toLocaleString('vi-VN')}đ</span>
+                <span className="order-detail-summary-subtotal">{subtotal.toLocaleString('vi-VN')}₫</span>
               </div>
               <div className="order-detail-summary-row">
                 <span>Giảm giá</span>
-                <span>0đ</span>
+                <span>0₫</span>
               </div>
               <div className="order-detail-summary-row">
                 <span>Phí giao hàng</span>
-                <span>{Number(shippingFee).toLocaleString('vi-VN')}đ</span>
+                <span>{Number(shippingFee).toLocaleString('vi-VN')}₫</span>
               </div>
               <hr className="order-detail-summary-divider" />
               <div className="order-detail-summary-totalrow">
                 <span>Tổng tiền</span>
-                <span className="order-detail-summary-total">{total.toLocaleString('vi-VN')}đ</span>
+                <span className="order-detail-summary-total">{total.toLocaleString('vi-VN')}₫</span>
               </div>
             </div>
           </div>

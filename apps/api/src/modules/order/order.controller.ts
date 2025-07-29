@@ -71,8 +71,32 @@ export class OrderController {
         status: order.status,
         appTransId: order.appTransId,
       });
+      console.log('🔍 Order items:', JSON.stringify(order.orderItems, null, 2));
     }
     return { data: order }; // ✅ Wrap trong data object
+  }
+
+  @Get('test/:id')
+  @ApiOperation({
+    summary: 'Test endpoint để kiểm tra order items',
+    description: 'Trả về thông tin chi tiết của order với items được enrich.',
+  })
+  @Response({ message: 'Test order items thành công' })
+  async testOrderItems(@Param('id') id: string) {
+    const order = await this.orderService.findOne(id);
+    console.log('🔍 Test order items for order:', id);
+    console.log('🔍 Order items:', JSON.stringify(order?.orderItems, null, 2));
+
+    // Test enrich items
+    if (order?.orderItems && typeof order.orderItems === 'object' && 'items' in order.orderItems) {
+      const items = (order.orderItems as any).items;
+      if (Array.isArray(items)) {
+        const enrichedItems = await this.orderService['enrichOrderItems'](items);
+        console.log('🔍 Enriched items:', JSON.stringify(enrichedItems, null, 2));
+      }
+    }
+
+    return { data: order };
   }
 
   @Get('status')
@@ -100,8 +124,7 @@ export class OrderController {
       }
 
       // Kiểm tra user_transaction để xác định isPaid
-      const transactions = await this.orderService.userTransactionService.findByOrderId(order.id);
-      const hasSuccessfulTransaction = transactions.some(tx => tx.status === 'success');
+      const hasSuccessfulTransaction = await this.orderService.checkOrderPaymentStatus(order.id);
 
       console.log('✅ Order found:', {
         id: order.id,

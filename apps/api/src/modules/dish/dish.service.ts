@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
+
+import { DishRepository } from '~/database/repositories/dish.repository';
 import { CreateDishDto } from './dto/create-dish.dto';
 import { UpdateDishDto } from './dto/update-dish.dto';
-import { DishRepository } from '~/database/repositories/dish.repository';
 
 @Injectable()
 export class DishService {
@@ -16,6 +17,11 @@ export class DishService {
   async findAll() {
     this.logger.info('Fetching all dishes...');
     return this.dishRepository.findAll();
+  }
+
+  async findAllForAdmin() {
+    this.logger.info('Fetching all dishes for admin...');
+    return this.dishRepository.findAllForAdmin();
   }
 
   async findOne(id: string) {
@@ -34,7 +40,22 @@ export class DishService {
     this.logger.info(`Updating dish with id: ${id}`);
     const existing = await this.dishRepository.findOne(id);
     if (!existing) throw new NotFoundException('Dish not found');
-    return this.dishRepository.update(id, data);
+
+    // Xử lý basePrice để tránh overflow
+    const updateData = { ...data };
+    if (updateData.basePrice) {
+      const price = parseFloat(String(updateData.basePrice));
+      if (!isNaN(price)) {
+        // Đảm bảo giá trị không vượt quá 99,999,999
+        const maxValue = 99999999;
+        const clampedPrice = Math.min(price, maxValue);
+        // Gửi dưới dạng string
+        updateData.basePrice = clampedPrice.toString();
+      }
+    }
+
+    this.logger.info(`Update data: ${JSON.stringify(updateData)}`);
+    return this.dishRepository.update(id, updateData);
   }
 
   async remove(id: string) {

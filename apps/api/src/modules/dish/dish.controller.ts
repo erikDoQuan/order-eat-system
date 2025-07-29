@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
-import { ApiOperation, ApiTags, ApiQuery } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 
 import { Response } from '~/common/decorators/response.decorator';
@@ -22,19 +22,21 @@ export class DishController {
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách tất cả món ăn' })
   @Response({ message: 'Lấy danh sách món ăn thành công' })
-  findAll(
-    @Req() req?: Request
-  ) {
+  findAll(@Req() req?: Request) {
     return this.dishService.findAll();
+  }
+
+  @Get('admin')
+  @ApiOperation({ summary: 'Lấy danh sách tất cả món ăn cho admin' })
+  @Response({ message: 'Lấy danh sách món ăn thành công' })
+  findAllForAdmin(@Req() req?: Request) {
+    return this.dishService.findAllForAdmin();
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Lấy thông tin món ăn theo ID' })
   @Response({ message: 'Lấy thông tin món ăn thành công' })
-  findOne(
-    @Param('id') id: string,
-    @Req() req?: Request
-  ) {
+  findOne(@Param('id') id: string, @Req() req?: Request) {
     return this.dishService.findOne(id);
   }
 

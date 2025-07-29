@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsNumberString, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
 
 export enum DishStatus {
   AVAILABLE = 'available',
@@ -21,10 +21,16 @@ export class CreateDishDto {
   name: string;
 
   @ApiProperty({
-    description: 'Giá gốc của món ăn (kiểu string vì decimal)',
+    description: 'Giá gốc của món ăn',
     example: '189000',
   })
-  @IsNumberString()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      // Loại bỏ tất cả ký tự không phải số
+      return value.replace(/[^\d]/g, '') || '0';
+    }
+    return String(value || 0);
+  })
   basePrice: string;
 
   @ApiProperty({ format: 'uuid', description: 'ID người tạo' })

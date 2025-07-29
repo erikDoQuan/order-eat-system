@@ -83,13 +83,35 @@ const Footer: React.FC = () => {
           <ul style={{ fontSize: 15, lineHeight: 2, listStyle: 'none', padding: 0 }}>
             {categories
               .filter(cat => (cat.nameLocalized || cat.name).toLowerCase() !== 'món thử nghiệm' && cat.isActive !== false)
-              .map(cat => (
-                <li key={cat.id}>
-                  <Link to={`/menu?category=${cat.id}`} style={{ color: 'white', textDecoration: 'none' }}>
-                    {cat.nameLocalized || cat.name}
-                  </Link>
-                </li>
-              ))}
+              .map(cat => {
+                // Map category name to navbar format
+                const categoryName = (cat.nameLocalized || cat.name).toLowerCase();
+                let path = '/';
+
+                if (categoryName.includes('pizza')) {
+                  path = '/?category=pizza';
+                } else if (categoryName.includes('spaghetti') || categoryName.includes('mỳ ý')) {
+                  path = '/?category=spaghetti';
+                } else if (categoryName.includes('nui bỏ lò') || categoryName.includes('baked macaroni')) {
+                  path = '/?category=baked_macaroni';
+                } else if (categoryName.includes('gà') || categoryName.includes('chicken')) {
+                  path = '/?category=chicken';
+                } else if (categoryName.includes('khai vị') || categoryName.includes('appetizer')) {
+                  path = '/?category=appetizer';
+                } else if (categoryName.includes('salad')) {
+                  path = '/?category=salad';
+                } else if (categoryName.includes('drink') || categoryName.includes('thức uống')) {
+                  path = '/?category=drink';
+                }
+
+                return (
+                  <li key={cat.id}>
+                    <Link to={path} style={{ color: 'white', textDecoration: 'none' }}>
+                      {cat.nameLocalized || cat.name}
+                    </Link>
+                  </li>
+                );
+              })}
           </ul>
         </div>
 
@@ -112,7 +134,19 @@ const Footer: React.FC = () => {
               {stores.map(store => (
                 <li key={store.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                   <FaPhoneAlt style={{ fontSize: 15, color: '#fff' }} />
-                  <span>{store.phone}</span>
+                  <a
+                    href={`tel:${store.phone.replace(/\s/g, '')}`}
+                    style={{
+                      color: 'white',
+                      textDecoration: 'none',
+                      position: 'relative',
+                      cursor: 'pointer',
+                    }}
+                    title={`Gọi điện thoại: ${store.phone}`}
+                    className="phone-link"
+                  >
+                    {store.phone}
+                  </a>
                 </li>
               ))}
             </ul>
@@ -163,6 +197,27 @@ const Footer: React.FC = () => {
           color: #ffecb3;
           transform: scale(1.1);
           transition: all 0.3s ease-in-out;
+        }
+        .phone-link {
+          transition: all 0.2s ease-in-out;
+        }
+        .phone-link:hover {
+          color: #ffecb3 !important;
+          text-decoration: underline !important;
+        }
+        .phone-link:hover::after {
+          content: attr(title);
+          position: fixed;
+          bottom: 20px;
+          left: 20px;
+          background: rgba(0, 0, 0, 0.8);
+          color: white;
+          padding: 8px 12px;
+          border-radius: 6px;
+          font-size: 14px;
+          z-index: 9999;
+          white-space: nowrap;
+          pointer-events: none;
         }
       `}</style>
     </footer>

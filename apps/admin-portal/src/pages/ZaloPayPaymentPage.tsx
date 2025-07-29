@@ -25,10 +25,32 @@ const ZaloPayPaymentPage: React.FC = () => {
   const shippingFee = orderType === 'delivery' ? (state.shippingFee ?? 25000) : 0;
   const deliveryAddress = state.deliveryAddress || '';
 
+  // Clear flag khi vào trang mới (trừ khi đang quay lại từ OrderSuccessPage)
+  useEffect(() => {
+    // Chỉ clear flag nếu không phải đang quay lại từ OrderSuccessPage
+    const urlParams = new URLSearchParams(window.location.search);
+    const appTransIdFromUrl = urlParams.get('appTransId') || urlParams.get('app_trans_id');
+    const returnCode = urlParams.get('return_code');
+
+    console.log('🔍 Debug - URL params:', { appTransIdFromUrl, returnCode });
+    console.log('🔍 Debug - Current zalopay_payment_completed:', localStorage.getItem('zalopay_payment_completed'));
+
+    // Nếu không có appTransId từ URL (không phải redirect từ ZaloPay), clear flag
+    if (!appTransIdFromUrl || returnCode !== '1') {
+      console.log('🔍 Debug - Clearing zalopay_payment_completed flag');
+      localStorage.removeItem('zalopay_payment_completed');
+    } else {
+      console.log('🔍 Debug - Keeping zalopay_payment_completed flag (redirect from ZaloPay)');
+    }
+  }, []);
+
   // Kiểm tra nếu user quay lại từ OrderSuccessPage thì redirect về trang chủ
   useEffect(() => {
     const hasCompletedPayment = localStorage.getItem('zalopay_payment_completed');
+    console.log('🔍 Debug - Checking zalopay_payment_completed:', hasCompletedPayment);
+
     if (hasCompletedPayment === 'true') {
+      console.log('🔍 Debug - Redirecting to homepage due to completed payment');
       // Clear flag và redirect về trang chủ
       localStorage.removeItem('zalopay_payment_completed');
       navigate('/', { replace: true });
@@ -99,10 +121,8 @@ const ZaloPayPaymentPage: React.FC = () => {
     localStorage.removeItem('last_zalopay_orderId');
     localStorage.removeItem('last_zalopay_order_url');
 
-    // Clear flag thanh toán thành công khi vào trang mới (trừ khi đang quay lại từ OrderSuccessPage)
-    if (!localStorage.getItem('zalopay_payment_completed')) {
-      localStorage.removeItem('zalopay_payment_completed');
-    }
+    // Clear flag thanh toán thành công khi vào trang mới
+    // (Logic clear flag đã được xử lý ở useEffect riêng ở trên)
 
     const now = new Date();
     const yymmdd = `${now.getFullYear().toString().slice(2)}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
