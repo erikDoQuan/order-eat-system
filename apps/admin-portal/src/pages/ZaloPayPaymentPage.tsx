@@ -63,6 +63,7 @@ const ZaloPayPaymentPage: React.FC = () => {
     console.log('ZaloPayPaymentPage state:', state);
     console.log('ZaloPayPaymentPage items:', items);
     console.log('ZaloPayPaymentPage totalAmount:', typeof state.totalAmount, state.totalAmount);
+    console.log('ZaloPayPaymentPage pickupTime:', state?.pickupTime);
   }, []);
 
   // Lấy danh sách món ăn
@@ -258,11 +259,18 @@ const ZaloPayPaymentPage: React.FC = () => {
 
     let deliveryAddressObj: any = null;
     if (orderType === 'pickup' && store && store.address && store.name) {
-      deliveryAddressObj = { address: store.address, storeName: store.name };
+      deliveryAddressObj = {
+        address: store.address,
+        storeName: store.name,
+        phone: customer?.phone || '',
+      };
     } else if (typeof deliveryAddress === 'object' && deliveryAddress?.address) {
       deliveryAddressObj = deliveryAddress;
     } else if (typeof deliveryAddress === 'string' && deliveryAddress) {
-      deliveryAddressObj = { address: deliveryAddress };
+      deliveryAddressObj = {
+        address: deliveryAddress,
+        phone: customer?.phone || '',
+      };
     }
 
     const payload = {
@@ -378,7 +386,7 @@ const ZaloPayPaymentPage: React.FC = () => {
     setError('');
     try {
       const zpTransToken = zalopayInfo?.zp_trans_token || zalopayInfo?.order_token || '';
-      const payload = {
+      const payload: any = {
         userId: user?.id,
         orderItems: { items },
         totalAmount,
@@ -390,6 +398,14 @@ const ZaloPayPaymentPage: React.FC = () => {
         appTransId,
         zpTransToken,
       };
+
+      // Thêm pickupTime cho pickup orders
+      if (orderType === 'pickup' && state?.pickupTime) {
+        payload.pickupTime = state.pickupTime;
+        console.log('ZaloPayPaymentPage - Added pickupTime to payload:', state.pickupTime);
+      } else {
+        console.log('ZaloPayPaymentPage - No pickupTime found. orderType:', orderType, 'state?.pickupTime:', state?.pickupTime);
+      }
       // Gọi API tạo đơn hàng (chỉ khi bấm Thanh toán)
       const orderRes = await createOrder(payload);
       clearCart();

@@ -148,10 +148,13 @@ export class OrderController {
       };
     } catch (error) {
       console.error('❌ Error checking order status:', error);
+
+      // Trả về JSON response thay vì throw error
       return {
         success: false,
         message: 'Error checking order status',
-        error: String(error),
+        error: error instanceof Error ? error.message : String(error),
+        status: 'ERROR',
       };
     }
   }
@@ -184,6 +187,7 @@ export class OrderController {
   @Response({ message: 'Cập nhật đơn hàng thành công' })
   update(@Param('id') id: string, @Body() dto: UpdateOrderDto, @Req() req: Request) {
     const adminId = (req as any).user?.id;
+    console.log('🔍 Controller received update request:', { id, dto, adminId });
     return this.orderService.update(id, { ...dto, updatedBy: adminId });
   }
 

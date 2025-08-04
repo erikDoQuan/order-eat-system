@@ -240,13 +240,13 @@ export default function RevenueReportsPage() {
               </div>
             </div>
             {/* Biểu đồ doanh thu */}
-            <div className="mb-8 rounded bg-white p-6 shadow">
+            <div className="mb-8 rounded bg-white p-6 shadow" style={{ minHeight: '450px' }}>
               <div className="mb-4 font-semibold">Revenue by Day</div>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={data.chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={data.chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
-                  <YAxis />
+                  <YAxis tickFormatter={value => value.toLocaleString('vi-VN')} domain={['dataMin', 'dataMax']} />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="revenue" name="Revenue">
                     {data.chartData.map((entry, index) => (

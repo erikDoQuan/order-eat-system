@@ -1,9 +1,27 @@
 .order-table-container {
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   padding: 24px;
   margin-top: 16px;
+}
+
+/* Chart container styles */
+.recharts-wrapper {
+  overflow: visible !important;
+}
+
+.recharts-responsive-container {
+  overflow: visible !important;
+}
+
+.recharts-surface {
+  overflow: visible !important;
+}
+
+/* Ensure chart has enough space */
+.recharts-bar-chart {
+  overflow: visible !important;
 }
 
 .order-table {
@@ -12,7 +30,8 @@
   border-spacing: 0;
 }
 
-.order-table th, .order-table td {
+.order-table th,
+.order-table td {
   text-align: center;
   padding: 14px 8px;
 }
@@ -38,8 +57,9 @@
 }
 
 @media (max-width: 600px) {
-  .order-table th, .order-table td {
+  .order-table th,
+  .order-table td {
     padding: 10px 4px;
     font-size: 0.95rem;
   }
-} 
+}

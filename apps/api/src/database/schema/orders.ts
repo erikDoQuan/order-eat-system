@@ -1,17 +1,27 @@
 import { InferInsertModel, InferSelectModel, relations } from 'drizzle-orm';
-import { decimal, json, pgEnum, pgTable, serial, uuid, varchar } from 'drizzle-orm/pg-core';
+import { decimal, json, pgEnum, pgTable, serial, text, uuid, varchar } from 'drizzle-orm/pg-core';
 
 import { baseColumns } from './_base';
 import { reviews } from './reviews';
 import { users } from './users';
 
 // Enum trạng thái đơn hàng
-export const orderStatusEnum = pgEnum('order_status', ['pending', 'confirmed', 'delivering', 'completed', 'cancelled']);
+export const orderStatusEnum = pgEnum('order_status', ['pending', 'confirmed', 'preparing', 'delivering', 'completed', 'cancelled']);
 
 // Enum hình thức nhận hàng
 export const ORDER_TYPE_VALUES = ['pickup', 'delivery'] as const;
 export type TypeOrderEnum = (typeof ORDER_TYPE_VALUES)[number];
 export const orderTypeEnum = pgEnum('order_type', ORDER_TYPE_VALUES);
+
+// Enum lý do hủy đơn hàng
+export const cancellationReasonsEnum = pgEnum('cancellation_reason', [
+  'Khách hàng yêu cầu hủy đơn',
+  'Không thể liên hệ khách hàng',
+  'Hết món ăn',
+  'Địa chỉ giao hàng không hợp lệ',
+  'Đơn nghi ngờ gian lận',
+  'Khu vực ngoài phạm vi giao hàng',
+]);
 // Sử dụng ORDER_TYPE_VALUES để render select option hoặc validate ở backend/frontend
 
 export const orders = pgTable('orders', {
@@ -23,10 +33,10 @@ export const orders = pgTable('orders', {
   type: orderTypeEnum('type').default('delivery'),
   deliveryAddress: json('delivery_address'),
   note: varchar('note', { length: 255 }),
-  pickupTime: varchar('pickup_time', { length: 20 }),
   updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
   appTransId: varchar('app_trans_id', { length: 32 }),
   zpTransToken: varchar('zp_trans_token', { length: 255 }),
+  cancellationReason: cancellationReasonsEnum('cancellation_reason'), // Lý do hủy đơn hàng
   // returnCode: varchar('return_code', { length: 10 }), // Tạm thời comment để tránh lỗi
   orderNumber: serial('order_number'),
 });

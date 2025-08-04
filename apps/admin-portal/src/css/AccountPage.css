@@ -54,12 +54,22 @@
   font-weight: 600;
   margin-bottom: 24px;
 }
-.account-info-box, .account-orders-box {
+.account-info-box,
+.account-orders-box {
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 8px #0001;
   padding: 18px 24px;
   margin-bottom: 32px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 .account-info-header {
   display: flex;
@@ -67,7 +77,8 @@
   justify-content: space-between;
   margin-bottom: 16px;
 }
-.account-info-title, .account-orders-title {
+.account-info-title,
+.account-orders-title {
   font-size: 18px;
   font-weight: 600;
   color: var(--primary-color);
@@ -141,7 +152,8 @@
 .table-recent-orders thead tr {
   background: var(--secondary-color);
 }
-.table-recent-orders th, .table-recent-orders td {
+.table-recent-orders th,
+.table-recent-orders td {
   padding: 16px 18px;
   text-align: left;
   font-size: 15px;
@@ -173,7 +185,8 @@
 .table-recent-orders .order-status-cancelled {
   color: red;
 }
-.table-recent-orders .order-status-completed, .table-recent-orders .order-status-confirmed {
+.table-recent-orders .order-status-completed,
+.table-recent-orders .order-status-confirmed {
   color: #17823c;
 }
 .order-status-pending,
@@ -188,19 +201,23 @@
 .order-date {
   white-space: nowrap;
 }
-.table-recent-orders td:first-child, .table-recent-orders th:first-child {
+.table-recent-orders td:first-child,
+.table-recent-orders th:first-child {
   min-width: 70px;
   max-width: 90px;
 }
-.table-recent-orders td:nth-child(3), .table-recent-orders th:nth-child(3) {
+.table-recent-orders td:nth-child(3),
+.table-recent-orders th:nth-child(3) {
   min-width: 110px;
   max-width: 120px;
 }
-.table-recent-orders td:nth-child(4), .table-recent-orders th:nth-child(4) {
+.table-recent-orders td:nth-child(4),
+.table-recent-orders th:nth-child(4) {
   min-width: 110px;
   max-width: 130px;
 }
-.table-recent-orders td:last-child, .table-recent-orders th:last-child {
+.table-recent-orders td:last-child,
+.table-recent-orders th:last-child {
   min-width: 110px;
   max-width: 130px;
 }

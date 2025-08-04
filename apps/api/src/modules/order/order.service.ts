@@ -8,6 +8,7 @@ import { OrderRepository } from '~/database/repositories/order.repository';
 import { UserRepository } from '~/database/repositories/user.repository';
 import { Order } from '~/database/schema/orders';
 import { userTransactions } from '~/database/schema/user_transactions';
+import { EmailService } from '../email/email.service';
 import { NotificationGateway } from '../notification/notification.gateway';
 // import { ZaloPayService } from '../payment/zalopay.service';
 import { TransactionMethod, TransactionStatus } from '../user_transaction/dto/create-user-transaction.dto';
@@ -15,7 +16,7 @@ import { UserTransactionService } from '../user_transaction/user-transaction.ser
 import { CompleteOrderDto } from './dto/complete-order.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { FetchOrdersDto } from './dto/fetch-order.dto';
-import { UpdateOrderDto } from './dto/update-order.dto';
+import { CANCELLATION_REASON_VALUES, UpdateOrderDto } from './dto/update-order.dto';
 
 @Injectable()
 export class OrderService {
@@ -27,6 +28,7 @@ export class OrderService {
     private readonly userRepository: UserRepository,
     private notificationGateway: NotificationGateway,
     public readonly userTransactionService: UserTransactionService, // thêm dòng này
+    private readonly emailService: EmailService,
     @Inject('ZALOPAY_SERVICE')
     private readonly zaloPayService: any,
   ) {}
@@ -251,7 +253,8 @@ export class OrderService {
       user: userInfo,
       updatedByInfo,
       paymentMethod: order.zpTransToken || order.appTransId ? 'zalopay' : 'cash',
-      order_number: order.orderNumber || order.id,
+      order_number: order.orderNumber || `#${order.id.slice(0, 8)}`,
+      orderNumber: order.orderNumber || `#${order.id.slice(0, 8)}`,
     };
   }
 
@@ -268,7 +271,8 @@ export class OrderService {
 
     return {
       ...order,
-      order_number: order.orderNumber || order.id,
+      order_number: order.orderNumber || `#${order.id.slice(0, 8)}`,
+      orderNumber: order.orderNumber || `#${order.id.slice(0, 8)}`,
     };
   }
 
@@ -283,33 +287,46 @@ export class OrderService {
     // Enrich thông tin user
     let userInfo = null;
     if (order.userId) {
-      const user = await this.userRepository.findOne(order.userId);
-      if (user) {
-        userInfo = {
-          id: user.id,
-          email: user.email,
-          phone: (user as any).phone,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
-        };
+      try {
+        const user = await this.userRepository.findOne(order.userId);
+        if (user) {
+          userInfo = {
+            id: user.id,
+            email: user.email,
+            phone: (user as any).phone,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+          };
+        }
+      } catch (error) {
+        console.error('❌ Error enriching user info:', error);
       }
     }
 
     // Enrich từng item với thông tin sản phẩm (giống findOne)
     const orderItems = (order.orderItems as { items: any[] } | undefined)?.items;
     if (orderItems && Array.isArray(orderItems)) {
-      const enrichedItems = await this.enrichOrderItems(orderItems);
-      (order.orderItems as { items: any[] }).items = enrichedItems;
+      try {
+        const enrichedItems = await this.enrichOrderItems(orderItems);
+        (order.orderItems as { items: any[] }).items = enrichedItems;
+      } catch (error) {
+        console.error('❌ Error enriching order items:', error);
+        // Không throw error, giữ nguyên order items
+      }
     }
 
     // Trả về đầy đủ các trường, đặc biệt là status
     console.log('✅ Đã tìm thấy đơn hàng:', JSON.stringify(order, null, 2));
+    console.log('🔍 Order number from DB:', order.orderNumber);
+    console.log('🔍 Order ID:', order.id);
+
     return {
       ...order,
       user: userInfo,
       paymentMethod: order.zpTransToken || order.appTransId ? 'zalopay' : 'cash',
-      order_number: order.orderNumber || order.id,
+      order_number: order.orderNumber || `#${order.id.slice(0, 8)}`,
+      orderNumber: order.orderNumber || `#${order.id.slice(0, 8)}`,
     };
   }
 
@@ -317,6 +334,13 @@ export class OrderService {
     // Validate type và deliveryAddress
     if (dto.type === 'delivery' && !dto.deliveryAddress) {
       throw new Error('Địa chỉ giao hàng là bắt buộc khi chọn hình thức giao hàng (delivery)');
+    }
+
+    // Validate deliveryAddress có đủ thông tin khi type là delivery
+    if (dto.type === 'delivery' && dto.deliveryAddress) {
+      if (!dto.deliveryAddress.address || !dto.deliveryAddress.phone) {
+        throw new Error('Địa chỉ giao hàng phải có đầy đủ địa chỉ và số điện thoại');
+      }
     }
 
     // Đảm bảo có userId
@@ -470,57 +494,52 @@ export class OrderService {
       dto.totalAmount = total;
       console.log('🔍 Total amount calculated:', total);
     }
-    // Xử lý pickupTime cho đơn pickup
-    let pickupTime: string | undefined = dto.pickupTime;
-    if (dto.type === 'pickup' || dto.type === 'delivery') {
-      if (!pickupTime) {
-        // Nếu không truyền pickupTime, mặc định:
-        // - pickup: +15 phút
-        // - delivery: +30 phút
-        const now = new Date();
-        // Lấy thời gian UTC+7
-        const vnOffset = 7 * 60; // phút
-        const localNow = new Date(now.getTime() + (vnOffset - now.getTimezoneOffset()) * 60000);
-        const addMinutes = dto.type === 'pickup' ? 15 : 30;
-        const pickupDate = new Date(localNow.getTime() + addMinutes * 60000);
-        const yyyy = pickupDate.getFullYear();
-        const MM = String(pickupDate.getMonth() + 1).padStart(2, '0');
-        const dd = String(pickupDate.getDate()).padStart(2, '0');
-        const hh = String(pickupDate.getHours()).padStart(2, '0');
-        const mm = String(pickupDate.getMinutes()).padStart(2, '0');
-        pickupTime = `${yyyy}-${MM}-${dd} ${hh}:${mm}`;
-      }
-    } else {
-      pickupTime = undefined;
+    // Xử lý note cho đơn hàng
+    let note = dto.note || '';
+    if (dto.type === 'pickup') {
+      note = `Đơn hàng mang về - ${note}`.trim();
+    } else if (dto.type === 'delivery') {
+      note = `Đơn hàng giao tận nơi - ${note}`.trim();
     }
-    // Chỉ truyền các trường hợp lệ vào DB
-    const { note, appTransId, ...rest } = dto;
-    this.logger?.log?.('orderRepository.create object:', { ...rest, appTransId });
-    console.log('🔍 Creating order with items:', dto.orderItems?.items?.length);
-    console.log('🔍 Order items before save:', JSON.stringify(dto.orderItems, null, 2));
+
+    // Tạo appTransId nếu có
+    const appTransId = dto.appTransId || undefined;
+
+    // Log dữ liệu trước khi tạo
     console.log(
-      '🔍 Order items validation before save:',
-      dto.orderItems.items.map(item => ({
-        dishId: item.dishId,
-        dishSnapshotId: item.dishSnapshotId,
-        name: item.name,
-        price: item.price,
-        hasSnapshot: !!item.dishSnapshotId,
-        hasName: !!item.name && item.name !== '-',
-        hasPrice: !!item.price && item.price > 0,
-      })),
+      '📦 Creating order with data:',
+      JSON.stringify(
+        {
+          userId: dto.userId,
+          type: dto.type,
+          totalAmount: dto.totalAmount,
+          status: dto.status,
+          appTransId,
+          orderItems: dto.orderItems,
+          note,
+        },
+        null,
+        2,
+      ),
     );
+
+    // Tạo đơn hàng
     const order = await this.orderRepository.create({
-      ...rest,
-      appTransId, // đảm bảo luôn truyền appTransId
-      orderItems: dto.orderItems, // đã có note trong từng item
-      note: note, // nếu muốn lưu note tổng
-      pickupTime,
+      userId: dto.userId,
+      type: dto.type,
+      orderItems: dto.orderItems,
+      totalAmount: dto.totalAmount,
+      status: dto.status,
+      createdBy: dto.createdBy,
+      deliveryAddress: dto.deliveryAddress,
+      appTransId,
+      note,
     });
     console.log('🔍 Order created successfully:', order.id);
+    console.log('🔍 Created order status:', order.status);
     // Lấy lại order từ DB để chắc chắn có trường orderNumber
     const orderFull = await this.orderRepository.findOne(order.id);
-
+    console.log('🔍 Retrieved order status from DB:', orderFull?.status);
     // Log appTransId và orderFull để debug
     console.log('AppTransId:', appTransId);
     console.log('Saved Order:', JSON.stringify(orderFull, null, 2));
@@ -544,8 +563,8 @@ export class OrderService {
         userId: dto.userId,
         orderId: orderFull.id,
         amount: String(orderFull.totalAmount),
-        method: dto.paymentMethod === 'zalopay' ? TransactionMethod.ZALOPAY : TransactionMethod.CASH,
-        status: dto.paymentMethod === 'zalopay' ? TransactionStatus.SUCCESS : TransactionStatus.PENDING,
+        method: TransactionMethod.CASH, // Mặc định là CASH
+        status: TransactionStatus.PENDING, // Mặc định là PENDING
         transTime: new Date().toISOString(),
         transactionCode: null,
         description: `Tạo giao dịch cho đơn hàng #${orderFull.orderNumber}`,
@@ -579,12 +598,34 @@ export class OrderService {
       updatedBy: existingOrder.userId,
     };
 
-    // Chỉ update status thành completed nếu không phải ZaloPay order
-    if (!existingOrder.appTransId) {
+    // Không bao giờ cập nhật order status thành completed cho ZaloPay orders
+    // Chỉ cập nhật cho cash orders (không có appTransId)
+    if (!existingOrder.appTransId && !existingOrder.zpTransToken) {
       updateData.status = 'completed';
+      console.log('✅ Cập nhật order status thành completed cho cash order');
+    } else {
+      console.log('ℹ️ Giữ nguyên order status cho ZaloPay order (có appTransId hoặc zpTransToken)');
     }
 
     await this.orderRepository.update(existingOrder.id, updateData);
+
+    // 4. Gửi email thông báo thanh toán thành công
+    try {
+      // Lấy thông tin user
+      const user = await this.userRepository.findOne(existingOrder.userId);
+      if (user?.email) {
+        // Enrich order data với items
+        const enrichedOrder = await this.findOne(existingOrder.id);
+        const customerName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || 'Quý khách';
+
+        await this.emailService.sendPaymentSuccessEmail(user.email, enrichedOrder, customerName);
+        this.logger.log(`Payment success email sent to ${user.email} for order ${existingOrder.id}`);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to send payment success email: ${error.message}`);
+      // Không throw error để không ảnh hưởng đến flow chính
+    }
+
     return { message: 'Cập nhật trạng thái thành công', orderId: existingOrder.id };
   }
 
@@ -672,6 +713,11 @@ export class OrderService {
     // Cập nhật các trường khác nếu có
     if (dto.status && ['pending', 'confirmed', 'preparing', 'delivering', 'completed', 'cancelled'].includes(dto.status)) {
       order.status = dto.status as any;
+      // Nếu status là cancelled và có cancellationReason, lưu lý do hủy
+      if (dto.status === 'cancelled' && dto.cancellationReason) {
+        order.cancellationReason = dto.cancellationReason as any;
+        console.log('🔍 Setting cancellationReason:', dto.cancellationReason);
+      }
     }
     if (dto.type && ['pickup', 'delivery'].includes(dto.type)) {
       order.type = dto.type as any;
@@ -679,7 +725,8 @@ export class OrderService {
     if (dto.isActive !== undefined) order.isActive = dto.isActive;
 
     // Đảm bảo deliveryAddress đúng cấu trúc nếu type là delivery
-    if (order.type === 'delivery') {
+    // Chỉ validate khi có thay đổi deliveryAddress hoặc type
+    if (order.type === 'delivery' && (dto.deliveryAddress || dto.type)) {
       const deliveryAddress = (dto.deliveryAddress ?? order.deliveryAddress) as { address: string; phone: string; name?: string };
       if (deliveryAddress && deliveryAddress.address && deliveryAddress.phone) {
         order.deliveryAddress = deliveryAddress;
@@ -693,7 +740,33 @@ export class OrderService {
       order.updatedBy = dto.updatedBy;
     }
     // Lưu lại order
-    const updatedOrder = await this.orderRepository.update(id, order as UpdateOrderDto);
+    console.log('🔍 Updating order with data:', {
+      id,
+      status: order.status,
+      cancellationReason: order.cancellationReason,
+    });
+
+    // Đảm bảo cancellationReason được gửi đúng
+    const updateData = { ...order } as UpdateOrderDto;
+    if (order.status === 'cancelled' && order.cancellationReason) {
+      updateData.cancellationReason = order.cancellationReason;
+      console.log('🔍 Explicitly setting cancellationReason:', order.cancellationReason);
+    }
+
+    const updatedOrder = await this.orderRepository.update(id, updateData);
+    console.log('🔍 Updated order result:', {
+      id: updatedOrder?.id,
+      status: updatedOrder?.status,
+      cancellationReason: updatedOrder?.cancellationReason,
+    });
+
+    // Kiểm tra lại từ database để đảm bảo dữ liệu được lưu
+    const verifyOrder = await this.orderRepository.findOne(id);
+    console.log('🔍 Verification from database:', {
+      id: verifyOrder?.id,
+      status: verifyOrder?.status,
+      cancellationReason: verifyOrder?.cancellationReason,
+    });
 
     // Nếu cập nhật status và có updatedBy (admin), thì update user_transaction
     if (dto.status && dto.updatedBy && order.userId) {
@@ -796,6 +869,23 @@ export class OrderService {
       // Không update status nữa, chỉ update zpTransToken
       zpTransToken: opts.transactionId || order.zpTransToken,
     });
+
+    // Gửi email thông báo thanh toán thành công cho ZaloPay
+    try {
+      const user = await this.userRepository.findOne(order.userId);
+      if (user?.email) {
+        // Enrich order data với items
+        const enrichedOrder = await this.findOne(order.id);
+        const customerName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || 'Quý khách';
+
+        await this.emailService.sendPaymentSuccessEmail(user.email, enrichedOrder, customerName);
+        this.logger.log(`Payment success email sent to ${user.email} for ZaloPay order ${order.id}`);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to send payment success email for ZaloPay: ${error.message}`);
+      // Không throw error để không ảnh hưởng đến flow chính
+    }
+
     // Có thể lưu thêm transaction vào bảng user_transaction nếu cần
     // await this.userTransactionService.create({ ... })
     return true;

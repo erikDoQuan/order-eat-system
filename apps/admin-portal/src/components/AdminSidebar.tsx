@@ -1,17 +1,17 @@
-import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useContext } from 'react';
 import { LogOut } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+
 import { AuthContext } from '../context/AuthContext';
-import { useContext } from 'react';
 
 const adminMenu = [
   { label: 'Dashboard', path: '/admin' },
-  { label: 'Category Management', path: '/admin/category' },
-  { label: 'Dish Management', path: '/admin/dishes' },
-  { label: 'User Management', path: '/admin/customers' },
-  { label: 'Order Management', path: '/admin/orders' },
-  { label: 'User Transaction Management', path: '/admin/user-transaction' },
-  { label: 'Review Management', path: '/admin/reviews' },
+  { label: 'Category', path: '/admin/category' },
+  { label: 'Dish ', path: '/admin/dishes' },
+  { label: 'User ', path: '/admin/customers' },
+  { label: 'Order ', path: '/admin/orders' },
+  { label: 'Payment', path: '/admin/user-transaction' },
+  { label: 'Review ', path: '/admin/reviews' },
   { label: 'Revenue Reports', path: '/admin/revenue-reports' },
   { label: 'Settings', path: '/admin/settings' },
 ];
@@ -28,8 +28,7 @@ export default function AdminSidebar() {
   return (
     <aside className="admin-sidebar">
       <div className="admin-logo" onClick={() => navigate('/admin')} style={{ cursor: 'pointer', marginBottom: 32 }}>
-        <img src="/logo.png" alt="Logo" style={{ width: 48, height: 48, borderRadius: 12, margin: '0 auto' }} />
-        <div style={{ fontWeight: 700, fontSize: 20, color: '#C92A15', textAlign: 'center', marginTop: 8 }}>BEP CUAME ADMIN</div>
+        <img src="/logo.png" alt="Logo" style={{ width: 80, height: 80, borderRadius: 12, margin: '0 auto' }} />
       </div>
       <nav style={{ flex: 1 }}>
         <ul className="admin-menu">

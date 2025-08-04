@@ -196,14 +196,13 @@ export default function HomePage() {
   const MemoDishCard = React.memo(DishCard);
 
   return (
-    <div className="min-h-screen bg-white py-8">
-      <div className="mb-10 w-full" style={{ display: 'flex', justifyContent: 'center' }}>
+    <div>
+      <div className="mb-6 w-full" style={{ display: 'flex', justifyContent: 'center', marginTop: '-20px' }}>
         <div
-          className="mx-auto"
+          className="mx-auto w-full max-w-7xl"
           style={{
             width: '100%',
-            maxWidth: '80rem', // tương đương max-w-7xl
-            aspectRatio: '1536/864',
+            aspectRatio: '1536/480', // Tỷ lệ 3.2:1 - tăng chiều cao thêm để thoải mái hơn nữa
             overflow: 'hidden',
             position: 'relative',
             background: '#fff',
@@ -213,12 +212,24 @@ export default function HomePage() {
             justifyContent: 'center',
           }}
         >
-          <img src="/banner.png" alt="Banner" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', borderRadius: 24 }} />
+          <img
+            src="/banner3.png"
+            alt="Banner"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'fill',
+              display: 'block',
+              borderRadius: 24,
+              maxHeight: '100%',
+              maxWidth: '100%',
+            }}
+          />
         </div>
       </div>
       {/* Nếu có selectedCategoryId thì chỉ render đúng 1 category đó */}
       {selectedCategoryId && filteredDishesByCategory.length > 0 && (
-        <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+        <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
           <div className="mb-6">
             <h2 className="flex-shrink-0 text-3xl font-extrabold text-black drop-shadow-lg">
               {categories.find(cat => cat.id === selectedCategoryId)?.nameLocalized ||
@@ -235,7 +246,7 @@ export default function HomePage() {
       )}
       {/* Nếu có selectedCategory thì chỉ render đúng 1 category đó */}
       {selectedCategory === 'pizza' && filteredPizzaDishes.length > 0 && (
-        <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+        <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
           <div className="mb-6">
             <h2 className="flex-shrink-0 text-3xl font-extrabold text-black drop-shadow-lg">{pizzaTypeTitle()}</h2>
             {/* Nếu không có typeParam thì mới hiển thị các button filter */}
@@ -302,7 +313,7 @@ export default function HomePage() {
         </div>
       )}
       {selectedCategory === 'chicken' && chickenDishes.length > 0 && (
-        <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+        <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
           <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('chicken')}</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
             {chickenDishes.slice(0, visibleChickenCount).map(dish => (
@@ -335,7 +346,7 @@ export default function HomePage() {
         </div>
       )}
       {selectedCategory === 'spaghetti' && filteredSpaghettiDishes.length > 0 && (
-        <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+        <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
           <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{spaghettiTypeTitle()}</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
             {filteredSpaghettiDishes.slice(0, visibleSpaghettiCount).map(dish => (
@@ -367,7 +378,7 @@ export default function HomePage() {
         </div>
       )}
       {selectedCategory === 'appetizer' && filteredAppetizerDishes.length > 0 && (
-        <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+        <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
           <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{appetizerTypeTitle()}</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
             {filteredAppetizerDishes.slice(0, visibleAppetizerCount).map(dish => (
@@ -400,7 +411,7 @@ export default function HomePage() {
         </div>
       )}
       {selectedCategory === 'baked_macaroni' && bakedMacaroniDishes.length > 0 && (
-        <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+        <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
           <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('baked_macaroni') || 'Nui Bỏ Lò'}</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
             {bakedMacaroniDishes.slice(0, visibleBakedMacaroniCount).map(dish => (
@@ -432,7 +443,7 @@ export default function HomePage() {
         </div>
       )}
       {selectedCategory === 'salad' && saladDishes.length > 0 && (
-        <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+        <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
           <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('salad') || 'Salad'}</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
             {saladDishes.slice(0, visibleSaladCount).map(dish => (
@@ -464,7 +475,7 @@ export default function HomePage() {
         </div>
       )}
       {selectedCategory === 'drink' && drinkDishes.length > 0 && (
-        <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+        <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
           <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('drink') || 'Thức uống'}</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
             {drinkDishes.slice(0, visibleDrinkCount).map(dish => (
@@ -499,7 +510,7 @@ export default function HomePage() {
       {!selectedCategory && (
         <>
           {pizzaDishes.length > 0 && (
-            <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+            <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
               <div className="mb-6 flex items-center gap-4">
                 <h2 className="flex-shrink-0 text-3xl font-extrabold text-black drop-shadow-lg">{t('pizza')}</h2>
                 <div className="ml-4 flex flex-1 flex-wrap justify-end gap-2">
@@ -559,7 +570,7 @@ export default function HomePage() {
             </div>
           )}
           {chickenDishes.length > 0 && (
-            <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+            <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
               <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('chicken')}</h2>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
                 {chickenDishes.slice(0, visibleChickenCount).map(dish => (
@@ -592,7 +603,7 @@ export default function HomePage() {
             </div>
           )}
           {spaghettiDishes.length > 0 && (
-            <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+            <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
               <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('spaghetti')}</h2>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
                 {spaghettiDishes.slice(0, visibleSpaghettiCount).map(dish => (
@@ -624,7 +635,7 @@ export default function HomePage() {
             </div>
           )}
           {bakedMacaroniDishes.length > 0 && (
-            <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+            <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
               <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('baked_macaroni') || 'Nui Bỏ Lò'}</h2>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
                 {bakedMacaroniDishes.slice(0, visibleBakedMacaroniCount).map(dish => (
@@ -656,7 +667,7 @@ export default function HomePage() {
             </div>
           )}
           {(appetizerDishes.length > 0 || appetizerDishesFallback.length > 0) && (
-            <div className="mx-auto max-w-7xl bg-white px-4 pb-4">
+            <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
               <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('appetizer')}</h2>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
                 {(appetizerDishes.length > 0 ? appetizerDishes : appetizerDishesFallback).slice(0, visibleAppetizerCount).map(dish => (

@@ -298,8 +298,10 @@ export default function ReviewAdminPage() {
             </button>
             {[1, 2, 3, 4, 5].map(star => (
               <button key={star} className={`review-star-filter-btn${starFilter === star ? 'selected' : ''}`} onClick={() => setStarFilter(star)}>
-                <Star size={15} fill="#ffd700" className="mr-1" />
-                {star}
+                <div className="flex items-center justify-center gap-1">
+                  <Star size={15} fill="#ffd700" />
+                  <span>{star}</span>
+                </div>
               </button>
             ))}
           </div>

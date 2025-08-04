@@ -1,7 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsEnum, IsNumber, IsObject, IsOptional, IsUUID } from 'class-validator';
+import { IsBoolean, IsEnum, IsNumber, IsObject, IsOptional, IsString, IsUUID } from 'class-validator';
 
 import { orderStatusEnumValues, orderTypeEnumValues } from '../constants/order-status.constant';
+
+// Enum values cho cancellation reasons
+export const CANCELLATION_REASON_VALUES = [
+  'Khách hàng yêu cầu hủy đơn',
+  'Không thể liên hệ khách hàng',
+  'Hết món ăn',
+  'Địa chỉ giao hàng không hợp lệ',
+  'Đơn nghi ngờ gian lận',
+  'Khu vực ngoài phạm vi giao hàng',
+] as const;
 
 export class UpdateOrderDto {
   @ApiProperty({
@@ -91,4 +101,14 @@ export class UpdateOrderDto {
   })
   @IsOptional()
   zpTransToken?: string;
+
+  @ApiProperty({
+    description: 'Lý do hủy đơn hàng (chỉ cần điền khi status = cancelled)',
+    enum: CANCELLATION_REASON_VALUES,
+    example: 'Khách hàng yêu cầu hủy đơn',
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(CANCELLATION_REASON_VALUES)
+  cancellationReason?: string;
 }

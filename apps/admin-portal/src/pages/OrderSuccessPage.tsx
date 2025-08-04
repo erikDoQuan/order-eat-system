@@ -7,6 +7,7 @@ import '../css/OrderSuccessPage.css';
 
 import { AuthContext } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { sendPaymentSuccessEmail } from '../services/email.api';
 import { getOrderDetail, getOrderDetailByAppTransId, getOrderDetailByNumber } from '../services/order.api';
 
 function isValidUUID(id: string | undefined | null): boolean {
@@ -78,12 +79,38 @@ const OrderSuccessPage: React.FC = () => {
     if (order && order.id && isValidUUID(order.id)) {
       setOrderNumber(order.order_number || order.orderNumber || order.id || '...');
       setError(null);
+
+      // Gửi email thông báo thanh toán thành công
+      if (user?.email) {
+        const customerName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || 'Quý khách';
+
+        sendPaymentSuccessEmail({
+          email: user.email,
+          orderData: order,
+          customerName,
+        }).catch(error => {
+          console.error('Failed to send payment success email:', error);
+        });
+      }
     } else if (orderId && isValidUUID(orderId)) {
       setLoading(true);
       getOrderDetail(orderId)
         .then(data => {
           setOrderNumber(data.order_number || data.orderNumber || data.id || '...');
           setError(null);
+
+          // Gửi email thông báo thanh toán thành công
+          if (user?.email) {
+            const customerName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || 'Quý khách';
+
+            sendPaymentSuccessEmail({
+              email: user.email,
+              orderData: data,
+              customerName,
+            }).catch(error => {
+              console.error('Failed to send payment success email:', error);
+            });
+          }
         })
         .catch(() => {
           setError('Không tìm thấy thông tin đơn hàng.');
@@ -123,6 +150,19 @@ const OrderSuccessPage: React.FC = () => {
                 }
               }
               setError(null);
+
+              // Gửi email thông báo thanh toán thành công
+              if (user?.email) {
+                const customerName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || 'Quý khách';
+
+                sendPaymentSuccessEmail({
+                  email: user.email,
+                  orderData: orderData,
+                  customerName,
+                }).catch(error => {
+                  console.error('Failed to send payment success email:', error);
+                });
+              }
             } else {
               console.log('❌ Invalid data from API:', orderData);
               setError('Không tìm thấy thông tin đơn hàng từ ZaloPay.');
@@ -137,7 +177,7 @@ const OrderSuccessPage: React.FC = () => {
     } else {
       setError('Không có thông tin đơn hàng.');
     }
-  }, [order, orderId, appTransId]);
+  }, [order, orderId, appTransId, user]);
 
   // Fallback: nếu appTransId không tìm thấy, thử lấy theo orderNumber từ URL
   useEffect(() => {
@@ -156,6 +196,19 @@ const OrderSuccessPage: React.FC = () => {
               if (orderData && orderData.id && isValidUUID(orderData.id)) {
                 setOrderNumber(orderData.order_number || orderData.orderNumber || orderData.id || '...');
                 setError(null);
+
+                // Gửi email thông báo thanh toán thành công
+                if (user?.email) {
+                  const customerName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || 'Quý khách';
+
+                  sendPaymentSuccessEmail({
+                    email: user.email,
+                    orderData: orderData,
+                    customerName,
+                  }).catch(error => {
+                    console.error('Failed to send payment success email:', error);
+                  });
+                }
               } else {
                 setError('Không tìm thấy đơn hàng theo số đơn hàng.');
               }
@@ -168,7 +221,7 @@ const OrderSuccessPage: React.FC = () => {
         });
       }
     }
-  }, [appTransId, order, orderId]);
+  }, [appTransId, order, orderId, user]);
 
   return (
     <div className="order-success-root">

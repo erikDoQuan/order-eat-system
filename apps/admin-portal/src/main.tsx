@@ -27,6 +27,7 @@ import RegisterPage from './pages/RegisterPage';
 
 import './i18n';
 
+import QuickOrderPage from './admin/QuickOrderPage';
 import RevenueReportsPage from './admin/RevenueReportsPage';
 import SettingAdminPage from './admin/SettingAdminPage';
 import UserTransactionAdminPage from './admin/UserTransactionAdminPage';
@@ -36,6 +37,8 @@ import BillPrintPage from './pages/BillPrintPage';
 import DeliveryOrderPage from './pages/DeliveryOrderPage';
 import ForgotPasswordPage from './pages/forgot-password';
 import OrderDetailPage from './pages/OrderDetailPage';
+import QuickOrderSuccessPage from './pages/QuickOrderSuccessPage';
+import QuickOrderZaloPayPage from './pages/QuickOrderZaloPayPage';
 import ResetPasswordPage from './pages/reset-password';
 import TeachableMachineTestPage from './pages/TeachableMachineTestPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
@@ -47,6 +50,11 @@ declare global {
   interface Window {
     __REACT_ROUTER_DISABLE_WARNINGS?: boolean;
   }
+}
+
+// Disable React Router warnings in development
+if (import.meta.env.DEV) {
+  window.__REACT_ROUTER_DISABLE_WARNINGS = true;
 }
 
 // Đảm bảo axios luôn gửi accessToken trong header Authorization mỗi lần app khởi động
@@ -147,7 +155,7 @@ function AppWithCartProvider() {
         <Route path="/orders/:orderId" element={<OrderDetailPage />} />
         {/* Route admin không dùng layout => không bị render Navbar */}
         <Route
-          path="/admin"
+          path="/admin/*"
           element={
             <AdminRoute>
               <AdminPage />
@@ -221,6 +229,14 @@ function AppWithCartProvider() {
             </AdminRoute>
           }
         />
+        <Route
+          path="/admin/quick-orders"
+          element={
+            <AdminRoute>
+              <QuickOrderPage />
+            </AdminRoute>
+          }
+        />
         {/* Các route không dùng layout */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -232,6 +248,8 @@ function AppWithCartProvider() {
         <Route path="/order-success" element={<OrderSuccessPage />} />
         <Route path="/ordersuccesspage" element={<OrderSuccessPage />} />
         <Route path="/zalo-pay-payment" element={<ZaloPayPaymentPage />} />
+        <Route path="/quick-order-zalopay" element={<QuickOrderZaloPayPage />} />
+        <Route path="/admin/quick-order-success" element={<QuickOrderSuccessPage />} />
         <Route path="/bill/generate" element={<BillPrintPage />} />
         <Route path="/bill/preview" element={<BillPreviewPage />} />
         {/* Route xác thực email */}
@@ -258,7 +276,12 @@ if (!window.__REACT_ROOT__) {
 const root = window.__REACT_ROOT__;
 root.render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <LanguageProvider>
         <AuthProvider>
           <DishProvider>

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNumber, IsObject, IsOptional, IsUUID } from 'class-validator';
+import { IsEnum, IsNumber, IsObject, IsOptional, IsString, IsUUID } from 'class-validator';
 
 import { orderStatusEnumValues, orderTypeEnumValues } from '../constants/order-status.constant';
 
@@ -80,15 +80,8 @@ export class CreateOrderDto {
     required: false,
   })
   @IsOptional()
+  @IsString()
   note?: string;
-
-  @ApiProperty({
-    description: 'Thời gian nhận hàng (pickup)',
-    example: '2024-06-01 18:30',
-    required: false,
-  })
-  @IsOptional()
-  pickupTime?: string;
 
   @ApiProperty({
     description: 'Phương thức thanh toán',
@@ -105,6 +98,7 @@ export class CreateOrderDto {
     required: false,
   })
   @IsOptional()
+  @IsString()
   appTransId?: string;
 
   @ApiProperty({

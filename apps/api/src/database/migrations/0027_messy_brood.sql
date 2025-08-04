@@ -1,0 +1,2 @@
+CREATE TYPE "public"."cancellation_reason" AS ENUM('Khách hàng yêu cầu hủy đơn', 'Không thể liên hệ khách hàng', 'Hết món ăn', 'Địa chỉ giao hàng không hợp lệ', 'Đơn nghi ngờ gian lận', 'Khu vực ngoài phạm vi giao hàng');--> statement-breakpoint
+ALTER TABLE "orders" ALTER COLUMN "cancellation_reason" SET DATA TYPE "public"."cancellation_reason" USING "cancellation_reason"::"public"."cancellation_reason";

@@ -12,13 +12,13 @@ const stores = [
   {
     id: 1,
     name: 'BẾP CỦA MẸ - TP NHA TRANG',
-    address: '296/29 Lương Định Của, Nha Trang, Khánh Hòa',
+    address: '296/29 Lương Định Của, Xã Vĩnh Ngọc, TP Nha Trang, Khánh Hòa (0337782571)',
     hotline: '0337782571',
   },
   {
     id: 2,
     name: 'BẾP CỦA MẸ NGUYỄN TRÃI - TP NHA TRANG',
-    address: '01 Nguyễn Trãi, Phường Phước Hải, Nha Trang, Khánh Hòa',
+    address: '01 Nguyễn Trãi, Phường Phước Hải, TP Nha Trang, Khánh Hòa (0337782571)',
     hotline: '0337782571',
   },
 ];
@@ -69,7 +69,7 @@ function getValidTimes(selectedDate: string) {
 const OrderInfoPage: React.FC = () => {
   const query = useQuery();
   const location = useLocation();
-  const orderType = location.state?.orderType || query.get('orderType');
+  const orderType = location.state?.orderType || query.get('orderType') || 'pickup';
   const deliveryAddress = location.state?.address || '';
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
@@ -83,7 +83,6 @@ const OrderInfoPage: React.FC = () => {
     storeId: 1,
     province: '',
     district: '',
-    search: '',
   });
 
   useEffect(() => {
@@ -110,7 +109,7 @@ const OrderInfoPage: React.FC = () => {
     <div style={{ background: '#f6fff8', minHeight: '100vh' }}>
       <Navbar />
       <div style={{ maxWidth: 1100, margin: '40px auto', padding: 32, borderRadius: 12, background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-        <div style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>{orderType === 'pickup' ? 'Đặt đến lấy' : 'Đặt giao hàng'}</div>
+        <div style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>Đặt giao hàng</div>
         <hr style={{ margin: '16px 0 32px 0' }} />
         <div style={{ display: 'flex', gap: 32 }}>
           {/* LEFT: Thông tin nhận hàng */}
@@ -212,140 +211,74 @@ const OrderInfoPage: React.FC = () => {
               )}
             </div>
           </div>
-          {/* RIGHT: Chọn cửa hàng đến lấy */}
+          {/* RIGHT: Cửa hàng */}
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 600, fontSize: 20, marginBottom: 16, color: '#b45309', borderLeft: '4px solid #b45309', paddingLeft: 8 }}>
-              {orderType === 'pickup' ? 'Nhận hàng tại:' : 'Giao hàng đến:'}
+              Cửa hàng:
             </div>
-            {orderType === 'pickup' ? (
-              <div>
-                <div style={{ fontWeight: 600, fontSize: 20, marginBottom: 16, color: '#b45309', borderLeft: '4px solid #b45309', paddingLeft: 8 }}>
-                  Chọn cửa hàng đến lấy
-                </div>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <div>
+              {stores.map(store => (
+                <label
+                  key={store.id}
+                  style={{
+                    display: 'block',
+                    border: '1px solid #b45309',
+                    borderRadius: 12,
+                    padding: 16,
+                    marginBottom: 12,
+                    cursor: 'pointer',
+                    background: form.storeId === store.id ? '#f6fff8' : '#fff',
+                    position: 'relative',
+                  }}
+                >
                   <input
-                    placeholder="Nhập tên cửa hàng để tìm kiếm"
-                    style={{ flex: 1, borderRadius: 8, border: '1px solid #ccc', padding: '10px 12px', fontSize: 16 }}
-                    value={form.search}
-                    onChange={e => setForm(f => ({ ...f, search: e.target.value }))}
+                    type="radio"
+                    name="store"
+                    checked={form.storeId === store.id}
+                    onChange={() => setForm(f => ({ ...f, storeId: store.id }))}
+                    style={{ position: 'absolute', left: 16, top: 16 }}
                   />
-                  <button
-                    style={{
-                      border: 'none',
-                      background: '#b45309',
-                      color: '#fff',
-                      borderRadius: 8,
-                      padding: '0 16px',
-                      fontSize: 20,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="9" cy="9" r="7" stroke="white" strokeWidth="2" />
-                      <line x1="14.1213" y1="14.1213" x2="18" y2="18" stroke="white" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
-                  </button>
-                </div>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                  <button
-                    style={{
-                      flex: 1,
-                      background: '#b45309',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '8px 8px 0 0',
-                      padding: '8px 0',
-                      fontWeight: 600,
-                      fontSize: 16,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Gần vị trí bạn
-                  </button>
-                  <button
-                    style={{
-                      flex: 1,
-                      background: '#fff',
-                      color: '#b45309',
-                      border: '1px solid #b45309',
-                      borderRadius: '8px 8px 0 0',
-                      padding: '8px 0',
-                      fontWeight: 600,
-                      fontSize: 16,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Cửa hàng lọc được
-                  </button>
-                </div>
-                <div>
-                  {stores
-                    .filter(s => s.name.toLowerCase().includes(form.search.toLowerCase()))
-                    .map(store => (
-                      <label
-                        key={store.id}
-                        style={{
-                          display: 'block',
-                          border: '1px solid #b45309',
-                          borderRadius: 12,
-                          padding: 16,
-                          marginBottom: 12,
-                          cursor: 'pointer',
-                          background: form.storeId === store.id ? '#f6fff8' : '#fff',
-                          position: 'relative',
-                        }}
-                      >
-                        <input
-                          type="radio"
-                          name="store"
-                          checked={form.storeId === store.id}
-                          onChange={() => setForm(f => ({ ...f, storeId: store.id }))}
-                          style={{ position: 'absolute', left: 16, top: 16 }}
-                        />
-                        <div style={{ marginLeft: 32 }}>
-                          <div style={{ fontWeight: 700, color: '#b45309', fontSize: 17, marginBottom: 4 }}>{store.name}</div>
-                          <div style={{ fontSize: 15, color: '#444', marginBottom: 2 }}>📍 {store.address}</div>
-                          <div style={{ fontSize: 15, color: '#444' }}>☎ Hotline: {store.hotline}</div>
-                        </div>
-                      </label>
-                    ))}
-                </div>
-              </div>
-            ) : (
-              <div>{deliveryAddress}</div>
-            )}
+                  <div style={{ marginLeft: 32 }}>
+                    <div style={{ fontWeight: 700, color: '#b45309', fontSize: 17, marginBottom: 4 }}>{store.name}</div>
+                    <div style={{ fontSize: 15, color: '#444', marginBottom: 2 }}>📍 {store.address}</div>
+                    <div style={{ fontSize: 15, color: '#444' }}>☎ Hotline: {store.hotline}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
           </div>
         </div>
         <div style={{ marginTop: 32, textAlign: 'right' }}>
           <button
             onClick={() => {
-              const selectedStore = stores.find(s => s.id === form.storeId);
-
-              // Tạo pickupTime từ time và date
+              const selectedStore = stores.find(s => s.id === form.storeId) || stores[0];
+              console.log('OrderInfoPage - form.storeId:', form.storeId);
+              console.log('OrderInfoPage - stores:', stores);
+              console.log('OrderInfoPage - selectedStore:', selectedStore);
+              // Tạo pickupTime từ date và time
               let pickupTime: string | null = null;
-              if (form.timeType === 'now') {
-                // Tối thiểu 15 phút sau khi đặt hàng thành công
-                const now = new Date();
-                now.setMinutes(now.getMinutes() + 15);
-                const pad = (n: number) => n.toString().padStart(2, '0');
-                pickupTime = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-              } else if (form.timeType === 'custom' && form.time && form.date) {
-                // Format theo dd/MM/yyyy HH:mm
-                const [yyyy, MM, dd] = form.date.split('-');
-                pickupTime = `${dd}/${MM}/${yyyy} ${form.time}`;
+              if (form.date && form.time) {
+                const [hours, minutes] = form.time.split(':');
+                const pickupDate = new Date(form.date);
+                pickupDate.setHours(parseInt(hours || '0'), parseInt(minutes || '0'), 0, 0);
+                pickupTime = pickupDate.toISOString();
+                console.log('OrderInfoPage - Created pickupTime:', pickupTime, 'from date:', form.date, 'time:', form.time);
+              } else {
+                console.log('OrderInfoPage - No pickupTime created. date:', form.date, 'time:', form.time);
               }
 
+              const stateData = {
+                store: selectedStore,
+                customer: { name: form.name, phone: form.phone },
+                timeType: form.timeType,
+                time: form.time,
+                date: form.date,
+                pickupTime: pickupTime,
+                orderType,
+              };
+              console.log('OrderInfoPage - navigating with state:', stateData);
               navigate('/payment-info', {
-                state: {
-                  store: selectedStore,
-                  customer: { name: form.name, phone: form.phone },
-                  timeType: form.timeType,
-                  time: form.time,
-                  date: form.date,
-                  pickupTime: pickupTime, // Thêm pickupTime
-                  orderType,
-                },
+                state: stateData,
               });
             }}
             style={{

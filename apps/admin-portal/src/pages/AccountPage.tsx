@@ -48,7 +48,8 @@ export default function AccountPage() {
   const [searchResult, setSearchResult] = useState<any[] | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const ORDERS_PER_PAGE = 5;
-  const paginatedOrders = searchResult !== null ? searchResult : recentOrders.filter(order => order.status === 'completed');
+  const paginatedOrders =
+    searchResult !== null ? searchResult : recentOrders.filter(order => order.status === 'completed' || order.status === 'cancelled');
   const totalPages = Math.ceil(paginatedOrders.length / ORDERS_PER_PAGE);
   const displayedOrders = paginatedOrders.slice((currentPage - 1) * ORDERS_PER_PAGE, currentPage * ORDERS_PER_PAGE);
   const { t } = useTranslation();
@@ -61,6 +62,49 @@ export default function AccountPage() {
   const [viewingReviewOrderId, setViewingReviewOrderId] = useState<string | null>(null);
   const [showAddressSuccess, setShowAddressSuccess] = useState(false);
   const [showInfoSuccess, setShowInfoSuccess] = useState(false);
+  // Thêm state cho phân trang đơn hàng gần đây
+  const [recentOrdersCurrentPage, setRecentOrdersCurrentPage] = useState(1);
+  const RECENT_ORDERS_PER_PAGE = 3;
+
+  // Hàm helper để tạo phân trang ngắn gọn
+  const getPaginationRange = (currentPage: number, totalPages: number, maxVisible: number = 5): (number | string)[] => {
+    if (totalPages <= maxVisible) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    const halfVisible = Math.floor(maxVisible / 2);
+    let startPage = Math.max(1, currentPage - halfVisible);
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+    if (endPage - startPage + 1 < maxVisible) {
+      startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+
+    const pages: (number | string)[] = [];
+
+    // Thêm trang đầu nếu không phải trang 1
+    if (startPage > 1) {
+      pages.push(1);
+      if (startPage > 2) {
+        pages.push('...');
+      }
+    }
+
+    // Thêm các trang trong khoảng
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+
+    // Thêm trang cuối nếu không phải trang cuối
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        pages.push('...');
+      }
+      pages.push(totalPages);
+    }
+
+    return pages;
+  };
 
   // Chỉ load user data nếu user chưa có address
   useEffect(() => {
@@ -122,6 +166,7 @@ export default function AccountPage() {
       setOrdersLoading(true);
       getOrdersByUserId(user.id)
         .then(orders => {
+          // Lấy tất cả orders và sắp xếp theo thời gian tạo
           const sorted = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           setRecentOrders(sorted);
           setOrdersLoading(false);
@@ -291,7 +336,6 @@ export default function AccountPage() {
       return;
     }
     const filtered = recentOrders.filter(order => {
-      if (order.status !== 'completed') return false;
       const phone = order.phoneNumber || order.phone_number || '';
       const orderNum = String(order.order_number || order.orderNumber || '');
       const id = String(order.id || '');
@@ -508,9 +552,27 @@ export default function AccountPage() {
                   {t('order_history')}
                 </h2>
                 <div className="account-recent-orders horizontal-scroll">
-                  {(searchResult !== null ? searchResult : recentOrders.filter(order => order.status === 'completed')).length === 0 && (
-                    <div className="text-gray-500">Bạn chưa có đơn hàng hoàn thành nào</div>
+                  {ordersLoading && (
+                    <div className="text-gray-500" style={{ textAlign: 'center', padding: '20px' }}>
+                      <div
+                        style={{
+                          display: 'inline-block',
+                          width: '20px',
+                          height: '20px',
+                          border: '2px solid #f3f3f3',
+                          borderTop: '2px solid #3498db',
+                          borderRadius: '50%',
+                          animation: 'spin 1s linear infinite',
+                        }}
+                      ></div>
+                      <div style={{ marginTop: '10px' }}>Đang tải đơn hàng...</div>
+                    </div>
                   )}
+                  {!ordersLoading &&
+                    (searchResult !== null
+                      ? searchResult
+                      : recentOrders.filter(order => order.status === 'completed' || order.status === 'cancelled')
+                    ).length === 0 && <div className="text-gray-500">Bạn chưa có đơn hàng hoàn thành hoặc đã hủy nào</div>}
                   <table className="table-recent-orders" style={{ width: '100%', marginTop: 8, tableLayout: 'fixed' }}>
                     <thead>
                       <tr>
@@ -567,18 +629,32 @@ export default function AccountPage() {
                                   whiteSpace: 'nowrap',
                                 }}
                               >
-                                <span
-                                  style={{
-                                    fontWeight: 500,
-                                    whiteSpace: 'nowrap',
-                                    lineHeight: '1.5',
-                                    fontSize: 16,
-                                    marginLeft: 8,
-                                    color: statusText === 'Hoàn thành' ? '#22c55e' : undefined,
-                                  }}
-                                >
-                                  {statusText}
-                                </span>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <span
+                                    style={{
+                                      fontWeight: 500,
+                                      whiteSpace: 'nowrap',
+                                      lineHeight: '1.5',
+                                      fontSize: 16,
+                                      marginLeft: 8,
+                                      color: statusText === 'Hoàn thành' ? '#22c55e' : statusText === 'Đã hủy' ? '#dc2626' : undefined,
+                                    }}
+                                  >
+                                    {statusText}
+                                  </span>
+                                  {order.status === 'cancelled' && order.cancellationReason && (
+                                    <span
+                                      style={{
+                                        fontSize: 12,
+                                        color: '#666',
+                                        marginLeft: 8,
+                                        fontStyle: 'italic',
+                                      }}
+                                    >
+                                      ({order.cancellationReason})
+                                    </span>
+                                  )}
+                                </div>
                                 {isCompleted && order.reviews && order.reviews.length > 0 && (
                                   <>
                                     <a
@@ -683,30 +759,35 @@ export default function AccountPage() {
                       })}
                     </tbody>
                   </table>
+                  {totalPages > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16, gap: 8, alignItems: 'center' }}>
+                      {getPaginationRange(currentPage, totalPages).map((page, index) => (
+                        <React.Fragment key={index}>
+                          {page === '...' ? (
+                            <span style={{ color: '#666', padding: '0 8px' }}>...</span>
+                          ) : (
+                            <button
+                              onClick={() => setCurrentPage(page as number)}
+                              style={{
+                                minWidth: 32,
+                                height: 32,
+                                borderRadius: 6,
+                                border: '1px solid #ccc',
+                                background: currentPage === page ? '#C92A15' : '#fff',
+                                color: currentPage === page ? '#fff' : '#222',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {page}
+                            </button>
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
-              {totalPages > 1 && (
-                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16, gap: 8 }}>
-                  {Array.from({ length: totalPages }, (_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setCurrentPage(i + 1)}
-                      style={{
-                        minWidth: 32,
-                        height: 32,
-                        borderRadius: 6,
-                        border: '1px solid #ccc',
-                        background: currentPage === i + 1 ? '#17823c' : '#fff',
-                        color: currentPage === i + 1 ? '#fff' : '#222',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                </div>
-              )}
             </>
           )}
           {tab === 'info' && (
@@ -959,68 +1040,112 @@ export default function AccountPage() {
                   )}
                   {!ordersLoading && recentOrders.length === 0 && <div className="text-gray-500">{t('no_orders')}</div>}
                   {!ordersLoading && recentOrders.length > 0 && (
-                    <table className="table-recent-orders" style={{ width: '100%', marginTop: 8 }}>
-                      <thead>
-                        <tr>
-                          <th>{t('order_code')}</th>
-                          <th>{t('product')}</th>
-                          <th>{t('order_date')}</th>
-                          <th>{t('total_amount')}</th>
-                          <th>{t('status')}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {recentOrders.slice(0, 3).map(order => {
-                          const items = order.orderItems?.items || [];
-                          const dishNames = items
-                            .map(
-                              (item: any) =>
-                                item.dishSnapshot?.name || item.name || getDishName(item.dishId) || item.dish?.name || 'Không rõ tên món',
-                            )
-                            .join(', ');
-                          const orderNumber = order.order_number || order.orderNumber || '-';
-                          const orderLink = `/orders/${order.id}`;
-                          const date = new Date(order.createdAt);
-                          const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                          let statusText = '';
-                          if (order.status === 'cancelled') statusText = t('order_cancelled');
-                          else if (order.status === 'completed') statusText = t('order_completed');
-                          else if (order.status === 'confirmed') statusText = t('order_confirmed');
-                          else if (order.status === 'pending') statusText = t('order_pending');
-                          else if (order.status === 'delivering') statusText = 'Đang giao hàng';
-                          else statusText = order.status;
-                          return (
-                            <tr key={order.id}>
-                              <td>
-                                <Link to={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>
-                                  {orderNumber}
-                                </Link>
-                              </td>
-                              <td style={{ whiteSpace: 'pre-line' }}>{dishNames}</td>
-                              <td>{dateStr}</td>
-                              <td>{Number(order.totalAmount).toLocaleString('vi-VN')}₫</td>
-                              <td
-                                className={
-                                  order.status === 'cancelled'
-                                    ? 'order-status-cancelled'
-                                    : order.status === 'completed'
-                                      ? 'order-status-completed'
-                                      : order.status === 'confirmed'
-                                        ? 'order-status-confirmed'
-                                        : order.status === 'delivering'
-                                          ? 'order-status-delivering'
-                                          : order.status === 'pending'
-                                            ? 'order-status-pending'
-                                            : ''
-                                }
-                              >
-                                {statusText}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                    <>
+                      <table className="table-recent-orders" style={{ width: '100%', marginTop: 8 }}>
+                        <thead>
+                          <tr>
+                            <th>{t('order_code')}</th>
+                            <th>{t('product')}</th>
+                            <th>{t('order_date')}</th>
+                            <th>{t('total_amount')}</th>
+                            <th>{t('status')}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {recentOrders
+                            .slice((recentOrdersCurrentPage - 1) * RECENT_ORDERS_PER_PAGE, recentOrdersCurrentPage * RECENT_ORDERS_PER_PAGE)
+                            .map(order => {
+                              const items = order.orderItems?.items || [];
+                              const dishNames = items
+                                .map(
+                                  (item: any) =>
+                                    item.dishSnapshot?.name || item.name || getDishName(item.dishId) || item.dish?.name || 'Không rõ tên món',
+                                )
+                                .join(', ');
+                              const orderNumber = order.order_number || order.orderNumber || '-';
+                              const orderLink = `/orders/${order.id}`;
+                              const date = new Date(order.createdAt);
+                              const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                              let statusText = '';
+                              if (order.status === 'cancelled') statusText = t('order_cancelled');
+                              else if (order.status === 'completed') statusText = t('order_completed');
+                              else if (order.status === 'confirmed') statusText = t('order_confirmed');
+                              else if (order.status === 'pending') statusText = t('order_pending');
+                              else if (order.status === 'delivering') statusText = 'Đang giao hàng';
+                              else statusText = order.status;
+                              return (
+                                <tr key={order.id}>
+                                  <td>
+                                    <Link to={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>
+                                      {orderNumber}
+                                    </Link>
+                                  </td>
+                                  <td style={{ whiteSpace: 'pre-line' }}>{dishNames}</td>
+                                  <td>{dateStr}</td>
+                                  <td>{Number(order.totalAmount).toLocaleString('vi-VN')}₫</td>
+                                  <td
+                                    className={
+                                      order.status === 'cancelled'
+                                        ? 'order-status-cancelled'
+                                        : order.status === 'completed'
+                                          ? 'order-status-completed'
+                                          : order.status === 'confirmed'
+                                            ? 'order-status-confirmed'
+                                            : order.status === 'delivering'
+                                              ? 'order-status-delivering'
+                                              : order.status === 'pending'
+                                                ? 'order-status-pending'
+                                                : ''
+                                    }
+                                  >
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                      <span>{statusText}</span>
+                                      {order.status === 'cancelled' && order.cancellationReason && (
+                                        <span
+                                          style={{
+                                            fontSize: 11,
+                                            color: '#666',
+                                            fontStyle: 'italic',
+                                          }}
+                                        >
+                                          ({order.cancellationReason})
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                        </tbody>
+                      </table>
+                      {recentOrders.length > RECENT_ORDERS_PER_PAGE && (
+                        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16, gap: 8, alignItems: 'center' }}>
+                          {getPaginationRange(recentOrdersCurrentPage, Math.ceil(recentOrders.length / RECENT_ORDERS_PER_PAGE)).map((page, index) => (
+                            <React.Fragment key={index}>
+                              {page === '...' ? (
+                                <span style={{ color: '#666', padding: '0 8px' }}>...</span>
+                              ) : (
+                                <button
+                                  onClick={() => setRecentOrdersCurrentPage(page as number)}
+                                  style={{
+                                    minWidth: 32,
+                                    height: 32,
+                                    borderRadius: 6,
+                                    border: '1px solid #ccc',
+                                    background: recentOrdersCurrentPage === page ? '#C92A15' : '#fff',
+                                    color: recentOrdersCurrentPage === page ? '#fff' : '#222',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  {page}
+                                </button>
+                              )}
+                            </React.Fragment>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

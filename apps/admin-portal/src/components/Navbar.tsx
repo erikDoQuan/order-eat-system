@@ -206,12 +206,9 @@ export default function Navbar() {
   ];
 
   return (
-    <nav
-      className="sticky top-0 z-50 w-full border-b border-transparent bg-white/90 shadow-lg backdrop-blur"
-      style={{ boxShadow: '0 2px 12px 0 #C92A1520' }}
-    >
+    <nav className="sticky top-0 z-50 w-full border-b border-transparent bg-white shadow-lg" style={{ boxShadow: '0 2px 12px 0 #C92A1520' }}>
       {/* Dòng trên: logo + tên + user + đăng nhập */}
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
+      <div className="mx-auto flex max-w-7xl items-center justify-between rounded-t-3xl bg-white px-6 py-3">
         <div className="flex min-w-[220px] items-center gap-3">
           <img
             src="/logo.png"
@@ -315,8 +312,8 @@ export default function Navbar() {
       </div>
 
       {/* Dòng dưới: nav menu + giỏ hàng */}
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 pb-2">
-        <div className="flex w-full items-center justify-between rounded-[15px] bg-[#C92A15] px-4 py-2 shadow">
+      <div className="mx-auto max-w-7xl pb-2">
+        <div className="flex w-full items-center justify-between rounded-[15px] bg-[#C92A15] px-6 py-2 shadow">
           {/* Hamburger menu cho mobile */}
           <button className="mr-2 block text-2xl text-white md:hidden" onClick={() => setShowMobileMenu(true)}>
             <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -328,11 +325,14 @@ export default function Navbar() {
             {navItems.map(item =>
               item.dropdown ? (
                 <li key={item.label} className="group relative">
-                  <button type="button" className="flex items-center rounded-lg px-3 py-1.5 transition hover:bg-[#a01f10]">
+                  <button type="button" className="group relative flex items-center rounded-lg px-3 py-1.5 transition hover:bg-[#a01f10]">
                     {item.label}
                     <svg className="ml-1 h-4 w-4" fill="none" stroke="#fff" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
+                    <span className="absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 transform whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      {item.label}
+                    </span>
                   </button>
                   <ul
                     className="pointer-events-none absolute left-0 z-20 w-48 rounded-xl border bg-white opacity-0 shadow-xl transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100"
@@ -358,10 +358,13 @@ export default function Navbar() {
                     to={item.path}
                     end={item.path === '/'}
                     className={({ isActive }) =>
-                      `rounded-xl px-3 py-1.5 transition hover:bg-[#a01f10] ${isActive ? 'font-bold text-white' : 'text-white'}`
+                      `group relative rounded-xl px-3 py-1.5 transition hover:bg-[#a01f10] ${isActive ? 'font-bold text-white' : 'text-white'}`
                     }
                   >
                     {item.label}
+                    <span className="absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 transform whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      {item.label}
+                    </span>
                   </NavLink>
                 </li>
               ),

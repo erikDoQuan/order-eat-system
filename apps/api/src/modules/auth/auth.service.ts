@@ -3,7 +3,6 @@ import * as jwt from 'jsonwebtoken';
 
 import { hashPassword } from '~/common/utils/password.util';
 import { UserRepository } from '~/database/repositories/user.repository';
-import { EmailService } from '~/modules/email/email.service';
 import { USER_ROLE } from '~/modules/user/constants/users.constant';
 import { AuthBaseService } from '~/shared-modules/auth-base/auth-base.service';
 import { ForgotPasswordDto, ResetPasswordDto, SignInDto } from './dto/auth.dto';

@@ -61,7 +61,6 @@ export class ZaloPayService {
       totalAmount: payload.amount,
       note: payload.note,
       deliveryAddress: payload.deliveryAddress,
-      pickupTime: payload.pickupTime,
       userPhone: payload.userPhone,
       userName: payload.userName,
     });
@@ -142,7 +141,6 @@ export class ZaloPayService {
           totalAmount: amount,
           type: payload.type || 'delivery',
           deliveryAddress,
-          pickupTime: payload.pickupTime || undefined,
           appTransId: app_trans_id, // ✅ Lưu appTransId
           zpTransToken: response.data.zp_trans_token || response.data.order_token || '',
           status: 'pending', // ✅ Status pending
@@ -150,7 +148,6 @@ export class ZaloPayService {
 
         console.log('📦 Order data to save:', orderData);
         console.log('📦 Payload deliveryAddress:', payload.deliveryAddress);
-        console.log('📦 Payload pickupTime:', payload.pickupTime);
         console.log('📦 Payload type:', payload.type);
         console.log('📦 Payload userPhone:', payload.userPhone);
         console.log('📦 Payload userName:', payload.userName);
@@ -158,7 +155,6 @@ export class ZaloPayService {
         const savedOrder = await this.orderRepository.create(orderData);
         console.log('✅ Đã lưu đơn hàng vào DB:', savedOrder.id, 'với appTransId:', app_trans_id);
         console.log('📦 Saved deliveryAddress:', savedOrder.deliveryAddress);
-        console.log('📦 Saved pickupTime:', savedOrder.pickupTime);
         console.log('📦 Saved status:', savedOrder.status);
 
         return {
@@ -203,7 +199,6 @@ export class ZaloPayService {
           console.log('✅ Parse embed_data thành công:', embed);
           console.log('🔍 Embed data keys:', Object.keys(embed));
           console.log('🔍 Embed deliveryAddress:', embed.deliveryAddress);
-          console.log('🔍 Embed pickupTime:', embed.pickupTime);
           console.log('🔍 Embed userPhone:', embed.userPhone);
           console.log('🔍 Embed userName:', embed.userName);
         } catch (err) {
@@ -226,9 +221,11 @@ export class ZaloPayService {
             id: existed.id,
             status: existed.status,
             deliveryAddress: existed.deliveryAddress,
-            pickupTime: existed.pickupTime,
             appTransId: existed.appTransId,
           });
+
+          // Không cập nhật order status, giữ nguyên pending để admin xử lý
+          console.log('ℹ️ Giữ nguyên order status pending để admin xử lý');
 
           // Chỉ tạo user_transaction, không tạo order mới
           console.log('💰 Bắt đầu tạo user transaction...');

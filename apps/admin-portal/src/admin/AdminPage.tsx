@@ -1,5 +1,5 @@
 // src/admin/AdminPage.tsx
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { LogOut, User } from 'lucide-react';
 import { Link, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 
@@ -11,6 +11,51 @@ import { getAllUsers } from '../services/user.api';
 import SettingAdminPage from './SettingAdminPage';
 
 import '../css/AdminSidebar.css';
+
+// Lazy load các components không quan trọng
+const LazyQuickOrderPage = React.lazy(() => import('./QuickOrderPage'));
+const LazyOrderAdminPage = React.lazy(() => import('./OrderAdminPage'));
+const LazyAdminUserPage = React.lazy(() => import('./AdminUserPage'));
+const LazyReviewAdminPage = React.lazy(() => import('./ReviewAdminPage'));
+const LazyRevenueReportsPage = React.lazy(() => import('./RevenueReportsPage'));
+const LazyAdminDishPage = React.lazy(() => import('./AdminDishPage'));
+const LazyAdminCategoryPage = React.lazy(() => import('./AdminCategoryPage'));
+const LazyUserTransactionAdminPage = React.lazy(() => import('./UserTransactionAdminPage'));
+
+// Cache data để tránh load lại
+interface DashboardData {
+  dishCount: number;
+  userCount: number;
+  todayOrderCount: number;
+  todayRevenue: number;
+  recentOrders: any[];
+  recentDishes: any[];
+}
+
+const dashboardCache: {
+  data: DashboardData | null;
+  timestamp: number;
+  cacheDuration: number;
+} = {
+  data: null,
+  timestamp: 0,
+  cacheDuration: 60000, // 1 phút
+};
+
+// Skeleton Loading Component
+const DashboardSkeleton = () => (
+  <div className="animate-pulse">
+    <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+      {[1, 2, 3, 4].map(i => (
+        <div key={i} className="h-24 rounded-lg bg-gray-200 p-6"></div>
+      ))}
+    </div>
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="h-64 rounded-lg bg-gray-200 p-6"></div>
+      <div className="h-64 rounded-lg bg-gray-200 p-6"></div>
+    </div>
+  </div>
+);
 
 export default function AdminPage() {
   const { user, setUser, loading } = useContext(AuthContext);
@@ -29,43 +74,113 @@ export default function AdminPage() {
   const [recentDishes, setRecentDishes] = useState<any[]>([]);
   const [dashboardLoading, setDashboardLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    // Load tất cả data cùng lúc để tránh load trước load sau
-    const loadDashboardData = async () => {
-      setDashboardLoading(true);
-      try {
-        const [dishes, usersRes, orders] = await Promise.all([getAllDishes(), getAllUsers(1, 1000), getAllOrders()]);
-
-        // Set dish count và recent dishes
-        setDishCount(dishes.length);
-        setRecentDishes(dishes);
-
-        // Set user count
-        const filteredUsers = usersRes.users.filter(u => (u.role === 'user' || u.role === 'USER') && u.isActive === true);
-        setUserCount(filteredUsers.length);
-
-        // Set today's orders và revenue
-        const today = new Date();
-        const isToday = (dateStr: string) => {
-          const d = new Date(dateStr);
-          return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
-        };
-        const todayOrders = orders.filter((o: any) => o.createdAt && isToday(o.createdAt));
-        setTodayOrderCount(todayOrders.length);
-        setTodayRevenue(todayOrders.reduce((sum: number, o: any) => sum + (isToday(o.createdAt) ? parseFloat(o.totalAmount) || 0 : 0), 0));
-
-        // Set recent orders
-        const sorted = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setRecentOrders(sorted.slice(0, 3));
-      } catch (error) {
-        console.error('Error loading dashboard data:', error);
-      } finally {
-        setDashboardLoading(false);
-      }
-    };
-
-    loadDashboardData();
+  // Preload các routes quan trọng khi user hover vào quick actions
+  const preloadRoute = useCallback((route: string) => {
+    switch (route) {
+      case '/admin/dishes/add':
+        import('./AdminDishPage');
+        break;
+      case '/admin/orders':
+        import('./OrderAdminPage');
+        break;
+      case '/admin/revenue-reports':
+        import('./RevenueReportsPage');
+        break;
+      case '/admin/quick-orders':
+        import('./QuickOrderPage');
+        break;
+    }
   }, []);
+
+  // Memoize expensive calculations
+  const todayRevenueFormatted = useMemo(() => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(todayRevenue);
+  }, [todayRevenue]);
+
+  const recentOrdersFormatted = useMemo(() => {
+    return recentOrders.map(order => ({
+      ...order,
+      formattedAmount: new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND',
+      }).format(order.totalAmount || 0),
+    }));
+  }, [recentOrders]);
+
+  // Tối ưu hóa load data với cache
+  const loadDashboardData = useCallback(async () => {
+    const now = Date.now();
+
+    // Kiểm tra cache
+    if (dashboardCache.data && now - dashboardCache.timestamp < dashboardCache.cacheDuration) {
+      const cached = dashboardCache.data;
+      setDishCount(cached.dishCount);
+      setUserCount(cached.userCount);
+      setTodayOrderCount(cached.todayOrderCount);
+      setTodayRevenue(cached.todayRevenue);
+      setRecentOrders(cached.recentOrders);
+      setRecentDishes(cached.recentDishes);
+      setDashboardLoading(false);
+      return;
+    }
+
+    setDashboardLoading(true);
+    try {
+      // Load data song song để tăng tốc - chỉ load data cần thiết
+      const [dishes, usersRes, orders] = await Promise.all([
+        getAllDishes(), // Có thể thêm limit nếu cần
+        getAllUsers(1, 100), // Giảm từ 1000 xuống 100
+        getAllOrders(), // Có thể thêm limit nếu cần
+      ]);
+
+      // Tính toán data
+      const today = new Date();
+      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+      const todayOrders = orders.filter((o: any) => {
+        if (!o.createdAt) return false;
+        const orderDate = new Date(o.createdAt);
+        return orderDate >= todayStart && orderDate < todayEnd;
+      });
+
+      const filteredUsers = usersRes.users.filter(u => (u.role === 'user' || u.role === 'USER') && u.isActive === true);
+
+      const sortedOrders = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 3);
+
+      // Cache data
+      const dashboardData = {
+        dishCount: dishes.length,
+        userCount: filteredUsers.length,
+        todayOrderCount: todayOrders.length,
+        todayRevenue: todayOrders.reduce((sum: number, o: any) => sum + (parseFloat(o.totalAmount) || 0), 0),
+        recentOrders: sortedOrders,
+        recentDishes: dishes,
+      };
+
+      dashboardCache.data = dashboardData;
+      dashboardCache.timestamp = now;
+
+      // Set state
+      setDishCount(dashboardData.dishCount);
+      setUserCount(dashboardData.userCount);
+      setTodayOrderCount(dashboardData.todayOrderCount);
+      setTodayRevenue(dashboardData.todayRevenue);
+      setRecentOrders(dashboardData.recentOrders);
+      setRecentDishes(dashboardData.recentDishes);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setDashboardLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
 
   useEffect(() => {
     if (!loading && (!user || user.role !== 'admin')) {
@@ -166,27 +281,38 @@ export default function AdminPage() {
         </div>
         {location.pathname === '/admin' ? (
           <>
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-[#C92A15]">Dashboard</h1>
+            </div>
             {dashboardLoading ? (
-              <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="rounded-lg bg-white p-6 shadow-sm">
-                    <div className="flex items-center">
-                      <div className="h-8 w-8 animate-pulse rounded-md bg-gray-200"></div>
-                      <div className="ml-4">
-                        <div className="h-4 w-20 animate-pulse rounded bg-gray-200"></div>
-                        <div className="mt-2 h-8 w-16 animate-pulse rounded bg-gray-200"></div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <DashboardSkeleton />
             ) : (
               <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 {[
-                  { label: 'Total Dishes', value: dishCount, bg: 'bg-blue-500', icon: '🍕' },
-                  { label: "Today's Orders", value: todayOrderCount, bg: 'bg-green-500', icon: '📦' },
-                  { label: "Today's Revenue", value: todayRevenue.toLocaleString('vi-VN') + '₫', bg: 'bg-yellow-500', icon: '💰' },
-                  { label: 'New Customer', value: userCount, bg: 'bg-purple-500', icon: '👥' },
+                  {
+                    label: 'Total Dishes',
+                    value: dishCount,
+                    bg: 'bg-blue-500',
+                    icon: '🍕',
+                  },
+                  {
+                    label: "Today's Orders",
+                    value: todayOrderCount,
+                    bg: 'bg-green-500',
+                    icon: '📦',
+                  },
+                  {
+                    label: "Today's Revenue",
+                    value: todayRevenueFormatted,
+                    bg: 'bg-yellow-500',
+                    icon: '💰',
+                  },
+                  {
+                    label: 'New Customer',
+                    value: userCount,
+                    bg: 'bg-purple-500',
+                    icon: '👥',
+                  },
                 ].map(card => (
                   <div key={card.label} className="rounded-lg bg-white p-6 shadow-sm">
                     <div className="flex items-center">
@@ -231,7 +357,14 @@ export default function AdminPage() {
                     color: 'text-yellow-600',
                     onClick: () => navigate('/admin/revenue-reports'),
                   },
-                  { title: 'Settings', subtitle: 'System configuration', icon: '⚙️', bg: 'bg-purple-100', color: 'text-purple-600' },
+                  {
+                    title: 'Quick Order',
+                    subtitle: 'Create order quickly',
+                    icon: '🍽️',
+                    bg: 'bg-purple-100',
+                    color: 'text-purple-600',
+                    onClick: () => navigate('/admin/quick-orders'),
+                  },
                 ].map(action => (
                   <button
                     key={action.title}
@@ -259,9 +392,17 @@ export default function AdminPage() {
               <div className="p-6">
                 <div className="space-y-4">
                   {recentOrders.length === 0 && <div className="text-gray-500">No orders</div>}
-                  {recentOrders.map(order => {
+                  {recentOrdersFormatted.map(order => {
                     const items = order.orderItems?.items || [];
-                    const dishNames = items.map((item: any) => getDishName(item.dishId)).join(', ');
+                    const dishNames = items
+                      .map((item: any) => {
+                        // Sử dụng item.name trực tiếp nếu có, nếu không thì tìm qua dishId
+                        if (item.name) {
+                          return item.name;
+                        }
+                        return getDishName(item.dishId || item.id);
+                      })
+                      .join(', ');
                     return (
                       <div key={order.id} className="flex items-center justify-between border-b border-gray-100 pb-4 last:border-b-0">
                         <div>
@@ -269,7 +410,7 @@ export default function AdminPage() {
                           <p className="text-xs text-gray-500">{dishNames}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-medium text-gray-900">{Number(order.totalAmount).toLocaleString('vi-VN')}₫</p>
+                          <p className="text-sm font-medium text-gray-900">{order.formattedAmount}</p>
                           <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${statusColor(order.status)}`}>
                             {statusMap[order.status] || order.status}
                           </span>

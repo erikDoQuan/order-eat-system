@@ -13,6 +13,7 @@ import RatingStars from '../components/RatingStars';
 import { AuthContext } from '../context/AuthContext';
 import { getAllDishes } from '../services/dish.api';
 import { deleteOrder, updateOrder } from '../services/order.api';
+import { createUserTransaction, deleteUserTransaction, updateUserTransaction } from '../services/user-transaction.api';
 import { getAllUsers, User } from '../services/user.api';
 import { Dish } from '../types/dish.type';
 
@@ -76,6 +77,13 @@ export default function OrderAdminPage() {
   const location = useLocation();
   const [orderSuccess, setOrderSuccess] = useState<any>(null);
   const [orderSuccessError, setOrderSuccessError] = useState<string | null>(null);
+  // State cho modal hủy đơn hàng
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancellingOrder, setCancellingOrder] = useState<any>(null);
+  const [cancelReason, setCancelReason] = useState('');
+
+  // Debug state modal
+  console.log('🔍 Modal state:', { showCancelModal, cancellingOrder: cancellingOrder?.id, cancelReason });
 
   // Khi có appTransId trên URL, tự động fetch đơn hàng thành công
   useEffect(() => {
@@ -110,7 +118,48 @@ export default function OrderAdminPage() {
     Promise.all([axios.get('/api/v1/orders'), getAllUsers(1, 1000), getAllDishes(), axios.get('/api/v1/user-transaction')])
       .then(([ordersRes, usersRes, dishesRes, transactionsRes]) => {
         const ordersArr = Array.isArray(ordersRes.data?.data?.data) ? ordersRes.data.data.data : [];
-        setOrders(ordersArr);
+
+        // Tự động tạo pickupTime cho các đơn hàng chưa có (chỉ cho đơn hàng đang xử lý)
+        const processedOrders = ordersArr.map(order => {
+          if (!order.pickupTime && (order.status === 'confirmed' || order.status === 'preparing')) {
+            let pickupTime;
+
+            // Ưu tiên thời gian người dùng chọn nếu có
+            if (order.userPickupTime) {
+              pickupTime = new Date(order.userPickupTime);
+            } else {
+              // Tạo pickupTime dựa trên createdAt + 15 phút chuẩn bị
+              const createdAt = new Date(order.createdAt);
+              pickupTime = new Date(createdAt.getTime() + 15 * 60000);
+            }
+
+            // Cập nhật pickupTime cho đơn hàng
+            const updatedOrder = { ...order, pickupTime: pickupTime.toISOString() };
+
+            // Gọi API để cập nhật pickupTime
+            updateOrder(order.id, { pickupTime: pickupTime.toISOString() }).catch(err => {
+              console.error('Lỗi cập nhật pickupTime cho đơn hàng:', order.id, err);
+            });
+
+            return updatedOrder;
+          }
+          return order;
+        });
+
+        console.log('Orders data:', processedOrders);
+        console.log(
+          '🔍 Orders with completed status:',
+          processedOrders.filter(o => o.status === 'completed'),
+        );
+        console.log(
+          '🔍 Orders with pending status:',
+          processedOrders.filter(o => o.status === 'pending'),
+        );
+        console.log(
+          'Cancelled orders:',
+          processedOrders.filter(o => o.status === 'cancelled'),
+        );
+        setOrders(processedOrders);
         setTransactions(transactionsRes.data?.data || []);
         // Sắp xếp: active lên trên, sau đó theo createdAt mới nhất
         const sortedUsers = [...(usersRes.users || [])].sort((a, b) => {
@@ -168,19 +217,63 @@ export default function OrderAdminPage() {
     return d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
   };
 
-  const formatDeliveryAddress = (deliveryAddress: any) => {
+  const formatPickupTime = (pickupTime: string) => {
+    if (!pickupTime) return '';
+    try {
+      const d = new Date(pickupTime);
+      return d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    } catch (error) {
+      return pickupTime; // Trả về nguyên bản nếu không parse được
+    }
+  };
+
+  const formatPickupTimeWithUserPreference = (order: any) => {
+    if (!order.pickupTime) return '';
+
+    let displayText = formatPickupTime(order.pickupTime);
+
+    // Thêm thông tin nếu có userPickupTime
+    if (order.userPickupTime && order.userPickupTime !== order.pickupTime) {
+      displayText += ` (Người dùng chọn: ${formatPickupTime(order.userPickupTime)})`;
+    } else if (order.userPickupTime) {
+      displayText += ' (Theo yêu cầu)';
+    }
+
+    return displayText;
+  };
+
+  const formatDeliveryAddress = (deliveryAddress: any, orderType: string) => {
     if (!deliveryAddress) return '';
     if (typeof deliveryAddress === 'string') return deliveryAddress;
     if (typeof deliveryAddress === 'object') {
-      // Chỉ hiển thị storeName
-      let str = deliveryAddress.storeName || '';
+      // Nếu là delivery, hiển thị địa chỉ giao hàng
+      if (orderType === 'delivery') {
+        let address = deliveryAddress.address || '';
+        let phone = deliveryAddress.phone || '';
+        let str = address;
 
-      // Nếu storeName quá dài, cắt ngắn
-      if (str.length > 80) {
-        str = str.substring(0, 77) + '...';
+        // Thêm số điện thoại nếu có
+        if (phone) {
+          str += ` (${phone})`;
+        }
+
+        // Nếu địa chỉ quá dài, cắt ngắn
+        if (str.length > 80) {
+          str = str.substring(0, 77) + '...';
+        }
+
+        return str.trim();
+      } else {
+        // Nếu là pickup, hiển thị storeName
+        let str = deliveryAddress.storeName || '';
+
+        // Nếu storeName quá dài, cắt ngắn
+        if (str.length > 80) {
+          str = str.substring(0, 77) + '...';
+        }
+
+        return str.trim();
       }
-
-      return str.trim();
     }
     return '';
   };
@@ -317,6 +410,12 @@ export default function OrderAdminPage() {
             : editingOrder.deliveryAddress,
         isActive: editingOrder.isActive,
       };
+
+      // Đảm bảo pickupTime được lưu cho cả pickup và delivery
+      if (editingOrder.pickupTime !== undefined && editingOrder.pickupTime !== '') {
+        payload.pickupTime = editingOrder.pickupTime;
+      }
+
       // Chỉ truyền updatedBy khi chuyển trạng thái sang completed
       if (['completed', 'hoàn thành'].includes((editingOrder.status || '').toLowerCase())) {
         payload.updatedBy = user?.id;
@@ -372,6 +471,41 @@ export default function OrderAdminPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [search]);
+
+  // Tự động tạo pickupTime cho đơn hàng mới
+  useEffect(() => {
+    if (orders.length > 0) {
+      const ordersNeedingPickupTime = orders.filter(order => !order.pickupTime && (order.status === 'confirmed' || order.status === 'preparing'));
+
+      if (ordersNeedingPickupTime.length > 0) {
+        console.log('Tìm thấy', ordersNeedingPickupTime.length, 'đơn hàng cần pickupTime');
+
+        ordersNeedingPickupTime.forEach(order => {
+          let pickupTime;
+
+          // Ưu tiên thời gian người dùng chọn nếu có
+          if (order.userPickupTime) {
+            pickupTime = new Date(order.userPickupTime);
+          } else {
+            // Thêm 15 phút chuẩn bị cho cả pickup và delivery
+            const createdAt = new Date(order.createdAt);
+            pickupTime = new Date(createdAt.getTime() + 15 * 60000);
+          }
+
+          updateOrder(order.id, { pickupTime: pickupTime.toISOString() })
+            .then(() => {
+              console.log('Đã cập nhật pickupTime cho đơn hàng:', order.id);
+            })
+            .catch(err => {
+              console.error('Lỗi cập nhật pickupTime cho đơn hàng:', order.id, err);
+            });
+        });
+
+        // Refresh danh sách sau 2 giây để cập nhật pickupTime
+        setTimeout(() => fetchOrders(), 2000);
+      }
+    }
+  }, [orders.length]); // Chỉ chạy khi số lượng orders thay đổi
 
   return (
     <div className="admin-layout bg-gray-50">
@@ -439,7 +573,6 @@ export default function OrderAdminPage() {
                   <th className="whitespace-nowrap border-b px-3 py-2">Status</th>
                   <th className="whitespace-nowrap border-b px-3 py-2">Type</th>
                   <th className="whitespace-nowrap border-b px-3 py-2">Method</th>
-                  <th className="whitespace-nowrap border-b px-3 py-2">Pickup Time</th>
                   <th className="whitespace-nowrap border-b px-3 py-2">Address</th>
                   <th className="whitespace-nowrap border-b px-3 py-2">Note</th>
                   <th className="whitespace-nowrap border-b px-3 py-2">Actions</th>
@@ -483,28 +616,81 @@ export default function OrderAdminPage() {
                           <td className="border-b px-3 py-2">{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
                           <td className="border-b px-3 py-2">
                             {order.status === 'completed' || order.status === 'cancelled' ? (
-                              <span
-                                className={`inline-block whitespace-nowrap rounded px-2 py-1 text-xs font-semibold ${
-                                  STATUS_LABEL[order.status]?.color || 'border border-gray-200 bg-gray-100 text-gray-800'
-                                }`}
-                              >
-                                {STATUS_LABEL[order.status]?.label || statusLabel[order.status] || order.status}
-                              </span>
+                              <div className="flex flex-col gap-1">
+                                <span
+                                  className={`inline-block whitespace-nowrap rounded px-2 py-1 text-xs font-semibold ${
+                                    STATUS_LABEL[order.status]?.color || 'border border-gray-200 bg-gray-100 text-gray-800'
+                                  }`}
+                                >
+                                  {STATUS_LABEL[order.status]?.label || statusLabel[order.status] || order.status}
+                                </span>
+                                {order.status === 'cancelled' && (
+                                  <div className="flex flex-col gap-1">
+                                    <span className="text-xs text-gray-600">
+                                      {order.cancellationReason ? `(${order.cancellationReason})` : '(Không có lý do)'}
+                                    </span>
+                                    <button
+                                      onClick={() => {
+                                        console.log('🔍 Edit cancellation reason clicked for order:', order.id);
+                                        console.log('🔍 Order data:', order);
+                                        setCancellingOrder(order);
+                                        setCancelReason(order.cancellationReason || '');
+                                        setShowCancelModal(true);
+                                        console.log('🔍 Modal should be shown now');
+                                      }}
+                                      className="cursor-pointer text-xs text-blue-600 underline hover:text-blue-800"
+                                    >
+                                      Sửa lý do
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             ) : (
                               <select
                                 value={order.status}
                                 onChange={async e => {
-                                  try {
-                                    const newStatus = e.target.value;
-                                    const payload: any = { status: newStatus };
-                                    if (['completed', 'hoàn thành'].includes(newStatus.toLowerCase())) {
-                                      payload.updatedBy = user?.id;
+                                  console.log('🔍 Select onChange triggered:', e.target.value);
+                                  const newStatus = e.target.value;
+                                  if (newStatus === 'cancelled') {
+                                    console.log('🔍 Cancelled selected, showing modal');
+                                    // Hiển thị modal để nhập lý do hủy
+                                    setCancellingOrder(order);
+                                    setCancelReason('');
+                                    setShowCancelModal(true);
+                                  } else {
+                                    try {
+                                      const payload: any = { status: newStatus };
+
+                                      // Đảm bảo pickupTime được lưu khi thay đổi status
+                                      if (order.pickupTime) {
+                                        payload.pickupTime = order.pickupTime;
+                                      }
+
+                                      // Tự động tạo pickupTime nếu chưa có và đơn hàng được xác nhận
+                                      if (!order.pickupTime && (newStatus === 'confirmed' || newStatus === 'preparing')) {
+                                        let pickupTime;
+
+                                        // Ưu tiên thời gian người dùng chọn nếu có
+                                        if (order.userPickupTime) {
+                                          pickupTime = new Date(order.userPickupTime);
+                                        } else {
+                                          // Nếu không có, tạo thời gian mặc định (15 phút từ hiện tại)
+                                          const now = new Date();
+                                          pickupTime = new Date(now.getTime() + 15 * 60000);
+                                        }
+
+                                        payload.pickupTime = pickupTime.toISOString();
+                                      }
+
+                                      if (['completed', 'hoàn thành'].includes(newStatus.toLowerCase())) {
+                                        payload.updatedBy = user?.id;
+                                      }
+                                      await updateOrder(order.id, payload);
+                                      fetchOrders(); // Refresh danh sách
+                                    } catch (error) {
+                                      console.error('Lỗi cập nhật status:', error);
+                                      alert('Cập nhật trạng thái thất bại');
                                     }
-                                    await updateOrder(order.id, payload);
-                                    fetchOrders(); // Refresh danh sách
-                                  } catch (error) {
-                                    console.error('Lỗi cập nhật status:', error);
-                                    alert('Cập nhật trạng thái thất bại');
                                   }
                                 }}
                                 className={`rounded border px-2 py-1 text-xs font-semibold ${
@@ -537,8 +723,8 @@ export default function OrderAdminPage() {
                               paymentMethodDisplay
                             )}
                           </td>
-                          <td className="border-b px-3 py-2">{order.pickupTime || ''}</td>
-                          <td className="border-b px-3 py-2">{formatDeliveryAddress(order.deliveryAddress)}</td>
+                          <td className="border-b px-3 py-2">{formatPickupTimeWithUserPreference(order)}</td>
+                          <td className="border-b px-3 py-2">{formatDeliveryAddress(order.deliveryAddress, order.type)}</td>
                           <td className="border-b px-3 py-2">{order.note}</td>
                           <td className="border-b px-3 py-2">
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 120 }}>
@@ -589,27 +775,112 @@ export default function OrderAdminPage() {
                                 </td>
                                 <td className="border-b px-3 py-2" rowSpan={maxItems}>
                                   {order.status === 'completed' || order.status === 'cancelled' ? (
-                                    <span
-                                      className={`inline-block whitespace-nowrap rounded px-2 py-1 text-xs font-semibold ${
-                                        STATUS_LABEL[order.status]?.color || 'border border-gray-200 bg-gray-100 text-gray-800'
-                                      }`}
-                                    >
-                                      {STATUS_LABEL[order.status]?.label || statusLabel[order.status] || order.status}
-                                    </span>
+                                    <div className="flex flex-col items-center gap-1">
+                                      <span
+                                        className={`inline-block whitespace-nowrap rounded px-2 py-1 text-xs font-semibold ${
+                                          STATUS_LABEL[order.status]?.color || 'border border-gray-200 bg-gray-100 text-gray-800'
+                                        }`}
+                                      >
+                                        {STATUS_LABEL[order.status]?.label || statusLabel[order.status] || order.status}
+                                      </span>
+                                      {order.status === 'cancelled' && order.cancellationReason && (
+                                        <span className="text-center text-xs text-gray-600">({order.cancellationReason})</span>
+                                      )}
+                                    </div>
                                   ) : (
                                     <select
                                       value={order.status}
                                       onChange={async e => {
                                         try {
                                           const newStatus = e.target.value;
-                                          const payload: any = { status: newStatus };
-                                          if (['completed', 'hoàn thành'].includes(newStatus.toLowerCase())) {
-                                            payload.updatedBy = user?.id;
+
+                                          if (newStatus === 'cancelled') {
+                                            console.log('🔍 Cancelled selected in table, showing modal');
+                                            setCancellingOrder(order);
+                                            setCancelReason('');
+                                            setShowCancelModal(true);
+                                          } else {
+                                            const payload: any = { status: newStatus };
+
+                                            // Cập nhật transaction cho cả trường hợp chuyển sang completed và order đã completed từ trước
+                                            if (['completed', 'hoàn thành'].includes(newStatus.toLowerCase()) || order.status === 'completed') {
+                                              payload.updatedBy = user?.id;
+
+                                              // Cập nhật transaction status thành success khi đơn hàng hoàn thành
+                                              console.log('OrderAdminPage - All transactions:', transactions);
+                                              console.log('OrderAdminPage - Order ID:', order.id);
+                                              console.log('OrderAdminPage - Order Number:', order.order_number);
+                                              console.log('OrderAdminPage - Order Number (orderNumber):', order.orderNumber);
+                                              console.log('OrderAdminPage - Order Type:', order.type);
+                                              console.log('OrderAdminPage - Order Method:', order.method);
+
+                                              const relatedTxs = transactions.filter((t: any) => {
+                                                const matchId = String(t.orderId).trim() === String(order.id).trim();
+                                                const matchOrderNumber = String(t.orderId).trim() === String(order.order_number).trim();
+                                                const matchOrderNumberAlt = String(t.orderId).trim() === String(order.orderNumber).trim();
+                                                const isCashTransaction = t.method === 'cash';
+
+                                                console.log(
+                                                  'OrderAdminPage - Checking transaction:',
+                                                  t.id,
+                                                  'orderId:',
+                                                  t.orderId,
+                                                  'method:',
+                                                  t.method,
+                                                  'status:',
+                                                  t.status,
+                                                );
+                                                console.log(
+                                                  'OrderAdminPage - Match ID:',
+                                                  matchId,
+                                                  'Match Order Number:',
+                                                  matchOrderNumber,
+                                                  'Match Order Number Alt:',
+                                                  matchOrderNumberAlt,
+                                                  'Is Cash:',
+                                                  isCashTransaction,
+                                                );
+
+                                                return (matchId || matchOrderNumber || matchOrderNumberAlt) && isCashTransaction;
+                                              });
+
+                                              console.log('OrderAdminPage - Related transactions:', relatedTxs);
+
+                                              if (relatedTxs.length > 0) {
+                                                // Cập nhật tất cả transactions liên quan
+                                                for (const tx of relatedTxs) {
+                                                  try {
+                                                    console.log('OrderAdminPage - Updating transaction:', tx.id, 'from', tx.status, 'to success');
+                                                    await updateUserTransaction(tx.id, { status: 'success' });
+                                                    console.log('OrderAdminPage - Transaction updated successfully');
+                                                  } catch (error) {
+                                                    console.error('Error updating transaction status:', error);
+                                                    // Không tạo transaction mới, chỉ log lỗi
+                                                    console.log('OrderAdminPage - Failed to update transaction, but not creating new one');
+                                                  }
+                                                }
+                                              } else {
+                                                console.log('OrderAdminPage - No related transactions found');
+                                                // Không tạo transaction mới nếu không tìm thấy
+                                                console.log('OrderAdminPage - No transaction found for this order, skipping');
+                                              }
+                                            }
+
+                                            await updateOrder(order.id, payload);
+
+                                            // Refresh transactions nếu có cập nhật
+                                            if (['completed', 'hoàn thành'].includes(newStatus.toLowerCase()) && relatedTxs.length > 0) {
+                                              setTimeout(() => {
+                                                fetchOrders(); // Refresh danh sách sau 1 giây
+                                              }, 1000);
+                                            } else {
+                                              fetchOrders(); // Refresh danh sách ngay lập tức
+                                            }
                                           }
-                                          await updateOrder(order.id, payload);
-                                          fetchOrders(); // Refresh danh sách
-                                        } catch (error) {
+                                        } catch (error: any) {
                                           console.error('Lỗi cập nhật status:', error);
+                                          console.error('Error details:', error.response?.data);
+                                          console.error('Error status:', error.response?.status);
                                           alert('Cập nhật trạng thái thất bại');
                                         }
                                       }}
@@ -644,16 +915,22 @@ export default function OrderAdminPage() {
                                   )}
                                 </td>
                                 <td className="border-b px-3 py-2" rowSpan={maxItems}>
-                                  {order.pickupTime || ''}
-                                </td>
-                                <td className="border-b px-3 py-2" rowSpan={maxItems}>
-                                  {formatDeliveryAddress(order.deliveryAddress)}
+                                  {formatDeliveryAddress(order.deliveryAddress, order.type)}
                                 </td>
                                 <td className="border-b px-3 py-2" rowSpan={maxItems}>
                                   {order.note}
                                 </td>
                                 <td className="border-b px-3 py-2" rowSpan={maxItems}>
-                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 120 }}>
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      width: '100%',
+                                      height: '100%',
+                                      minHeight: '40px',
+                                    }}
+                                  >
                                     {isCompleted ? (
                                       <button
                                         title="In hóa đơn"
@@ -663,14 +940,28 @@ export default function OrderAdminPage() {
                                           background: 'none',
                                           color: '#2563eb',
                                           cursor: 'pointer',
-                                          fontSize: 14,
+                                          fontSize: 13,
                                           fontWeight: 500,
                                           textDecoration: 'underline',
+                                          padding: '6px 12px',
+                                          borderRadius: '4px',
+                                          transition: 'all 0.2s',
+                                          whiteSpace: 'nowrap',
+                                          minWidth: '80px',
+                                          textAlign: 'center',
+                                        }}
+                                        onMouseEnter={e => {
+                                          (e.target as HTMLButtonElement).style.backgroundColor = '#f3f4f6';
+                                        }}
+                                        onMouseLeave={e => {
+                                          (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
                                         }}
                                       >
                                         In hóa đơn
                                       </button>
-                                    ) : null}
+                                    ) : (
+                                      <span style={{ color: '#9ca3af', fontSize: 14 }}>-</span>
+                                    )}
                                   </div>
                                 </td>
                               </>
@@ -694,7 +985,22 @@ export default function OrderAdminPage() {
                 <select
                   className="w-full rounded border px-2 py-1"
                   value={editingOrder.status}
-                  onChange={e => setEditingOrder({ ...editingOrder, status: e.target.value })}
+                  onChange={e => {
+                    const newStatus = e.target.value;
+                    console.log('🔍 Status dropdown changed to:', newStatus);
+                    console.log('🔍 Current editingOrder:', editingOrder);
+
+                    if (newStatus === 'cancelled') {
+                      console.log('🔍 Cancelled selected, showing modal');
+                      console.log('🔍 Setting cancellingOrder to:', editingOrder);
+                      setCancellingOrder(editingOrder);
+                      setCancelReason('');
+                      setShowCancelModal(true);
+                      console.log('🔍 Modal should be shown now, showCancelModal set to true');
+                    } else {
+                      setEditingOrder({ ...editingOrder, status: newStatus });
+                    }
+                  }}
                 >
                   <option value="pending">Pending</option>
                   <option value="confirmed">Confirmed</option>
@@ -703,6 +1009,22 @@ export default function OrderAdminPage() {
                   <option value="completed">Completed</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
+              </div>
+              <div className="mb-3">
+                <label className="block text-sm font-medium">Pickup Time</label>
+                <input
+                  type="datetime-local"
+                  className="w-full rounded border px-2 py-1"
+                  value={editingOrder.pickupTime ? editingOrder.pickupTime.slice(0, 16) : ''}
+                  onChange={e => setEditingOrder({ ...editingOrder, pickupTime: e.target.value })}
+                  placeholder="Chọn thời gian pickup"
+                />
+                <small className="text-gray-500">
+                  Để trống nếu chưa xác định thời gian.
+                  {editingOrder.userPickupTime && (
+                    <span className="block text-blue-600">Người dùng đã chọn: {formatPickupTime(editingOrder.userPickupTime)}</span>
+                  )}
+                </small>
               </div>
               <div className="mt-4 flex justify-end gap-2">
                 <button type="button" className="rounded bg-gray-200 px-4 py-2" onClick={() => setShowEdit(false)} disabled={saving}>
@@ -725,7 +1047,7 @@ export default function OrderAdminPage() {
                 <b>Khách hàng:</b> {getUserName(detailOrder.userId)}
               </div>
               <div>
-                <b>Địa chỉ:</b> {formatDeliveryAddress(detailOrder.deliveryAddress)}
+                <b>Địa chỉ:</b> {formatDeliveryAddress(detailOrder.deliveryAddress, detailOrder.type)}
               </div>
               <div>
                 <b>Số điện thoại:</b> {detailOrder.deliveryAddress?.phone || '-'}
@@ -858,6 +1180,127 @@ export default function OrderAdminPage() {
             >
               Next
             </button>
+          </div>
+        )}
+        {/* Modal hủy đơn hàng */}
+        {showCancelModal && (
+          <div
+            className="modal-admin"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+            }}
+          >
+            <div className="modal-content-admin" style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', minWidth: '400px' }}>
+              <button className="modal-close-admin" onClick={() => setShowCancelModal(false)} type="button">
+                ×
+              </button>
+              <h2 className="mb-4 text-lg font-semibold">{cancellingOrder?.status === 'cancelled' ? 'Sửa lý do hủy đơn hàng' : 'Hủy đơn hàng'}</h2>
+              <div className="mb-4">
+                <p className="mb-2 text-sm text-gray-600">
+                  Đơn hàng: <b>#{cancellingOrder?.order_number || cancellingOrder?.orderNumber || cancellingOrder?.id}</b>
+                </p>
+                <p className="mb-4 text-sm text-gray-600">
+                  Khách hàng: <b>{getUserName(cancellingOrder?.userId)}</b>
+                </p>
+                <label className="mb-2 block font-medium">Lý do hủy đơn hàng:</label>
+                <select
+                  value={cancelReason}
+                  onChange={e => setCancelReason(e.target.value)}
+                  className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#C92A15]"
+                  required
+                >
+                  <option value="">Chọn lý do hủy đơn hàng...</option>
+                  <option value="Khách hàng yêu cầu hủy đơn">Khách hàng yêu cầu hủy đơn</option>
+                  <option value="Không thể liên hệ khách hàng">Không thể liên hệ khách hàng</option>
+                  <option value="Hết món ăn">Hết món ăn</option>
+                  <option value="Đơn nghi ngờ gian lận">Đơn nghi ngờ gian lận</option>
+                  <option value="Khu vực ngoài phạm vi giao hàng">Khu vực ngoài phạm vi giao hàng</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCancelModal(false)}
+                  className="rounded border border-gray-300 bg-gray-100 px-4 py-2 transition hover:bg-gray-200"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!cancelReason.trim()) {
+                      alert('Vui lòng chọn lý do hủy đơn hàng');
+                      return;
+                    }
+                    try {
+                      setSaving(true);
+                      const payload: any = {
+                        status: 'cancelled',
+                        cancellationReason: cancelReason.trim(),
+                        updatedBy: user?.id,
+                      };
+
+                      // Nếu là delivery order, thêm deliveryAddress để tránh validation error
+                      if (cancellingOrder.type === 'delivery' && cancellingOrder.deliveryAddress) {
+                        // Đảm bảo deliveryAddress có đủ thông tin address và phone
+                        const deliveryAddress = cancellingOrder.deliveryAddress;
+                        if (typeof deliveryAddress === 'object' && deliveryAddress.address) {
+                          // Lấy phone từ deliveryAddress hoặc từ user
+                          let phone = deliveryAddress.phone;
+                          if (!phone) {
+                            const user = users.find(u => u.id === cancellingOrder.userId);
+                            phone = user?.phoneNumber || '';
+                          }
+                          payload.deliveryAddress = {
+                            address: deliveryAddress.address,
+                            phone: phone,
+                          };
+                        }
+                      }
+                      console.log('🔍 Sending update request:', {
+                        orderId: cancellingOrder.id,
+                        payload: payload,
+                      });
+                      console.log('🔍 Full request details:', {
+                        url: `/api/v1/orders/${cancellingOrder.id}`,
+                        method: 'PATCH',
+                        data: payload,
+                      });
+                      await updateOrder(cancellingOrder.id, payload);
+                      console.log('🔍 Update request completed successfully');
+                      setShowCancelModal(false);
+                      setCancellingOrder(null);
+                      setCancelReason('');
+                      fetchOrders(); // Refresh danh sách
+                    } catch (error: any) {
+                      console.error('Lỗi hủy đơn hàng:', error);
+                      console.error('🔍 Error details:', {
+                        message: error.message,
+                        response: error.response?.data,
+                        status: error.response?.status,
+                        statusText: error.response?.statusText,
+                      });
+                      alert('Hủy đơn hàng thất bại');
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                  disabled={saving || !cancelReason.trim()}
+                  className="rounded bg-red-600 px-4 py-2 text-white transition hover:bg-red-700 disabled:opacity-50"
+                >
+                  {saving ? 'Đang lưu...' : cancellingOrder?.status === 'cancelled' ? 'Cập nhật lý do' : 'Xác nhận hủy'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

@@ -212,7 +212,7 @@ const AdminUserPage: React.FC = () => {
             <table className="table-admin-user" style={{ minWidth: 1200 }}>
               <thead>
                 <tr className="bg-gray-100 text-gray-700">
-                  <th className="whitespace-nowrap border-b px-3 py-2">STT</th>
+                  <th className="whitespace-nowrap border-b px-3 py-2">No.</th>
                   <th className="whitespace-nowrap border-b px-3 py-2">Email</th>
                   <th className="whitespace-nowrap border-b px-3 py-2">Name</th>
                   <th className="whitespace-nowrap border-b px-3 py-2">Phone</th>

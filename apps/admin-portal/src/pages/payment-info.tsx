@@ -14,28 +14,18 @@ const PaymentInfoPage: React.FC = () => {
   const location = useLocation();
   const state = (location.state as any) || {};
   const orderType = state?.orderType || 'pickup';
-  const getStores = () => {
-    try {
-      const stores = JSON.parse(localStorage.getItem('bcm_stores') || '[]');
-      if (Array.isArray(stores) && stores.length > 0) return stores;
-    } catch {}
-    return [
-      {
-        id: 1,
-        name: 'Bếp của Mẹ - Chi nhánh 1',
-        address: '296/29 Lương Định Của, Nha Trang',
-        phone: '0909 123 456',
-      },
-      {
-        id: 2,
-        name: 'Bếp của Mẹ - Chi nhánh 2',
-        address: '01 Nguyễn Trãi, P. Phước Hải, Nha Trang, Khánh Hòa',
-        phone: '0909 123 456',
-      },
-    ];
+
+  // Debug: log thông tin được truyền
+  console.log('PaymentInfoPage - state:', state);
+  console.log('PaymentInfoPage - store:', state?.store);
+  console.log('PaymentInfoPage - customer:', state?.customer);
+  const store = state?.store || {
+    id: 1,
+    name: 'BẾP CỦA MẸ - TP NHA TRANG',
+    address: '296/29 Lương Định Của, Xã Vĩnh Ngọc, TP Nha Trang, Khánh Hòa (0337782571)',
+    hotline: '0337782571',
   };
-  const stores = getStores();
-  const store = state?.store || stores[0];
+  console.log('PaymentInfoPage - final store being used:', store);
   const customer = state?.customer || { name: '', phone: '' };
   const { user } = useContext(AuthContext);
   const { orderItems, dishes } = useCart();
@@ -130,7 +120,10 @@ const PaymentInfoPage: React.FC = () => {
       deliveryTimeText = `Dự kiến giao lúc: ${pad(now.getHours())}:${pad(now.getMinutes())} ${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} (tối thiểu 30 phút sau khi đặt hàng thành công)`;
     }
   }
-  const deliveryAddress = [state?.address, state?.street, state?.ward, state?.district, state?.province, state?.detail].filter(Boolean).join(', ');
+  const deliveryAddress =
+    orderType === 'delivery'
+      ? [state?.address, state?.street, state?.ward, state?.district, state?.province, state?.detail].filter(Boolean).join(', ')
+      : `${store.name} (${store.hotline})` || '';
 
   const [paymentMethod, setPaymentMethod] = React.useState('cod');
 
@@ -142,13 +135,18 @@ const PaymentInfoPage: React.FC = () => {
       if (orderType === 'delivery') {
         deliveryAddressObj = {
           address: [state?.address, state?.street, state?.ward, state?.district, state?.province, state?.detail].filter(Boolean).join(', '),
+          phone: state?.phone || customer?.phone || '',
         };
       } else {
         deliveryAddressObj = {
-          address: store.address || '',
+          address: deliveryAddress,
+          phone: store.hotline || '',
           storeName: store.name || '',
         };
       }
+      console.log('PaymentInfoPage - state?.pickupTime:', state?.pickupTime);
+      console.log('PaymentInfoPage - state:', state);
+      console.log('PaymentInfoPage - Navigating to ZaloPay with pickupTime:', state?.pickupTime);
       navigate('/zalo-pay-payment', {
         state: {
           items,
@@ -170,15 +168,19 @@ const PaymentInfoPage: React.FC = () => {
     if (orderType === 'delivery') {
       deliveryAddressObj = {
         address: [state?.address, state?.street, state?.ward, state?.district, state?.province, state?.detail].filter(Boolean).join(', '),
+        phone: state?.phone || customer?.phone || '',
       };
     } else {
-      // Pickup: lưu địa chỉ cửa hàng
+      // Pickup: lưu địa chỉ và số điện thoại cửa hàng
+      console.log('PaymentInfoPage - store for pickup:', store);
       deliveryAddressObj = {
-        address: store.address || '',
+        address: deliveryAddress,
+        phone: store.hotline || '',
         storeName: store.name || '',
       };
+      console.log('PaymentInfoPage - deliveryAddressObj for pickup:', deliveryAddressObj);
     }
-    const payload = {
+    const payload: any = {
       userId: user?.id,
       orderItems: { items: items },
       totalAmount: totalAmountDisplay,
@@ -186,6 +188,17 @@ const PaymentInfoPage: React.FC = () => {
       deliveryAddress: deliveryAddressObj,
       note: '', // lấy từ textarea nếu cần
     };
+
+    // Thêm pickupTime cho pickup orders
+    if (orderType === 'pickup' && state?.pickupTime) {
+      payload.pickupTime = state.pickupTime;
+    }
+    console.log('PaymentInfoPage - final payload:', payload);
+    console.log('PaymentInfoPage - orderType:', orderType);
+    console.log('PaymentInfoPage - deliveryAddressObj:', deliveryAddressObj);
+    console.log('PaymentInfoPage - deliveryAddress:', deliveryAddress);
+    console.log('PaymentInfoPage - store.hotline:', store.hotline);
+    console.log('PaymentInfoPage - store.name:', store.name);
     try {
       const orderRes = await createOrder(payload);
       navigate('/order-success', { state: { order: orderRes } });
@@ -217,11 +230,10 @@ const PaymentInfoPage: React.FC = () => {
               ) : (
                 <>
                   <div className="payment-info-text">
-                    Nhận hàng tại: <span className="payment-info-highlight">{store.name}</span>
+                    Nhận hàng tại: <span className="payment-info-highlight">{deliveryAddress}</span>
                   </div>
-                  <div className="payment-info-text">{store.address}</div>
                   <div className="payment-info-text">
-                    <b>Khách hàng:</b> {customer.name} &nbsp; <b>Điện thoại:</b> {customer.phone}
+                    <b>Khách hàng:</b> {state?.customer?.name || customer.name} &nbsp; <b>Điện thoại:</b> {state?.customer?.phone || customer.phone}
                   </div>
                   {state?.pickupTime && (
                     <div className="payment-info-text">

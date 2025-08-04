@@ -135,20 +135,19 @@ export default function BillPreviewPage() {
                 <tr key={idx} style={{ fontFamily: 'Arial' }}>
                   <td>{!item.name || item.name.toLowerCase() === 'món ăn' ? 'Không rõ tên món' : item.name}</td>
                   <td style={{ textAlign: 'center' }}>{item.quantity ?? 0}</td>
-                  <td style={{ textAlign: 'center' }}>{formatVND(Number(item.price) || 0)}</td>
+                  <td style={{ textAlign: 'center' }}>{Number(item.price || 0).toLocaleString('vi-VN')}</td>
                   <td style={{ textAlign: 'center' }}>
-                    {formatVND(
-                      item.quantity === '' || Number(item.quantity) === 0
-                        ? Number(item.price) || 0
-                        : (Number(item.price) || 0) * (Number(item.quantity) || 0),
-                    )}
+                    {(item.quantity === '' || Number(item.quantity) === 0
+                      ? Number(item.price) || 0
+                      : (Number(item.price) || 0) * (Number(item.quantity) || 0)
+                    ).toLocaleString('vi-VN')}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
           <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: 20, color: '#C8403B', fontFamily: 'Arial' }}>
-            Tổng cộng: {Number(totalAmount).toLocaleString()} VND
+            Tổng cộng: {Number(totalAmount).toLocaleString()}
           </div>
           {/* Xóa dòng in đậm bên dưới tổng cộng */}
           {/* {paymentMethod === 'cash' && (
