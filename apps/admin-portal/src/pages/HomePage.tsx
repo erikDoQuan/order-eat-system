@@ -230,291 +230,32 @@ export default function HomePage() {
       </div>
       {/* Nếu có selectedCategoryId thì chỉ render đúng 1 category đó */}
       {selectedCategoryId && filteredDishesByCategory.length > 0 && (
-        <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
-          <div className="mb-6">
-            <h2 className="flex-shrink-0 text-3xl font-extrabold text-black drop-shadow-lg">
-              {categories.find(cat => cat.id === selectedCategoryId)?.nameLocalized ||
-                categories.find(cat => cat.id === selectedCategoryId)?.name ||
-                'Danh mục'}
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-            {filteredDishesByCategory.map(dish => (
-              <MemoDishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
-            ))}
+        <div className="w-full px-4 md:px-6">
+          <div className="mx-auto max-w-7xl pb-4">
+            <div className="mb-6">
+              <h2 className="flex-shrink-0 text-3xl font-extrabold text-black drop-shadow-lg">
+                {categories.find(cat => cat.id === selectedCategoryId)?.nameLocalized ||
+                  categories.find(cat => cat.id === selectedCategoryId)?.name ||
+                  'Danh mục'}
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+              {filteredDishesByCategory.map(dish => (
+                <MemoDishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+              ))}
+            </div>
           </div>
         </div>
       )}
       {/* Nếu có selectedCategory thì chỉ render đúng 1 category đó */}
       {selectedCategory === 'pizza' && filteredPizzaDishes.length > 0 && (
-        <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
-          <div className="mb-6">
-            <h2 className="flex-shrink-0 text-3xl font-extrabold text-black drop-shadow-lg">{pizzaTypeTitle()}</h2>
-            {/* Nếu không có typeParam thì mới hiển thị các button filter */}
-            {!typeParam && (
-              <div className="pizza-filter-bar mt-2">
-                <button
-                  className={`rounded-full border px-4 py-1 text-sm font-bold shadow transition-all duration-150 ${filterPizzaType === 'Tất cả' ? 'border-[#C92A15] bg-[#C92A15] text-white' : 'border-gray-200 bg-white font-semibold text-[#C92A15]'}`}
-                  onClick={() => setFilterPizzaType('Tất cả')}
-                >
-                  {t('all')}
-                </button>
-                <button
-                  className={`rounded-full border px-4 py-1 text-sm font-bold shadow transition-all duration-150 ${filterPizzaType === 'Pizza Hải Sản' ? 'border-[#C92A15] bg-[#C92A15] text-white' : 'border-gray-200 bg-white font-semibold text-[#C92A15]'}`}
-                  onClick={() => setFilterPizzaType('Pizza Hải Sản')}
-                >
-                  {t('seafood_pizza')}
-                </button>
-                <button
-                  className={`rounded-full border px-4 py-1 text-sm font-bold shadow transition-all duration-150 ${filterPizzaType === 'Pizza Truyền Thống' ? 'border-[#C92A15] bg-[#C92A15] text-white' : 'border-gray-200 bg-white font-semibold text-[#C92A15]'}`}
-                  onClick={() => setFilterPizzaType('Pizza Truyền Thống')}
-                >
-                  {t('traditional_pizza')}
-                </button>
-                <button
-                  className={`rounded-full border px-4 py-1 text-sm font-bold shadow transition-all duration-150 ${filterPizzaType === 'Pizza Thập Cẩm' ? 'border-[#C92A15] bg-[#C92A15] text-white' : 'border-gray-200 bg-white font-semibold text-[#C92A15]'}`}
-                  onClick={() => setFilterPizzaType('Pizza Thập Cẩm')}
-                >
-                  {t('combo_pizza')}
-                </button>
-              </div>
-            )}
-          </div>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-            {dishes.length === 0
-              ? Array.from({ length: 6 }).map((_, idx) => <div key={idx} className="h-48 w-full animate-pulse rounded-lg bg-gray-100" />)
-              : filteredPizzaDishes
-                  .slice(0, visiblePizzaCount)
-                  .map(dish => (
-                    <MemoDishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
-                  ))}
-          </div>
-          {visiblePizzaCount < filteredPizzaDishes.length && !typeParam && (
-            <div className="mb-12 mt-4 flex justify-center">
-              <a
-                className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
-                style={{ textDecoration: 'none' }}
-                onClick={() => setVisiblePizzaCount(prev => prev + 3)}
-              >
-                Xem thêm
-              </a>
-            </div>
-          )}
-          {visiblePizzaCount >= filteredPizzaDishes.length && visiblePizzaCount > 3 && !typeParam && (
-            <div className="mb-12 mt-4 flex justify-center">
-              <a
-                className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
-                style={{ textDecoration: 'none' }}
-                onClick={() => setVisiblePizzaCount(3)}
-              >
-                Thu gọn
-              </a>
-            </div>
-          )}
-        </div>
-      )}
-      {selectedCategory === 'chicken' && chickenDishes.length > 0 && (
-        <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
-          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('chicken')}</h2>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-            {chickenDishes.slice(0, visibleChickenCount).map(dish => (
-              <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
-            ))}
-          </div>
-          {visibleChickenCount < chickenDishes.length && (
-            <div className="mb-12 mt-4 flex justify-center">
-              <a
-                className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
-                style={{ textDecoration: 'none' }}
-                onClick={() => setVisibleChickenCount(prev => prev + 3)}
-              >
-                {t('view_more')}
-                <em className="ri-add-line" />
-              </a>
-            </div>
-          )}
-          {visibleChickenCount >= chickenDishes.length && visibleChickenCount > 3 && (
-            <div className="mb-12 mt-4 flex justify-center">
-              <a
-                className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
-                style={{ textDecoration: 'none' }}
-                onClick={() => setVisibleChickenCount(3)}
-              >
-                Thu gọn
-              </a>
-            </div>
-          )}
-        </div>
-      )}
-      {selectedCategory === 'spaghetti' && filteredSpaghettiDishes.length > 0 && (
-        <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
-          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{spaghettiTypeTitle()}</h2>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-            {filteredSpaghettiDishes.slice(0, visibleSpaghettiCount).map(dish => (
-              <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
-            ))}
-          </div>
-          {filteredSpaghettiDishes.length > 3 && visibleSpaghettiCount < filteredSpaghettiDishes.length && (
-            <div className="mb-12 mt-4 flex justify-center">
-              <a
-                className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
-                style={{ textDecoration: 'none' }}
-                onClick={() => setVisibleSpaghettiCount(prev => prev + 3)}
-              >
-                Xem thêm
-              </a>
-            </div>
-          )}
-          {visibleSpaghettiCount >= filteredSpaghettiDishes.length && visibleSpaghettiCount > 3 && (
-            <div className="mb-12 mt-4 flex justify-center">
-              <a
-                className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
-                style={{ textDecoration: 'none' }}
-                onClick={() => setVisibleSpaghettiCount(3)}
-              >
-                Thu gọn
-              </a>
-            </div>
-          )}
-        </div>
-      )}
-      {selectedCategory === 'appetizer' && filteredAppetizerDishes.length > 0 && (
-        <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
-          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{appetizerTypeTitle()}</h2>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-            {filteredAppetizerDishes.slice(0, visibleAppetizerCount).map(dish => (
-              <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
-            ))}
-          </div>
-          {visibleAppetizerCount < filteredAppetizerDishes.length && !typeParam && (
-            <div className="mb-12 mt-4 flex justify-center">
-              <a
-                className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
-                style={{ textDecoration: 'none' }}
-                onClick={() => setVisibleAppetizerCount(prev => prev + 3)}
-              >
-                {t('view_more')}
-                <em className="ri-add-line" />
-              </a>
-            </div>
-          )}
-          {visibleAppetizerCount >= filteredAppetizerDishes.length && visibleAppetizerCount > 3 && !typeParam && (
-            <div className="mb-12 mt-4 flex justify-center">
-              <a
-                className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
-                style={{ textDecoration: 'none' }}
-                onClick={() => setVisibleAppetizerCount(3)}
-              >
-                Thu gọn
-              </a>
-            </div>
-          )}
-        </div>
-      )}
-      {selectedCategory === 'baked_macaroni' && bakedMacaroniDishes.length > 0 && (
-        <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
-          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('baked_macaroni') || 'Nui Bỏ Lò'}</h2>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-            {bakedMacaroniDishes.slice(0, visibleBakedMacaroniCount).map(dish => (
-              <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
-            ))}
-          </div>
-          {bakedMacaroniDishes.length > 3 && visibleBakedMacaroniCount < bakedMacaroniDishes.length && (
-            <div className="mb-12 mt-4 flex justify-center">
-              <a
-                className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
-                style={{ textDecoration: 'none' }}
-                onClick={() => setVisibleBakedMacaroniCount(prev => prev + 3)}
-              >
-                Xem thêm
-              </a>
-            </div>
-          )}
-          {visibleBakedMacaroniCount >= bakedMacaroniDishes.length && visibleBakedMacaroniCount > 3 && (
-            <div className="mb-12 mt-4 flex justify-center">
-              <a
-                className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
-                style={{ textDecoration: 'none' }}
-                onClick={() => setVisibleBakedMacaroniCount(3)}
-              >
-                Thu gọn
-              </a>
-            </div>
-          )}
-        </div>
-      )}
-      {selectedCategory === 'salad' && saladDishes.length > 0 && (
-        <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
-          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('salad') || 'Salad'}</h2>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-            {saladDishes.slice(0, visibleSaladCount).map(dish => (
-              <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
-            ))}
-          </div>
-          {saladDishes.length > 3 && visibleSaladCount < saladDishes.length && (
-            <div className="mb-6 mt-4 flex justify-center">
-              <a
-                className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
-                style={{ textDecoration: 'none' }}
-                onClick={() => setVisibleSaladCount(prev => prev + 3)}
-              >
-                Xem thêm
-              </a>
-            </div>
-          )}
-          {visibleSaladCount >= saladDishes.length && visibleSaladCount > 3 && (
-            <div className="mb-6 mt-4 flex justify-center">
-              <a
-                className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
-                style={{ textDecoration: 'none' }}
-                onClick={() => setVisibleSaladCount(3)}
-              >
-                Thu gọn
-              </a>
-            </div>
-          )}
-        </div>
-      )}
-      {selectedCategory === 'drink' && drinkDishes.length > 0 && (
-        <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
-          <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('drink') || 'Thức uống'}</h2>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-            {drinkDishes.slice(0, visibleDrinkCount).map(dish => (
-              <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
-            ))}
-          </div>
-          {drinkDishes.length > 3 && visibleDrinkCount < drinkDishes.length && (
-            <div className="mb-6 mt-4 flex justify-center">
-              <a
-                className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
-                style={{ textDecoration: 'none' }}
-                onClick={() => setVisibleDrinkCount(prev => prev + 3)}
-              >
-                Xem thêm
-              </a>
-            </div>
-          )}
-          {visibleDrinkCount >= drinkDishes.length && visibleDrinkCount > 3 && (
-            <div className="mb-6 mt-4 flex justify-center">
-              <a
-                className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
-                style={{ textDecoration: 'none' }}
-                onClick={() => setVisibleDrinkCount(3)}
-              >
-                Thu gọn
-              </a>
-            </div>
-          )}
-        </div>
-      )}
-      {/* Nếu không có selectedCategory thì render tất cả như cũ */}
-      {!selectedCategory && (
-        <>
-          {pizzaDishes.length > 0 && (
-            <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
-              <div className="mb-6 flex items-center gap-4">
-                <h2 className="flex-shrink-0 text-3xl font-extrabold text-black drop-shadow-lg">{t('pizza')}</h2>
-                <div className="ml-4 flex flex-1 flex-wrap justify-end gap-2">
+        <div className="w-full px-4 md:px-6">
+          <div className="mx-auto max-w-7xl pb-4">
+            <div className="mb-6">
+              <h2 className="flex-shrink-0 text-3xl font-extrabold text-black drop-shadow-lg">{pizzaTypeTitle()}</h2>
+              {/* Nếu không có typeParam thì mới hiển thị các button filter */}
+              {!typeParam && (
+                <div className="pizza-filter-bar mt-2">
                   <button
                     className={`rounded-full border px-4 py-1 text-sm font-bold shadow transition-all duration-150 ${filterPizzaType === 'Tất cả' ? 'border-[#C92A15] bg-[#C92A15] text-white' : 'border-gray-200 bg-white font-semibold text-[#C92A15]'}`}
                     onClick={() => setFilterPizzaType('Tất cả')}
@@ -540,221 +281,453 @@ export default function HomePage() {
                     {t('combo_pizza')}
                   </button>
                 </div>
-              </div>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-                {filteredPizzaDishes.slice(0, visiblePizzaCount).map(dish => (
-                  <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
-                ))}
-              </div>
-              {visiblePizzaCount < filteredPizzaDishes.length && (
-                <div className="mb-12 mt-4 flex justify-center">
-                  <a
-                    className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
-                    style={{ textDecoration: 'none' }}
-                    onClick={() => setVisiblePizzaCount(prev => prev + 3)}
-                  >
-                    Xem thêm
-                  </a>
-                </div>
               )}
-              {visiblePizzaCount >= filteredPizzaDishes.length && visiblePizzaCount > 3 && (
-                <div className="mb-12 mt-4 flex justify-center">
-                  <a
-                    className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
-                    style={{ textDecoration: 'none' }}
-                    onClick={() => setVisiblePizzaCount(3)}
-                  >
-                    Thu gọn
-                  </a>
+            </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+              {dishes.length === 0
+                ? Array.from({ length: 6 }).map((_, idx) => <div key={idx} className="h-48 w-full animate-pulse rounded-lg bg-gray-100" />)
+                : filteredPizzaDishes
+                    .slice(0, visiblePizzaCount)
+                    .map(dish => (
+                      <MemoDishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                    ))}
+            </div>
+            {visiblePizzaCount < filteredPizzaDishes.length && !typeParam && (
+              <div className="mb-12 mt-4 flex justify-center">
+                <a
+                  className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                  style={{ textDecoration: 'none' }}
+                  onClick={() => setVisiblePizzaCount(prev => prev + 3)}
+                >
+                  {t('view_more')}
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {selectedCategory === 'spaghetti' && filteredSpaghettiDishes.length > 0 && (
+        <div className="w-full px-4 md:px-6">
+          <div className="mx-auto max-w-7xl pb-4">
+            <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{spaghettiTypeTitle()}</h2>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+              {dishes.length === 0
+                ? Array.from({ length: 6 }).map((_, idx) => <div key={idx} className="h-48 w-full animate-pulse rounded-lg bg-gray-100" />)
+                : filteredSpaghettiDishes
+                    .slice(0, visibleSpaghettiCount)
+                    .map(dish => (
+                      <MemoDishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                    ))}
+            </div>
+            {visibleSpaghettiCount < filteredSpaghettiDishes.length && (
+              <div className="mb-12 mt-4 flex justify-center">
+                <a
+                  className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                  style={{ textDecoration: 'none' }}
+                  onClick={() => setVisibleSpaghettiCount(prev => prev + 3)}
+                >
+                  {t('view_more')}
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {selectedCategory === 'baked_macaroni' && bakedMacaroniDishes.length > 0 && (
+        <div className="w-full px-4 md:px-6">
+          <div className="mx-auto max-w-7xl pb-4">
+            <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('baked_macaroni') || 'Nui Bỏ Lò'}</h2>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+              {dishes.length === 0
+                ? Array.from({ length: 6 }).map((_, idx) => <div key={idx} className="h-48 w-full animate-pulse rounded-lg bg-gray-100" />)
+                : bakedMacaroniDishes
+                    .slice(0, visibleBakedMacaroniCount)
+                    .map(dish => (
+                      <MemoDishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                    ))}
+            </div>
+            {visibleBakedMacaroniCount < bakedMacaroniDishes.length && (
+              <div className="mb-12 mt-4 flex justify-center">
+                <a
+                  className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                  style={{ textDecoration: 'none' }}
+                  onClick={() => setVisibleBakedMacaroniCount(prev => prev + 3)}
+                >
+                  {t('view_more')}
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {selectedCategory === 'chicken' && chickenDishes.length > 0 && (
+        <div className="w-full px-4 md:px-6">
+          <div className="mx-auto max-w-7xl pb-4">
+            <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('chicken')}</h2>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+              {dishes.length === 0
+                ? Array.from({ length: 6 }).map((_, idx) => <div key={idx} className="h-48 w-full animate-pulse rounded-lg bg-gray-100" />)
+                : chickenDishes
+                    .slice(0, visibleChickenCount)
+                    .map(dish => (
+                      <MemoDishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                    ))}
+            </div>
+            {visibleChickenCount < chickenDishes.length && (
+              <div className="mb-12 mt-4 flex justify-center">
+                <a
+                  className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                  style={{ textDecoration: 'none' }}
+                  onClick={() => setVisibleChickenCount(prev => prev + 3)}
+                >
+                  {t('view_more')}
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {selectedCategory === 'appetizer' && appetizerDishes.length > 0 && (
+        <div className="w-full px-4 md:px-6">
+          <div className="mx-auto max-w-7xl pb-4">
+            <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{appetizerTypeTitle()}</h2>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+              {dishes.length === 0
+                ? Array.from({ length: 6 }).map((_, idx) => <div key={idx} className="h-48 w-full animate-pulse rounded-lg bg-gray-100" />)
+                : appetizerDishes
+                    .slice(0, visibleAppetizerCount)
+                    .map(dish => (
+                      <MemoDishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                    ))}
+            </div>
+            {visibleAppetizerCount < appetizerDishes.length && (
+              <div className="mb-12 mt-4 flex justify-center">
+                <a
+                  className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                  style={{ textDecoration: 'none' }}
+                  onClick={() => setVisibleAppetizerCount(prev => prev + 3)}
+                >
+                  {t('view_more')}
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {selectedCategory === 'salad' && saladDishes.length > 0 && (
+        <div className="w-full px-4 md:px-6">
+          <div className="mx-auto max-w-7xl pb-4">
+            <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('salad') || 'Salad'}</h2>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+              {dishes.length === 0
+                ? Array.from({ length: 6 }).map((_, idx) => <div key={idx} className="h-48 w-full animate-pulse rounded-lg bg-gray-100" />)
+                : saladDishes
+                    .slice(0, visibleSaladCount)
+                    .map(dish => (
+                      <MemoDishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                    ))}
+            </div>
+            {visibleSaladCount < saladDishes.length && (
+              <div className="mb-12 mt-4 flex justify-center">
+                <a
+                  className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                  style={{ textDecoration: 'none' }}
+                  onClick={() => setVisibleSaladCount(prev => prev + 3)}
+                >
+                  {t('view_more')}
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {selectedCategory === 'drink' && drinkDishes.length > 0 && (
+        <div className="w-full px-4 md:px-6">
+          <div className="mx-auto max-w-7xl pb-4">
+            <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('drink') || 'Thức uống'}</h2>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+              {dishes.length === 0
+                ? Array.from({ length: 6 }).map((_, idx) => <div key={idx} className="h-48 w-full animate-pulse rounded-lg bg-gray-100" />)
+                : drinkDishes
+                    .slice(0, visibleDrinkCount)
+                    .map(dish => (
+                      <MemoDishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                    ))}
+            </div>
+            {visibleDrinkCount < drinkDishes.length && (
+              <div className="mb-12 mt-4 flex justify-center">
+                <a
+                  className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                  style={{ textDecoration: 'none' }}
+                  onClick={() => setVisibleDrinkCount(prev => prev + 3)}
+                >
+                  {t('view_more')}
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {/* Nếu không có selectedCategory thì render tất cả như cũ */}
+      {!selectedCategory && (
+        <>
+          {pizzaDishes.length > 0 && (
+            <div className="w-full px-4 md:px-6">
+              <div className="mx-auto max-w-7xl pb-4">
+                <div className="mb-6 flex items-center gap-4">
+                  <h2 className="flex-shrink-0 text-3xl font-extrabold text-black drop-shadow-lg">{t('pizza')}</h2>
+                  <div className="ml-4 flex flex-1 flex-wrap justify-end gap-2">
+                    <button
+                      className={`rounded-full border px-4 py-1 text-sm font-bold shadow transition-all duration-150 ${filterPizzaType === 'Tất cả' ? 'border-[#C92A15] bg-[#C92A15] text-white' : 'border-gray-200 bg-white font-semibold text-[#C92A15]'}`}
+                      onClick={() => setFilterPizzaType('Tất cả')}
+                    >
+                      {t('all')}
+                    </button>
+                    <button
+                      className={`rounded-full border px-4 py-1 text-sm font-bold shadow transition-all duration-150 ${filterPizzaType === 'Pizza Hải Sản' ? 'border-[#C92A15] bg-[#C92A15] text-white' : 'border-gray-200 bg-white font-semibold text-[#C92A15]'}`}
+                      onClick={() => setFilterPizzaType('Pizza Hải Sản')}
+                    >
+                      {t('seafood_pizza')}
+                    </button>
+                    <button
+                      className={`rounded-full border px-4 py-1 text-sm font-bold shadow transition-all duration-150 ${filterPizzaType === 'Pizza Truyền Thống' ? 'border-[#C92A15] bg-[#C92A15] text-white' : 'border-gray-200 bg-white font-semibold text-[#C92A15]'}`}
+                      onClick={() => setFilterPizzaType('Pizza Truyền Thống')}
+                    >
+                      {t('traditional_pizza')}
+                    </button>
+                    <button
+                      className={`rounded-full border px-4 py-1 text-sm font-bold shadow transition-all duration-150 ${filterPizzaType === 'Pizza Thập Cẩm' ? 'border-[#C92A15] bg-[#C92A15] text-white' : 'border-gray-200 bg-white font-semibold text-[#C92A15]'}`}
+                      onClick={() => setFilterPizzaType('Pizza Thập Cẩm')}
+                    >
+                      {t('combo_pizza')}
+                    </button>
+                  </div>
                 </div>
-              )}
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+                  {filteredPizzaDishes.slice(0, visiblePizzaCount).map(dish => (
+                    <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                  ))}
+                </div>
+                {visiblePizzaCount < filteredPizzaDishes.length && (
+                  <div className="mb-12 mt-4 flex justify-center">
+                    <a
+                      className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                      style={{ textDecoration: 'none' }}
+                      onClick={() => setVisiblePizzaCount(prev => prev + 3)}
+                    >
+                      {t('view_more')}
+                    </a>
+                  </div>
+                )}
+                {visiblePizzaCount >= filteredPizzaDishes.length && visiblePizzaCount > 3 && (
+                  <div className="mb-12 mt-4 flex justify-center">
+                    <a
+                      className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
+                      style={{ textDecoration: 'none' }}
+                      onClick={() => setVisiblePizzaCount(3)}
+                    >
+                      {t('collapse')}
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           )}
           {chickenDishes.length > 0 && (
-            <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
-              <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('chicken')}</h2>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-                {chickenDishes.slice(0, visibleChickenCount).map(dish => (
-                  <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
-                ))}
+            <div className="w-full px-4 md:px-6">
+              <div className="mx-auto max-w-7xl pb-4">
+                <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('chicken')}</h2>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+                  {dishes.length === 0
+                    ? Array.from({ length: 6 }).map((_, idx) => <div key={idx} className="h-48 w-full animate-pulse rounded-lg bg-gray-100" />)
+                    : chickenDishes
+                        .slice(0, visibleChickenCount)
+                        .map(dish => (
+                          <MemoDishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                        ))}
+                </div>
+                {visibleChickenCount < chickenDishes.length && (
+                  <div className="mb-12 mt-4 flex justify-center">
+                    <a
+                      className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                      style={{ textDecoration: 'none' }}
+                      onClick={() => setVisibleChickenCount(prev => prev + 3)}
+                    >
+                      {t('view_more')}
+                    </a>
+                  </div>
+                )}
               </div>
-              {visibleChickenCount < chickenDishes.length && (
-                <div className="mb-12 mt-4 flex justify-center">
-                  <a
-                    className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
-                    style={{ textDecoration: 'none' }}
-                    onClick={() => setVisibleChickenCount(prev => prev + 3)}
-                  >
-                    {t('view_more')}
-                    <em className="ri-add-line" />
-                  </a>
-                </div>
-              )}
-              {visibleChickenCount >= chickenDishes.length && visibleChickenCount > 3 && (
-                <div className="mb-12 mt-4 flex justify-center">
-                  <a
-                    className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
-                    style={{ textDecoration: 'none' }}
-                    onClick={() => setVisibleChickenCount(3)}
-                  >
-                    Thu gọn
-                  </a>
-                </div>
-              )}
             </div>
           )}
           {spaghettiDishes.length > 0 && (
-            <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
-              <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('spaghetti')}</h2>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-                {spaghettiDishes.slice(0, visibleSpaghettiCount).map(dish => (
-                  <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
-                ))}
+            <div className="w-full px-4 md:px-6">
+              <div className="mx-auto max-w-7xl pb-4">
+                <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('spaghetti')}</h2>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+                  {dishes.length === 0
+                    ? Array.from({ length: 6 }).map((_, idx) => <div key={idx} className="h-48 w-full animate-pulse rounded-lg bg-gray-100" />)
+                    : spaghettiDishes
+                        .slice(0, visibleSpaghettiCount)
+                        .map(dish => (
+                          <MemoDishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                        ))}
+                </div>
+                {spaghettiDishes.length > 3 && visibleSpaghettiCount < spaghettiDishes.length && (
+                  <div className="mb-12 mt-4 flex justify-center">
+                    <a
+                      className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                      style={{ textDecoration: 'none' }}
+                      onClick={() => setVisibleSpaghettiCount(prev => prev + 3)}
+                    >
+                      {t('view_more')}
+                    </a>
+                  </div>
+                )}
+                {visibleSpaghettiCount >= spaghettiDishes.length && visibleSpaghettiCount > 3 && (
+                  <div className="mb-12 mt-4 flex justify-center">
+                    <a
+                      className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
+                      style={{ textDecoration: 'none' }}
+                      onClick={() => setVisibleSpaghettiCount(3)}
+                    >
+                      {t('collapse')}
+                    </a>
+                  </div>
+                )}
               </div>
-              {spaghettiDishes.length > 3 && visibleSpaghettiCount < spaghettiDishes.length && (
-                <div className="mb-12 mt-4 flex justify-center">
-                  <a
-                    className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
-                    style={{ textDecoration: 'none' }}
-                    onClick={() => setVisibleSpaghettiCount(prev => prev + 3)}
-                  >
-                    Xem thêm
-                  </a>
-                </div>
-              )}
-              {visibleSpaghettiCount >= spaghettiDishes.length && visibleSpaghettiCount > 3 && (
-                <div className="mb-12 mt-4 flex justify-center">
-                  <a
-                    className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
-                    style={{ textDecoration: 'none' }}
-                    onClick={() => setVisibleSpaghettiCount(3)}
-                  >
-                    Thu gọn
-                  </a>
-                </div>
-              )}
             </div>
           )}
           {bakedMacaroniDishes.length > 0 && (
-            <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
-              <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('baked_macaroni') || 'Nui Bỏ Lò'}</h2>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-                {bakedMacaroniDishes.slice(0, visibleBakedMacaroniCount).map(dish => (
-                  <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
-                ))}
+            <div className="w-full px-4 md:px-6">
+              <div className="mx-auto max-w-7xl pb-4">
+                <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('baked_macaroni') || 'Nui Bỏ Lò'}</h2>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+                  {dishes.length === 0
+                    ? Array.from({ length: 6 }).map((_, idx) => <div key={idx} className="h-48 w-full animate-pulse rounded-lg bg-gray-100" />)
+                    : bakedMacaroniDishes
+                        .slice(0, visibleBakedMacaroniCount)
+                        .map(dish => (
+                          <MemoDishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                        ))}
+                </div>
+                {bakedMacaroniDishes.length > 3 && visibleBakedMacaroniCount < bakedMacaroniDishes.length && (
+                  <div className="mb-12 mt-4 flex justify-center">
+                    <a
+                      className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                      style={{ textDecoration: 'none' }}
+                      onClick={() => setVisibleBakedMacaroniCount(prev => prev + 3)}
+                    >
+                      {t('view_more')}
+                    </a>
+                  </div>
+                )}
+                {visibleBakedMacaroniCount >= bakedMacaroniDishes.length && visibleBakedMacaroniCount > 3 && (
+                  <div className="mb-12 mt-4 flex justify-center">
+                    <a
+                      className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
+                      style={{ textDecoration: 'none' }}
+                      onClick={() => setVisibleBakedMacaroniCount(3)}
+                    >
+                      {t('collapse')}
+                    </a>
+                  </div>
+                )}
               </div>
-              {bakedMacaroniDishes.length > 3 && visibleBakedMacaroniCount < bakedMacaroniDishes.length && (
-                <div className="mb-12 mt-4 flex justify-center">
-                  <a
-                    className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
-                    style={{ textDecoration: 'none' }}
-                    onClick={() => setVisibleBakedMacaroniCount(prev => prev + 3)}
-                  >
-                    Xem thêm
-                  </a>
-                </div>
-              )}
-              {visibleBakedMacaroniCount >= bakedMacaroniDishes.length && visibleBakedMacaroniCount > 3 && (
-                <div className="mb-12 mt-4 flex justify-center">
-                  <a
-                    className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
-                    style={{ textDecoration: 'none' }}
-                    onClick={() => setVisibleBakedMacaroniCount(3)}
-                  >
-                    Thu gọn
-                  </a>
-                </div>
-              )}
             </div>
           )}
           {(appetizerDishes.length > 0 || appetizerDishesFallback.length > 0) && (
-            <div className="mx-auto max-w-7xl px-4 pb-4" style={{ marginTop: '-10px' }}>
-              <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('appetizer')}</h2>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-                {(appetizerDishes.length > 0 ? appetizerDishes : appetizerDishesFallback).slice(0, visibleAppetizerCount).map(dish => (
-                  <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
-                ))}
-              </div>
-              {/* Thêm nút Xem thêm cho Khai vị */}
-              {(appetizerDishes.length > 3 || (appetizerDishes.length === 0 && appetizerDishesFallback.length > 3)) &&
-                visibleAppetizerCount < (appetizerDishes.length > 0 ? appetizerDishes.length : appetizerDishesFallback.length) && (
+            <div className="w-full px-4 md:px-6">
+              <div className="mx-auto max-w-7xl pb-4">
+                <h2 className="mb-6 text-3xl font-extrabold text-black drop-shadow-lg">{t('appetizer')}</h2>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+                  {dishes.length === 0
+                    ? Array.from({ length: 6 }).map((_, idx) => <div key={idx} className="h-48 w-full animate-pulse rounded-lg bg-gray-100" />)
+                    : (appetizerDishes.length > 0 ? appetizerDishes : appetizerDishesFallback)
+                        .slice(0, visibleAppetizerCount)
+                        .map(dish => (
+                          <MemoDishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                        ))}
+                </div>
+                {visibleAppetizerCount < (appetizerDishes.length > 0 ? appetizerDishes.length : appetizerDishesFallback.length) && (
                   <div className="mb-12 mt-4 flex justify-center">
                     <a
                       className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
                       style={{ textDecoration: 'none' }}
                       onClick={() => setVisibleAppetizerCount(prev => prev + 3)}
                     >
-                      Xem thêm
+                      {t('view_more')}
                     </a>
                   </div>
                 )}
-              {visibleAppetizerCount >= (appetizerDishes.length > 0 ? appetizerDishes.length : appetizerDishesFallback.length) &&
-                visibleAppetizerCount > 3 && (
-                  <div className="mb-12 mt-4 flex justify-center">
-                    <a
-                      className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
-                      style={{ textDecoration: 'none' }}
-                      onClick={() => setVisibleAppetizerCount(3)}
-                    >
-                      Thu gọn
-                    </a>
-                  </div>
-                )}
-              {/* Thêm phần hiển thị salad nếu có */}
-              {saladDishes.length > 0 && (
-                <>
-                  <h3 className="mb-4 mt-8 text-2xl font-bold text-black">{t('salad') || 'Salad'}</h3>
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-                    {saladDishes.slice(0, visibleSaladCount).map(dish => (
-                      <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
-                    ))}
-                  </div>
-                  {saladDishes.length > 3 && visibleSaladCount < saladDishes.length && (
-                    <div className="mb-6 mt-4 flex justify-center">
-                      <a
-                        className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
-                        style={{ textDecoration: 'none' }}
-                        onClick={() => setVisibleSaladCount(prev => prev + 3)}
-                      >
-                        Xem thêm
-                      </a>
-                    </div>
-                  )}
-                  {visibleSaladCount >= saladDishes.length && visibleSaladCount > 3 && (
-                    <div className="mb-6 mt-4 flex justify-center">
+                {visibleAppetizerCount >= (appetizerDishes.length > 0 ? appetizerDishes.length : appetizerDishesFallback.length) &&
+                  visibleAppetizerCount > 3 && (
+                    <div className="mb-12 mt-4 flex justify-center">
                       <a
                         className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
                         style={{ textDecoration: 'none' }}
-                        onClick={() => setVisibleSaladCount(3)}
+                        onClick={() => setVisibleAppetizerCount(3)}
                       >
-                        Thu gọn
+                        {t('collapse')}
                       </a>
                     </div>
                   )}
-                </>
-              )}
-              {/* Thêm phần hiển thị thức uống nếu có */}
-              {drinkDishes.length > 0 && (
-                <>
-                  <h3 className="mb-4 mt-8 text-2xl font-bold text-black">{t('drink') || 'Thức uống'}</h3>
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-                    {drinkDishes.slice(0, visibleDrinkCount).map(dish => (
-                      <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
-                    ))}
-                  </div>
-                  {drinkDishes.length > 3 && visibleDrinkCount < drinkDishes.length && (
-                    <div className="mb-6 mt-4 flex justify-center">
-                      <a
-                        className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
-                        style={{ textDecoration: 'none' }}
-                        onClick={() => setVisibleDrinkCount(prev => prev + 3)}
-                      >
-                        Xem thêm
-                      </a>
+                {/* Thêm phần hiển thị salad nếu có */}
+                {saladDishes.length > 0 && (
+                  <>
+                    <h3 className="mb-4 mt-8 text-2xl font-bold text-black">{t('salad') || 'Salad'}</h3>
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+                      {saladDishes.slice(0, visibleSaladCount).map(dish => (
+                        <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                      ))}
                     </div>
-                  )}
-                </>
-              )}
+                    {saladDishes.length > 3 && visibleSaladCount < saladDishes.length && (
+                      <div className="mb-6 mt-4 flex justify-center">
+                        <a
+                          className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                          style={{ textDecoration: 'none' }}
+                          onClick={() => setVisibleSaladCount(prev => prev + 3)}
+                        >
+                          {t('view_more')}
+                        </a>
+                      </div>
+                    )}
+                    {visibleSaladCount >= saladDishes.length && visibleSaladCount > 3 && (
+                      <div className="mb-6 mt-4 flex justify-center">
+                        <a
+                          className="view-all cursor-pointer rounded-full border border-gray-400 px-6 py-2 text-base font-semibold text-gray-600 transition hover:bg-gray-400 hover:text-white"
+                          style={{ textDecoration: 'none' }}
+                          onClick={() => setVisibleSaladCount(3)}
+                        >
+                          {t('collapse')}
+                        </a>
+                      </div>
+                    )}
+                  </>
+                )}
+                {/* Thêm phần hiển thị thức uống nếu có */}
+                {drinkDishes.length > 0 && (
+                  <>
+                    <h3 className="mb-4 mt-8 text-2xl font-bold text-black">{t('drink') || 'Thức uống'}</h3>
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
+                      {drinkDishes.slice(0, visibleDrinkCount).map(dish => (
+                        <DishCard key={dish.id} dish={dish} categoryName={categories.find(cat => cat.id === dish.categoryId)?.name || ''} />
+                      ))}
+                    </div>
+                    {drinkDishes.length > 3 && visibleDrinkCount < drinkDishes.length && (
+                      <div className="mb-6 mt-4 flex justify-center">
+                        <a
+                          className="view-all cursor-pointer rounded-full border border-[#C92A15] px-6 py-2 text-base font-semibold text-[#C92A15] transition hover:bg-[#C92A15] hover:text-white"
+                          style={{ textDecoration: 'none' }}
+                          onClick={() => setVisibleDrinkCount(prev => prev + 3)}
+                        >
+                          {t('view_more')}
+                        </a>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           )}
         </>

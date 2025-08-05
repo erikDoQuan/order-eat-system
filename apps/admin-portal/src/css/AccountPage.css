@@ -1,7 +1,14 @@
+/* Cho phép cuộn ngang khi bảng bị hẹp */
+.horizontal-scroll {
+  overflow-x: auto;
+  width: 100%;
+}
 .account-container {
   display: flex;
   gap: 32px;
-  margin: 32px 0;
+  margin: 32px auto;
+  max-width: 80rem; /* khớp với max-w-7xl của navbar */
+  width: 100%;
 }
 .account-sidebar {
   min-width: 270px;

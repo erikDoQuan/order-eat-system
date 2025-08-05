@@ -113,11 +113,7 @@ const QuickOrderZaloPayPage: React.FC = () => {
           id: dishId,
           dishId: dishId,
           name:
-            (dish && dish.name) ||
-            (item.dishSnapshot && item.dishSnapshot.name) ||
-            (item.dish && item.dish.name) ||
-            item.name ||
-            'Không rõ tên món',
+            (dish && dish.name) || (item.dishSnapshot && item.dishSnapshot.name) || (item.dish && item.dish.name) || item.name || 'Không rõ tên món',
           quantity: item.quantity,
           price,
           basePrice: item.basePrice || price,
@@ -204,8 +200,18 @@ const QuickOrderZaloPayPage: React.FC = () => {
           // Reset giỏ hàng trước khi chuyển trang
           try {
             clearCart();
-            if (typeof fetchCart === 'function') fetchCart();
-            console.log('✅ Cart cleared and UI updated');
+            console.log('✅ Cart cleared successfully');
+
+            // Đảm bảo UI được cập nhật
+            if (typeof fetchCart === 'function') {
+              await fetchCart();
+              console.log('✅ Cart UI updated');
+            }
+
+            // Thêm delay nhỏ để đảm bảo cart được clear hoàn toàn
+            setTimeout(() => {
+              console.log('✅ Cart clear completed with delay');
+            }, 100);
           } catch (error) {
             console.error('❌ Error clearing cart:', error);
           }
@@ -252,31 +258,49 @@ const QuickOrderZaloPayPage: React.FC = () => {
   return (
     <div className="payment-info-root" style={{ minHeight: '100vh', position: 'relative' }}>
       <AdminSidebar />
-      <div className="payment-info-container" style={{
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: '100%',
-        maxWidth: 900,
-        zIndex: 10,
-        padding: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        <div className="payment-info-grid" style={{ width: '100%', background: '#fff', borderRadius: 18, boxShadow: '0 4px 24px rgba(0,0,0,0.08)', padding: 32, display: 'flex', gap: 32, alignItems: 'center', justifyContent: 'center' }}>
+      <div
+        className="payment-info-container"
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '100%',
+          maxWidth: 900,
+          zIndex: 10,
+          padding: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div
+          className="payment-info-grid"
+          style={{
+            width: '100%',
+            background: '#fff',
+            borderRadius: 18,
+            boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+            padding: 32,
+            display: 'flex',
+            gap: 32,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           {/* Left */}
           <div className="payment-info-left" style={{ flex: 1, minWidth: 320 }}>
             <div className="payment-info-block" style={{ boxShadow: 'none', border: 'none', background: 'transparent', padding: 0 }}>
-              <div className="payment-info-title" style={{ fontSize: 22, marginBottom: 18, color: '#C92A15', textAlign: 'center', letterSpacing: 1 }}>Thông tin đơn hàng nhanh</div>
-              
+              <div className="payment-info-title" style={{ fontSize: 22, marginBottom: 18, color: '#C92A15', textAlign: 'center', letterSpacing: 1 }}>
+                Thông tin đơn hàng nhanh
+              </div>
+
               {/* Thông tin khách hàng */}
               <div className="payment-info-text" style={{ fontSize: 17, marginBottom: 12, textAlign: 'left' }}>
                 <b>Khách:</b> {customer.name === '' ? 'Khách ngoài' : customer.name}
               </div>
               {/* Nếu là khách ngoài thì không hiện số điện thoại */}
-              
+
               {/* Thông tin cửa hàng */}
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
                 <div style={{ minWidth: 110, fontWeight: 600, fontSize: 17 }}>Cửa hàng:</div>
@@ -302,8 +326,14 @@ const QuickOrderZaloPayPage: React.FC = () => {
                     {items.map((item, idx) => {
                       const dishId = item.dishId || item.id;
                       const dish = getDish(dishId);
-                      const name = (dish && dish.name) || (item.dishSnapshot && item.dishSnapshot.name) || (item.dish && item.dish.name) || item.name || 'Không rõ tên món';
-                      const price = (dish && dish.basePrice) ? Number(dish.basePrice) : (typeof item.price === 'number' ? Number(item.price) : getItemPrice(item));
+                      const name =
+                        (dish && dish.name) ||
+                        (item.dishSnapshot && item.dishSnapshot.name) ||
+                        (item.dish && item.dish.name) ||
+                        item.name ||
+                        'Không rõ tên món';
+                      const price =
+                        dish && dish.basePrice ? Number(dish.basePrice) : typeof item.price === 'number' ? Number(item.price) : getItemPrice(item);
                       const quantity = item.quantity || 1;
                       return (
                         <tr key={idx}>
@@ -317,8 +347,12 @@ const QuickOrderZaloPayPage: React.FC = () => {
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colSpan={3} style={{ textAlign: 'right', fontWeight: 600, padding: 6, fontSize: 16, background: '#f1f3f7' }}>Tổng cộng:</td>
-                      <td style={{ textAlign: 'right', fontWeight: 700, color: '#C92A15', padding: 6, fontSize: 17, background: '#f1f3f7' }}>{finalTotal.toLocaleString('vi-VN')}đ</td>
+                      <td colSpan={3} style={{ textAlign: 'right', fontWeight: 600, padding: 6, fontSize: 16, background: '#f1f3f7' }}>
+                        Tổng cộng:
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: 700, color: '#C92A15', padding: 6, fontSize: 17, background: '#f1f3f7' }}>
+                        {finalTotal.toLocaleString('vi-VN')}đ
+                      </td>
                     </tr>
                   </tfoot>
                 </table>
@@ -333,12 +367,36 @@ const QuickOrderZaloPayPage: React.FC = () => {
           </div>
 
           {/* Right */}
-          <div className="payment-info-right" style={{ flex: 1, minWidth: 320, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div className="payment-info-block" style={{ textAlign: 'center', background: '#f4f7fb', borderRadius: 18, padding: 32, minWidth: 320, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <div
+            className="payment-info-right"
+            style={{ flex: 1, minWidth: 320, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <div
+              className="payment-info-block"
+              style={{
+                textAlign: 'center',
+                background: '#f4f7fb',
+                borderRadius: 18,
+                padding: 32,
+                minWidth: 320,
+                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+              }}
+            >
               <div className="payment-info-title" style={{ fontSize: 22, marginBottom: 20, color: '#1976d2' }}>
                 Quét QR để thanh toán
               </div>
-              <div style={{ background: '#fff', borderRadius: 16, padding: 24, minWidth: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 220 }}>
+              <div
+                style={{
+                  background: '#fff',
+                  borderRadius: 16,
+                  padding: 24,
+                  minWidth: 220,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: 220,
+                }}
+              >
                 {loading ? (
                   <div>Đang tạo mã QR ZaloPay...</div>
                 ) : zalopayInfo?.order_url ? (
@@ -352,7 +410,21 @@ const QuickOrderZaloPayPage: React.FC = () => {
                 )}
               </div>
               <div style={{ marginTop: 24 }}>
-                <button onClick={() => navigate(-1)} className="btn-back" style={{ padding: '10px 28px', borderRadius: 8, background: '#C92A15', color: '#fff', fontWeight: 600, fontSize: 16, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', cursor: 'pointer' }}>
+                <button
+                  onClick={() => navigate(-1)}
+                  className="btn-back"
+                  style={{
+                    padding: '10px 28px',
+                    borderRadius: 8,
+                    background: '#C92A15',
+                    color: '#fff',
+                    fontWeight: 600,
+                    fontSize: 16,
+                    border: 'none',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                    cursor: 'pointer',
+                  }}
+                >
                   Quay lại
                 </button>
               </div>

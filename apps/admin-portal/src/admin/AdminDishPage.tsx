@@ -140,19 +140,13 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
 
   // Sửa input giá trong form:
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
     try {
-      // Đảm bảo basePrice chỉ chứa số và là string
+      // Đảm bảo basePrice chỉ chứa số và là string, chỉ gửi nếu có giá trị hợp lệ
       const basePriceString = String(rawBasePrice).replace(/[^\d]/g, '');
-      console.log('Debug - rawBasePrice:', rawBasePrice);
-      console.log('Debug - basePriceString:', basePriceString);
-      console.log('Debug - typeof basePriceString:', typeof basePriceString);
-      console.log('Debug - dishData:', { name, description, basePrice: basePriceString, status, categoryId, imageUrl, typeName });
-      const dishData: any = { name, description, basePrice: basePriceString, status, categoryId, imageUrl, typeName };
-
-      // Log thêm để debug
-      console.log('Debug - Final dishData:', JSON.stringify(dishData, null, 2));
+      const dishData: any = { name, description, status, categoryId, imageUrl, typeName };
+      if (basePriceString && !isNaN(Number(basePriceString))) {
+        dishData.basePrice = basePriceString;
+      }
       // Chỉ gửi categoryId nếu nó có giá trị
       if (!categoryId) {
         delete dishData.categoryId;
@@ -196,7 +190,7 @@ const AdminDishPage: React.FC<AdminDishPageProps> = ({ showAddForm }) => {
       alert(message);
     }
     setSaving(false);
-  };
+  }
 
   const selectedCategory = categories.find(c => c.id === categoryId);
   const showSize =

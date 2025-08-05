@@ -13,6 +13,7 @@ import { Dish } from '../types/dish.type';
 
 import '../css/AccountPage.css';
 
+import Navbar from '../components/Navbar';
 import RatingStars from '../components/RatingStars';
 import ReviewForm from '../components/ReviewForm';
 import axios from '../services/axios';
@@ -357,6 +358,7 @@ export default function AccountPage() {
 
   return (
     <>
+      {/* <Navbar /> */}
       {showNewOrderNotification && (
         <div
           style={{
@@ -489,9 +491,6 @@ export default function AccountPage() {
             <li className={tab === 'info' ? 'active' : ''} onClick={() => setTab('info')}>
               {t('customer_info')}
             </li>
-            <li className={tab === 'address' ? 'active' : ''} onClick={() => setTab('address')}>
-              {t('address_count')}
-            </li>
             <li className={tab === 'history' ? 'active' : ''} onClick={() => setTab('history')}>
               {t('purchase_history')}
             </li>
@@ -568,197 +567,194 @@ export default function AccountPage() {
                       <div style={{ marginTop: '10px' }}>Đang tải đơn hàng...</div>
                     </div>
                   )}
-                  {!ordersLoading &&
-                    (searchResult !== null
-                      ? searchResult
-                      : recentOrders.filter(order => order.status === 'completed' || order.status === 'cancelled')
-                    ).length === 0 && <div className="text-gray-500">Bạn chưa có đơn hàng hoàn thành hoặc đã hủy nào</div>}
-                  <table className="table-recent-orders" style={{ width: '100%', marginTop: 8, tableLayout: 'fixed' }}>
-                    <thead>
-                      <tr>
-                        <th style={{ width: '10%' }}>{t('order_code')}</th>
-                        <th style={{ width: '35%' }}>{t('product')}</th>
-                        <th style={{ width: '15%' }}>{t('order_date')}</th>
-                        <th style={{ width: '15%' }}>{t('total_amount')}</th>
-                        <th style={{ width: 400 }}>{t('status')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {displayedOrders.map(order => {
-                        const items = order.orderItems?.items || [];
-                        const dishNames = items
-                          .map(
-                            (item: any) => item.dishSnapshot?.name || item.name || getDishName(item.dishId) || item.dish?.name || 'Không rõ tên món',
-                          )
-                          .join(', ');
-                        const orderNumber = order.order_number || order.orderNumber || '-';
-                        const orderLink = `/orders/${order.id}`;
-                        const date = new Date(order.createdAt);
-                        const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                        let statusText = '';
-                        if (order.status === 'cancelled') statusText = t('order_cancelled');
-                        else if (order.status === 'completed') statusText = t('order_completed');
-                        else if (order.status === 'confirmed') statusText = t('order_confirmed');
-                        else if (order.status === 'pending') statusText = t('order_pending');
-                        else if (order.status === 'delivering') statusText = 'Đang giao hàng';
-                        else statusText = order.status;
-                        const isCompleted = ['completed', 'hoàn thành'].includes((order.status || '').toLowerCase());
-                        return (
-                          <React.Fragment key={order.id}>
-                            <tr>
-                              <td>
-                                <Link to={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>
-                                  {orderNumber}
-                                </Link>
-                              </td>
-                              <td style={{ whiteSpace: 'pre-line' }}>{dishNames}</td>
-                              <td className="order-date">{dateStr}</td>
-                              <td>{calculateOrderTotal(order).toLocaleString('vi-VN')}₫</td>
-                              <td
-                                style={{
-                                  width: 400,
-                                  position: 'relative',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'flex-start',
-                                  fontSize: 16,
-                                  lineHeight: 1.5,
-                                  paddingLeft: 12,
-                                  paddingRight: 12,
-                                  boxSizing: 'border-box',
-                                  whiteSpace: 'nowrap',
-                                }}
-                              >
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                  <span
-                                    style={{
-                                      fontWeight: 500,
-                                      whiteSpace: 'nowrap',
-                                      lineHeight: '1.5',
-                                      fontSize: 16,
-                                      marginLeft: 8,
-                                      color: statusText === 'Hoàn thành' ? '#22c55e' : statusText === 'Đã hủy' ? '#dc2626' : undefined,
-                                    }}
-                                  >
-                                    {statusText}
-                                  </span>
-                                  {order.status === 'cancelled' && order.cancellationReason && (
+                  {!ordersLoading && displayedOrders.length === 0 && (
+                    <div className="text-gray-500">Bạn chưa có đơn hàng hoàn thành hoặc đã hủy nào</div>
+                  )}
+                  {!ordersLoading && displayedOrders.length > 0 && (
+                    <table className="table-recent-orders" style={{ width: '100%', marginTop: 8, tableLayout: 'fixed' }}>
+                      <thead>
+                        <tr>
+                          <th style={{ width: '8%' }}>{t('order_code')}</th>
+                          <th style={{ width: '30%' }}>{t('product')}</th>
+                          <th style={{ width: '15%' }}>{t('order_date')}</th>
+                          <th style={{ width: '15%' }}>{t('total_amount')}</th>
+                          <th style={{ width: '32%' }}>{t('status')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {displayedOrders.map(order => {
+                          const items = order.orderItems?.items || [];
+                          const dishNames = items
+                            .map(
+                              (item: any) =>
+                                item.dishSnapshot?.name || item.name || getDishName(item.dishId) || item.dish?.name || 'Không rõ tên món',
+                            )
+                            .join(', ');
+                          const orderNumber = order.order_number || order.orderNumber || '-';
+                          const orderLink = `/orders/${order.id}`;
+                          const date = new Date(order.createdAt);
+                          const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                          let statusText = '';
+                          if (order.status === 'cancelled') statusText = t('order_cancelled');
+                          else if (order.status === 'completed') statusText = t('order_completed');
+                          else if (order.status === 'confirmed') statusText = t('order_confirmed');
+                          else if (order.status === 'pending') statusText = t('order_pending');
+                          else if (order.status === 'delivering') statusText = 'Đang giao hàng';
+                          else statusText = order.status;
+                          const isCompleted = ['completed', 'hoàn thành'].includes((order.status || '').toLowerCase());
+                          return (
+                            <React.Fragment key={order.id}>
+                              <tr>
+                                <td>
+                                  <Link to={orderLink} style={{ color: '#1787e0', textDecoration: 'underline', cursor: 'pointer' }}>
+                                    {orderNumber}
+                                  </Link>
+                                </td>
+                                <td style={{ whiteSpace: 'pre-line' }}>{dishNames}</td>
+                                <td className="order-date">{dateStr}</td>
+                                <td>{calculateOrderTotal(order).toLocaleString('vi-VN')}₫</td>
+                                <td
+                                  style={{
+                                    position: 'relative',
+                                    fontSize: 16,
+                                    lineHeight: 1.5,
+                                    paddingLeft: 12,
+                                    paddingRight: 12,
+                                    boxSizing: 'border-box',
+                                    width: '100%',
+                                    display: 'flex',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                     <span
                                       style={{
-                                        fontSize: 12,
-                                        color: '#666',
-                                        marginLeft: 8,
-                                        fontStyle: 'italic',
-                                      }}
-                                    >
-                                      ({order.cancellationReason})
-                                    </span>
-                                  )}
-                                </div>
-                                {isCompleted && order.reviews && order.reviews.length > 0 && (
-                                  <>
-                                    <a
-                                      href="#"
-                                      style={{
-                                        color: '#2563eb',
-                                        textDecoration: 'underline',
                                         fontWeight: 500,
-                                        fontSize: 14,
-                                        cursor: 'pointer',
-                                        display: 'inline-block',
-                                        whiteSpace: 'nowrap',
-                                        marginLeft: 48,
                                         lineHeight: '1.5',
-                                      }}
-                                      onClick={e => {
-                                        e.preventDefault();
-                                        setViewingReviewOrderId(order.id);
-                                      }}
-                                    >
-                                      {t('view_review')}
-                                    </a>
-                                  </>
-                                )}
-                              </td>
-                            </tr>
-                            {isCompleted && (!order.reviews || order.reviews.length === 0) && (
-                              <tr>
-                                <td colSpan={5}>
-                                  <ReviewForm
-                                    orderId={order.id}
-                                    existingReview={order.reviews?.[0]}
-                                    onSubmit={async ({ orderId, rating, comment }) => {
-                                      await createReview({
-                                        orderId,
-                                        rating,
-                                        comment,
-                                        userId: user?.id,
-                                      });
-                                    }}
-                                    onSuccess={async () => {
-                                      setShowThankYou(true);
-                                      setThankYouOrderId(order.id);
-                                      if (user?.id) {
-                                        const updatedOrders = await getOrdersByUserId(user.id);
-                                        setRecentOrders(updatedOrders);
-                                      }
-                                      setTimeout(() => {
-                                        setShowThankYou(false);
-                                        setThankYouOrderId(null);
-                                      }, 2000);
-                                    }}
-                                  />
-                                  {showThankYou && thankYouOrderId === order.id && (
-                                    <div
-                                      style={{
-                                        marginTop: 8,
-                                        color: '#17823c',
-                                        fontWeight: 600,
                                         fontSize: 16,
-                                        background: '#e8f5e9',
-                                        borderRadius: 8,
-                                        padding: '8px 16px',
-                                        display: 'inline-block',
+                                        marginLeft: 8,
+                                        color: statusText === 'Hoàn thành' ? '#22c55e' : statusText === 'Đã hủy' ? '#dc2626' : undefined,
                                       }}
                                     >
-                                      Cảm ơn bạn đã đánh giá!
-                                    </div>
+                                      {statusText}
+                                    </span>
+                                    {order.status === 'cancelled' && order.cancellationReason && (
+                                      <span
+                                        style={{
+                                          fontSize: 12,
+                                          color: '#666',
+                                          marginLeft: 8,
+                                          fontStyle: 'italic',
+                                        }}
+                                      >
+                                        ({order.cancellationReason})
+                                      </span>
+                                    )}
+                                  </div>
+                                  {isCompleted && order.reviews && order.reviews.length > 0 && (
+                                    <>
+                                      <a
+                                        href="#"
+                                        style={{
+                                          color: '#2563eb',
+                                          textDecoration: 'underline',
+                                          fontWeight: 500,
+                                          fontSize: 14,
+                                          cursor: 'pointer',
+                                          display: 'inline-block',
+                                          marginLeft: 48,
+                                          lineHeight: '1.5',
+                                        }}
+                                        onClick={e => {
+                                          e.preventDefault();
+                                          setViewingReviewOrderId(order.id);
+                                        }}
+                                      >
+                                        {t('view_review')}
+                                      </a>
+                                    </>
                                   )}
                                 </td>
                               </tr>
-                            )}
-                            {isCompleted && order.reviews && order.reviews.length > 0 && viewingReviewOrderId === order.id && (
-                              <tr>
-                                <td colSpan={5}>
-                                  <div style={{ width: '100%', margin: '12px 0 0 0', position: 'relative' }}>
-                                    <button
-                                      type="button"
-                                      onClick={() => setViewingReviewOrderId(null)}
-                                      style={{
-                                        position: 'absolute',
-                                        top: 4,
-                                        right: 4,
-                                        background: 'transparent',
-                                        border: 'none',
-                                        fontSize: 20,
-                                        color: '#888',
-                                        cursor: 'pointer',
-                                        zIndex: 1,
+                              {isCompleted && (!order.reviews || order.reviews.length === 0) && (
+                                <tr>
+                                  <td colSpan={5}>
+                                    <ReviewForm
+                                      orderId={order.id}
+                                      existingReview={order.reviews?.[0]}
+                                      onSubmit={async ({ orderId, rating, comment }) => {
+                                        await createReview({
+                                          orderId,
+                                          rating,
+                                          comment,
+                                          userId: user?.id,
+                                        });
                                       }}
-                                      aria-label="Đóng"
-                                    >
-                                      ×
-                                    </button>
-                                    <ReviewForm existingReview={order.reviews[0]} viewOnly={true} />
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                          </React.Fragment>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                                      onSuccess={async () => {
+                                        setShowThankYou(true);
+                                        setThankYouOrderId(order.id);
+                                        if (user?.id) {
+                                          const updatedOrders = await getOrdersByUserId(user.id);
+                                          setRecentOrders(updatedOrders);
+                                        }
+                                        setTimeout(() => {
+                                          setShowThankYou(false);
+                                          setThankYouOrderId(null);
+                                        }, 2000);
+                                      }}
+                                    />
+                                    {showThankYou && thankYouOrderId === order.id && (
+                                      <div
+                                        style={{
+                                          marginTop: 8,
+                                          color: '#17823c',
+                                          fontWeight: 600,
+                                          fontSize: 16,
+                                          background: '#e8f5e9',
+                                          borderRadius: 8,
+                                          padding: '8px 16px',
+                                          display: 'inline-block',
+                                        }}
+                                      >
+                                        Cảm ơn bạn đã đánh giá!
+                                      </div>
+                                    )}
+                                  </td>
+                                </tr>
+                              )}
+                              {isCompleted && order.reviews && order.reviews.length > 0 && viewingReviewOrderId === order.id && (
+                                <tr>
+                                  <td colSpan={5}>
+                                    <div style={{ width: '100%', margin: '12px 0 0 0', position: 'relative' }}>
+                                      <button
+                                        type="button"
+                                        onClick={() => setViewingReviewOrderId(null)}
+                                        style={{
+                                          position: 'absolute',
+                                          top: 4,
+                                          right: 4,
+                                          background: 'transparent',
+                                          border: 'none',
+                                          fontSize: 20,
+                                          color: '#888',
+                                          cursor: 'pointer',
+                                          zIndex: 1,
+                                        }}
+                                        aria-label="Đóng"
+                                      >
+                                        ×
+                                      </button>
+                                      <ReviewForm existingReview={order.reviews[0]} viewOnly={true} />
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
                   {totalPages > 1 && (
                     <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16, gap: 8, alignItems: 'center' }}>
                       {getPaginationRange(currentPage, totalPages).map((page, index) => (

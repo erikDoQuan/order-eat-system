@@ -139,7 +139,7 @@ export class EmailService {
     const mailOptions = {
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       to: email,
-      subject: 'Thanh toán thành công - Bếp Của Mẹ',
+      subject: `Thanh toán thành công đơn hàng #${orderNumber} - Bếp Của Mẹ`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: #C92A15; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">

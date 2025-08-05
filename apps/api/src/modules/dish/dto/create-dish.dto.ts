@@ -20,10 +20,11 @@ export class CreateDishDto {
   @IsNotEmpty()
   name: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Giá gốc của món ăn',
     example: '189000',
   })
+  @IsOptional()
   @Transform(({ value }) => {
     if (typeof value === 'string') {
       // Loại bỏ tất cả ký tự không phải số
@@ -31,7 +32,7 @@ export class CreateDishDto {
     }
     return String(value || 0);
   })
-  basePrice: string;
+  basePrice?: string;
 
   @ApiProperty({ format: 'uuid', description: 'ID người tạo' })
   @IsUUID()

@@ -87,27 +87,45 @@ const Footer: React.FC = () => {
                 // Map category name to navbar format
                 const categoryName = (cat.nameLocalized || cat.name).toLowerCase();
                 let path = '/';
+                let translationKey = '';
 
                 if (categoryName.includes('pizza')) {
                   path = '/?category=pizza';
+                  translationKey = 'pizza';
                 } else if (categoryName.includes('spaghetti') || categoryName.includes('mỳ ý')) {
                   path = '/?category=spaghetti';
+                  translationKey = 'spaghetti';
                 } else if (categoryName.includes('nui bỏ lò') || categoryName.includes('baked macaroni')) {
                   path = '/?category=baked_macaroni';
+                  translationKey = 'baked_macaroni';
                 } else if (categoryName.includes('gà') || categoryName.includes('chicken')) {
                   path = '/?category=chicken';
+                  translationKey = 'chicken';
                 } else if (categoryName.includes('khai vị') || categoryName.includes('appetizer')) {
                   path = '/?category=appetizer';
+                  translationKey = 'appetizer';
                 } else if (categoryName.includes('salad')) {
                   path = '/?category=salad';
+                  translationKey = 'salad';
                 } else if (categoryName.includes('drink') || categoryName.includes('thức uống')) {
                   path = '/?category=drink';
+                  translationKey = 'drink';
                 }
 
                 return (
-                  <li key={cat.id}>
+                  <li key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: 'white',
+                        marginRight: 8,
+                      }}
+                    />
                     <Link to={path} style={{ color: 'white', textDecoration: 'none' }}>
-                      {cat.nameLocalized || cat.name}
+                      {translationKey ? t(translationKey) : cat.nameLocalized || cat.name}
                     </Link>
                   </li>
                 );

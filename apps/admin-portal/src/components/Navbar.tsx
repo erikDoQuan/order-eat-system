@@ -172,6 +172,7 @@ export default function Navbar() {
     {
       label: t('pizza'),
       path: '/?category=pizza',
+      category: 'pizza',
       dropdown: [
         { label: t('seafood_pizza'), path: '/?category=pizza&type=seafood' },
         { label: t('traditional_pizza'), path: '/?category=pizza&type=traditional' },
@@ -182,28 +183,41 @@ export default function Navbar() {
     {
       label: t('spaghetti'),
       path: '/?category=spaghetti',
+      category: 'spaghetti',
     },
     {
       label: t('baked_macaroni'),
       path: '/?category=baked_macaroni',
+      category: 'baked_macaroni',
     },
     {
       label: t('chicken'),
       path: '/?category=chicken',
+      category: 'chicken',
     },
     {
       label: t('appetizer'),
       path: '/?category=appetizer',
+      category: 'appetizer',
     },
     {
       label: t('salad'),
       path: '/?category=salad',
+      category: 'salad',
     },
     {
       label: t('drink'),
       path: '/?category=drink',
+      category: 'drink',
     },
   ];
+
+  // Function để kiểm tra active state
+  const isActiveLink = (item: any) => {
+    const urlParams = new URLSearchParams(location.search);
+    const currentCategory = urlParams.get('category');
+    return currentCategory === item.category;
+  };
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-transparent bg-white shadow-lg" style={{ boxShadow: '0 2px 12px 0 #C92A1520' }}>
@@ -332,7 +346,10 @@ export default function Navbar() {
               {navItems.map(item =>
                 item.dropdown ? (
                   <li key={item.label} className="group relative">
-                    <button type="button" className="group relative flex items-center rounded-lg px-3 py-1.5 transition hover:bg-[#a01f10]">
+                    <button
+                      type="button"
+                      className={`group relative flex items-center rounded-lg px-3 py-1.5 transition hover:bg-[#a01f10] ${isActiveLink(item) ? 'bg-[#a01f10] font-bold' : ''}`}
+                    >
                       {item.label}
                       <svg className="ml-1 h-4 w-4" fill="none" stroke="#fff" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -364,9 +381,7 @@ export default function Navbar() {
                     <NavLink
                       to={item.path}
                       end={item.path === '/'}
-                      className={({ isActive }) =>
-                        `group relative rounded-xl px-3 py-1.5 transition hover:bg-[#a01f10] ${isActive ? 'font-bold text-white' : 'text-white'}`
-                      }
+                      className={`group relative rounded-xl px-3 py-1.5 transition hover:bg-[#a01f10] ${isActiveLink(item) ? 'bg-[#a01f10] font-bold' : 'text-white'}`}
                     >
                       {item.label}
                       <span className="absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 transform whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
@@ -402,7 +417,7 @@ export default function Navbar() {
                         item.dropdown ? (
                           <li key={item.label} className="w-full">
                             <button
-                              className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-base font-bold text-white hover:bg-white/10 focus:outline-none"
+                              className={`flex w-full items-center justify-between rounded px-3 py-2 text-left text-base font-bold text-white hover:bg-white/10 focus:outline-none ${isActiveLink(item) ? 'bg-white/20' : ''}`}
                               onClick={() => setOpenDropdown(openDropdown === item.label ? null : item.label)}
                               type="button"
                             >
@@ -439,7 +454,7 @@ export default function Navbar() {
                             <NavLink
                               to={item.path}
                               end={item.path === '/'}
-                              className="block w-full rounded px-3 py-2 text-left text-base font-semibold text-white hover:bg-white/10"
+                              className={`block w-full rounded px-3 py-2 text-left text-base font-semibold text-white hover:bg-white/10 ${isActiveLink(item) ? 'bg-white/20 font-bold' : ''}`}
                               onClick={() => setShowMobileMenu(false)}
                             >
                               {item.label}
@@ -453,7 +468,7 @@ export default function Navbar() {
               </>
             )}
 
-            {/* Giỏ hàng nằm phía cuối bên phải (ĐÃ SỬA: thêm border-radius đẹp) */}
+            {/* Giỏ hàng nằm phía cuối bên phải */}
             <div
               className="ml-auto mr-4 flex items-center gap-0 rounded-full border-2 border-white bg-white px-6 py-2 transition hover:shadow-lg"
               style={{ cursor: 'pointer', position: 'relative' }}
@@ -497,7 +512,9 @@ export default function Navbar() {
                   </>
                 )}
               </div>
-              <span className="text-sm font-bold text-[#a01f10]">{t('cart')}</span>
+              <span className="text-sm font-bold text-[#a01f10]" style={{ marginLeft: '8px' }}>
+                {t('cart')}
+              </span>
             </div>
           </div>
         </div>

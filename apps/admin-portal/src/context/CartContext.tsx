@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import axios from 'axios';
+
 import type { Dish } from '../types/dish.type';
 import { AuthContext } from './AuthContext';
 
@@ -77,23 +78,24 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (userCartRaw) userCart = JSON.parse(userCartRaw);
       } catch {}
       // Nếu có guestCart và (chưa có userCart hoặc muốn merge)
-      if (guestCart && (!userCart || (guestCart.orderItems?.items?.length > 0))) {
+      if (guestCart && (!userCart || guestCart.orderItems?.items?.length > 0)) {
         // Merge items nếu userCart đã có
         let mergedItems: CartItem[] = [];
         const guestItems = guestCart.orderItems && Array.isArray(guestCart.orderItems.items) ? guestCart.orderItems.items : [];
         if (userCart && userCart.orderItems?.items) {
           // Gộp các món không trùng lặp (theo dishId, size, base, note)
-          const normalize = (v: any) => v === undefined || v === null || (typeof v === 'string' && v.trim() === '') ? '' : v;
+          const normalize = (v: any) => (v === undefined || v === null || (typeof v === 'string' && v.trim() === '') ? '' : v);
           mergedItems = [...userCart.orderItems.items];
           guestItems.forEach(guestItem => {
-            const idx = mergedItems.findIndex(i =>
-              i.dishId === guestItem.dishId &&
-              normalize(i.size) === normalize(guestItem.size) &&
-              normalize(i.base) === normalize(guestItem.base) &&
-              normalize(i.note) === normalize(guestItem.note)
+            const idx = mergedItems.findIndex(
+              i =>
+                i.dishId === guestItem.dishId &&
+                normalize(i.size) === normalize(guestItem.size) &&
+                normalize(i.base) === normalize(guestItem.base) &&
+                normalize(i.note) === normalize(guestItem.note),
             );
-            if (idx > -1) {
-              mergedItems[idx].quantity += guestItem.quantity;
+            if (idx > -1 && mergedItems[idx]) {
+              mergedItems[idx]!.quantity += guestItem.quantity;
             } else {
               mergedItems.push(guestItem);
             }
@@ -152,24 +154,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setOrderItems(cartObj.orderItems?.items || []);
   };
 
-  const addToCart = async (
-    dishId: string,
-    options?: { quantity?: number; size?: 'small' | 'medium' | 'large'; base?: string; note?: string }
-  ) => {
+  const addToCart = async (dishId: string, options?: { quantity?: number; size?: 'small' | 'medium' | 'large'; base?: string; note?: string }) => {
     const { quantity = 1, size, base, note } = options || {};
-    let items: CartItem[] = cart && cart.orderItems && Array.isArray(cart.orderItems.items)
-      ? [...cart.orderItems.items]
-      : [];
-    const normalize = (v: any) =>
-      v === undefined || v === null || (typeof v === 'string' && v.trim() === '') ? '' : v;
-    const idx = items.findIndex(i =>
-      i.dishId === dishId &&
-      normalize(i.size) === normalize(size) &&
-      normalize(i.base) === normalize(base) &&
-      normalize(i.note) === normalize(note)
+    let items: CartItem[] = cart && cart.orderItems && Array.isArray(cart.orderItems.items) ? [...cart.orderItems.items] : [];
+    const normalize = (v: any) => (v === undefined || v === null || (typeof v === 'string' && v.trim() === '') ? '' : v);
+    const idx = items.findIndex(
+      i =>
+        i.dishId === dishId &&
+        normalize(i.size) === normalize(size) &&
+        normalize(i.base) === normalize(base) &&
+        normalize(i.note) === normalize(note),
     );
-    if (idx > -1) {
-      items[idx].quantity += quantity;
+    if (idx > -1 && items[idx]) {
+      items[idx]!.quantity += quantity;
     } else {
       const newItem: CartItem = {
         dishId,
@@ -203,16 +200,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const removeFromCart = async (itemToRemove: { dishId: string; size?: string; base?: string; note?: string }) => {
     if (!cart || !cart.orderItems || !Array.isArray(cart.orderItems.items)) return;
-    const items: CartItem[] = cart && cart.orderItems && Array.isArray(cart.orderItems.items)
-      ? [...cart.orderItems.items]
-      : [];
-    const normalize = (v: any) => (v === null || v === undefined || (typeof v === 'string' && v.trim() === '')) ? undefined : v;
-    const filteredItems = items.filter(i => !(
-      i.dishId === itemToRemove.dishId &&
-      normalize(i.size) === normalize(itemToRemove.size) &&
-      normalize(i.base) === normalize(itemToRemove.base) &&
-      normalize(i.note) === normalize(itemToRemove.note)
-    ));
+    const items: CartItem[] = cart && cart.orderItems && Array.isArray(cart.orderItems.items) ? [...cart.orderItems.items] : [];
+    const normalize = (v: any) => (v === null || v === undefined || (typeof v === 'string' && v.trim() === '') ? undefined : v);
+    const filteredItems = items.filter(
+      i =>
+        !(
+          i.dishId === itemToRemove.dishId &&
+          normalize(i.size) === normalize(itemToRemove.size) &&
+          normalize(i.base) === normalize(itemToRemove.base) &&
+          normalize(i.note) === normalize(itemToRemove.note)
+        ),
+    );
     let totalAmount = 0;
     for (const item of filteredItems) {
       if (!item || !item.dishId || !Array.isArray(dishes)) continue;
@@ -235,18 +233,37 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clearCart = () => {
     localStorage.removeItem(CART_KEY);
+    localStorage.removeItem(GUEST_CART_KEY);
     setCart(null);
     setOrderItems([]);
   };
 
   const removeItemFromOrder = async () => {};
-  const fetchCartPublic = async () => { await fetchCart(); };
+  const fetchCartPublic = async () => {
+    await fetchCart();
+  };
 
-  useEffect(() => { fetchCart(); }, [userId]);
+  useEffect(() => {
+    fetchCart();
+  }, [userId]);
 
   return (
-    <CartContext.Provider value={{ cart, orders, addToCart, removeFromCart, fetchCart, clearCart, removeItemFromOrder, fetchCartPublic, orderItems, setOrderItems, dishes }}>
+    <CartContext.Provider
+      value={{
+        cart,
+        orders,
+        addToCart,
+        removeFromCart,
+        fetchCart,
+        clearCart,
+        removeItemFromOrder,
+        fetchCartPublic,
+        orderItems,
+        setOrderItems,
+        dishes,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );
-}; 
+};

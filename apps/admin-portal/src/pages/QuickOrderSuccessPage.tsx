@@ -15,7 +15,7 @@ const QuickOrderSuccessPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
-  const { clearCart } = useCart();
+  const { clearCart, fetchCart } = useCart();
   const [dishes, setDishes] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [orderData, setOrderData] = useState<any>(null);
@@ -75,6 +75,17 @@ const QuickOrderSuccessPage: React.FC = () => {
       try {
         clearCart();
         console.log('✅ QuickOrderSuccessPage: Cart cleared successfully');
+
+        // Đảm bảo UI được cập nhật
+        if (typeof fetchCart === 'function') {
+          fetchCart()
+            .then(() => {
+              console.log('✅ QuickOrderSuccessPage: Cart UI updated');
+            })
+            .catch(error => {
+              console.error('❌ QuickOrderSuccessPage: Error updating cart UI:', error);
+            });
+        }
       } catch (error) {
         console.error('❌ QuickOrderSuccessPage: Error clearing cart:', error);
       }
@@ -88,7 +99,7 @@ const QuickOrderSuccessPage: React.FC = () => {
       hasClearedCart.current = true;
       console.log('✅ QuickOrderSuccessPage: Cart clear flag set');
     }
-  }, []);
+  }, [clearCart, fetchCart]);
 
   const getDishNameById = (dishId: string) => {
     const dish = dishes.find(d => d.id === dishId);
@@ -117,12 +128,7 @@ const QuickOrderSuccessPage: React.FC = () => {
       const dish = dishes.find(d => d.id === item.dishId);
 
       // Try all possible sources for price, in order
-      price =
-        Number(item.basePrice) ||
-        Number(dish?.basePrice) ||
-        Number(item.dishSnapshot?.price) ||
-        Number(item.dish?.price) ||
-        0;
+      price = Number(item.basePrice) || Number(dish?.basePrice) || Number(item.dishSnapshot?.price) || Number(item.dish?.price) || 0;
       if (!price && item.price) {
         if (quantity > 0) {
           price = Number(item.price) / quantity;
@@ -132,12 +138,7 @@ const QuickOrderSuccessPage: React.FC = () => {
       }
 
       return {
-        name:
-          getDishNameById(item.dishId) ||
-          item.dishSnapshot?.name ||
-          item.dish?.name ||
-          item.name ||
-          'Không rõ tên món',
+        name: getDishNameById(item.dishId) || item.dishSnapshot?.name || item.dish?.name || item.name || 'Không rõ tên món',
         quantity: quantity,
         price: price,
         total: price * quantity,
@@ -154,26 +155,17 @@ const QuickOrderSuccessPage: React.FC = () => {
     // Lấy thông tin customer từ deliveryAddress
     const deliveryAddress = orderData.deliveryAddress || {};
     const customerName = deliveryAddress.name || getUserName(orderData.userId);
-    const customerPhone =
-      deliveryAddress.phone ||
-      orderData.customerPhone ||
-      users.find(u => u.id === orderData.userId)?.phoneNumber || '';
+    const customerPhone = deliveryAddress.phone || orderData.customerPhone || users.find(u => u.id === orderData.userId)?.phoneNumber || '';
     const customerAddress = deliveryAddress.address || '';
 
     const date = orderData.createdAt ? new Date(orderData.createdAt).toLocaleDateString('vi-VN') : '';
     const adminId = orderData.updatedBy || '';
 
-    const url = `/bill/preview?id=${orderData.id}&customer=${encodeURIComponent(
-      customerName,
-    )}&items=${encodeURIComponent(
+    const url = `/bill/preview?id=${orderData.id}&customer=${encodeURIComponent(customerName)}&items=${encodeURIComponent(
       JSON.stringify(items),
-    )}&total=${total}&customerAddress=${encodeURIComponent(
-      customerAddress,
-    )}&customerPhone=${encodeURIComponent(
+    )}&total=${total}&customerAddress=${encodeURIComponent(customerAddress)}&customerPhone=${encodeURIComponent(
       customerPhone,
-    )}&date=${encodeURIComponent(
-      date,
-    )}&order_number=${
+    )}&date=${encodeURIComponent(date)}&order_number=${
       orderData.order_number || orderData.orderNumber || ''
     }&adminId=${encodeURIComponent(adminId)}&paymentMethod=${paymentMethod}`;
     navigate(url);
