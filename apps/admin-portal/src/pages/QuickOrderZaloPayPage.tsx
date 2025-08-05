@@ -13,7 +13,7 @@ const QuickOrderZaloPayPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
-  const { clearCart } = useCart();
+  const { clearCart, fetchCart } = useCart();
   const state = (location.state as any) || {};
 
   const items = state.items || [];
@@ -102,13 +102,25 @@ const QuickOrderZaloPayPage: React.FC = () => {
       amount: finalTotal,
       userId: user?.id || 'admin_user',
       items: items.map(item => {
-        const dish = getDish(item.dishId || item.id);
+        // Ưu tiên lấy dishId từ item, nếu không có thì lấy từ item.id
+        const dishId = item.dishId || item.id;
+        const dish = getDish(dishId);
+        let price = 0;
+        if (dish && dish.basePrice) price = Number(dish.basePrice);
+        else if (typeof item.price === 'number') price = Number(item.price);
+        else price = getItemPrice(item);
         return {
-          id: item.id,
-          name: dish ? dish.name : item.name,
+          id: dishId,
+          dishId: dishId,
+          name:
+            (dish && dish.name) ||
+            (item.dishSnapshot && item.dishSnapshot.name) ||
+            (item.dish && item.dish.name) ||
+            item.name ||
+            'Không rõ tên món',
           quantity: item.quantity,
-          price: getItemPrice(item),
-          basePrice: item.basePrice || getItemPrice(item), // Thêm basePrice
+          price,
+          basePrice: item.basePrice || price,
         };
       }),
       note: 'Don hang nhanh',
@@ -192,7 +204,8 @@ const QuickOrderZaloPayPage: React.FC = () => {
           // Reset giỏ hàng trước khi chuyển trang
           try {
             clearCart();
-            console.log('✅ Cart cleared successfully');
+            if (typeof fetchCart === 'function') fetchCart();
+            console.log('✅ Cart cleared and UI updated');
           } catch (error) {
             console.error('❌ Error clearing cart:', error);
           }
@@ -237,41 +250,95 @@ const QuickOrderZaloPayPage: React.FC = () => {
   }, [countdown]);
 
   return (
-    <div className="payment-info-root">
+    <div className="payment-info-root" style={{ minHeight: '100vh', position: 'relative' }}>
       <AdminSidebar />
-      <div className="payment-info-container">
-        <div className="payment-info-grid">
+      <div className="payment-info-container" style={{
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '100%',
+        maxWidth: 900,
+        zIndex: 10,
+        padding: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <div className="payment-info-grid" style={{ width: '100%', background: '#fff', borderRadius: 18, boxShadow: '0 4px 24px rgba(0,0,0,0.08)', padding: 32, display: 'flex', gap: 32, alignItems: 'center', justifyContent: 'center' }}>
           {/* Left */}
-          <div className="payment-info-left">
-            <div className="payment-info-block">
-              <div className="payment-info-title">Thông tin đơn hàng nhanh</div>
-              <div className="payment-info-text">
-                <b>Khách:</b> {customer.name} &nbsp; <b>ĐT:</b> {customer.phone}
+          <div className="payment-info-left" style={{ flex: 1, minWidth: 320 }}>
+            <div className="payment-info-block" style={{ boxShadow: 'none', border: 'none', background: 'transparent', padding: 0 }}>
+              <div className="payment-info-title" style={{ fontSize: 22, marginBottom: 18, color: '#C92A15', textAlign: 'center', letterSpacing: 1 }}>Thông tin đơn hàng nhanh</div>
+              
+              {/* Thông tin khách hàng */}
+              <div className="payment-info-text" style={{ fontSize: 17, marginBottom: 12, textAlign: 'left' }}>
+                <b>Khách:</b> {customer.name === '' ? 'Khách ngoài' : customer.name}
               </div>
-              <div className="payment-info-text">
-                <b>Cửa hàng:</b> {store.name} - {store.address}
+              {/* Nếu là khách ngoài thì không hiện số điện thoại */}
+              
+              {/* Thông tin cửa hàng */}
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+                <div style={{ minWidth: 110, fontWeight: 600, fontSize: 17 }}>Cửa hàng:</div>
+                <div style={{ fontSize: 17, whiteSpace: 'pre' }}>
+                  {store.name === 'Mua trực tiếp tại cửa hàng' && store.address === 'Mua trực tiếp tại cửa hàng'
+                    ? 'Mua trực tiếp tại cửa hàng'
+                    : `${store.name} - ${store.address}`}
+                </div>
               </div>
-              <div className="payment-info-text">
-                <b>Giá trị đơn hàng:</b>
-                <span style={{ float: 'right' }}>{finalTotal.toLocaleString('vi-VN')}đ</span>
+
+              {/* Bảng chi tiết đơn hàng nằm ngay dưới khách và cửa hàng */}
+              <div style={{ margin: '18px 0 0 0', background: '#f8f9fa', borderRadius: 10, padding: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
+                  <thead>
+                    <tr style={{ background: '#e3e7ed' }}>
+                      <th style={{ padding: 6, textAlign: 'left', borderRadius: 6 }}>Tên món</th>
+                      <th style={{ padding: 6, textAlign: 'center', borderRadius: 6 }}>Số lượng</th>
+                      <th style={{ padding: 6, textAlign: 'right', borderRadius: 6 }}>Đơn giá</th>
+                      <th style={{ padding: 6, textAlign: 'right', borderRadius: 6 }}>Thành tiền</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item, idx) => {
+                      const dishId = item.dishId || item.id;
+                      const dish = getDish(dishId);
+                      const name = (dish && dish.name) || (item.dishSnapshot && item.dishSnapshot.name) || (item.dish && item.dish.name) || item.name || 'Không rõ tên món';
+                      const price = (dish && dish.basePrice) ? Number(dish.basePrice) : (typeof item.price === 'number' ? Number(item.price) : getItemPrice(item));
+                      const quantity = item.quantity || 1;
+                      return (
+                        <tr key={idx}>
+                          <td style={{ padding: 6 }}>{name}</td>
+                          <td style={{ padding: 6, textAlign: 'center' }}>{quantity}</td>
+                          <td style={{ padding: 6, textAlign: 'right' }}>{price.toLocaleString('vi-VN')}</td>
+                          <td style={{ padding: 6, textAlign: 'right' }}>{(price * quantity).toLocaleString('vi-VN')}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan={3} style={{ textAlign: 'right', fontWeight: 600, padding: 6, fontSize: 16, background: '#f1f3f7' }}>Tổng cộng:</td>
+                      <td style={{ textAlign: 'right', fontWeight: 700, color: '#C92A15', padding: 6, fontSize: 17, background: '#f1f3f7' }}>{finalTotal.toLocaleString('vi-VN')}đ</td>
+                    </tr>
+                  </tfoot>
+                </table>
+                <div style={{ marginTop: 18, fontSize: 16, textAlign: 'center' }}>
+                  Giao dịch kết thúc trong{' '}
+                  <span style={{ fontWeight: 700, color: '#C92A15', fontSize: 18 }}>
+                    {String(Math.floor(countdown / 60)).padStart(2, '0')}:{String(countdown % 60).padStart(2, '0')}
+                  </span>
+                </div>
               </div>
-              <div style={{ marginTop: 12, fontSize: 15 }}>
-                Giao dịch kết thúc trong{' '}
-                <span style={{ fontWeight: 600, color: '#C92A15' }}>
-                  {String(Math.floor(countdown / 60)).padStart(2, '0')}:{String(countdown % 60).padStart(2, '0')}
-                </span>
-              </div>
-              {error && <div style={{ color: 'red', marginTop: 8 }}>{error}</div>}
             </div>
           </div>
 
           {/* Right */}
-          <div className="payment-info-right">
-            <div className="payment-info-block" style={{ textAlign: 'center' }}>
-              <div className="payment-info-title" style={{ fontSize: 22, marginBottom: 16 }}>
+          <div className="payment-info-right" style={{ flex: 1, minWidth: 320, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="payment-info-block" style={{ textAlign: 'center', background: '#f4f7fb', borderRadius: 18, padding: 32, minWidth: 320, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+              <div className="payment-info-title" style={{ fontSize: 22, marginBottom: 20, color: '#1976d2' }}>
                 Quét QR để thanh toán
               </div>
-              <div style={{ background: '#f4f7fb', borderRadius: 16, padding: 24, minWidth: 320 }}>
+              <div style={{ background: '#fff', borderRadius: 16, padding: 24, minWidth: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 220 }}>
                 {loading ? (
                   <div>Đang tạo mã QR ZaloPay...</div>
                 ) : zalopayInfo?.order_url ? (
@@ -284,8 +351,8 @@ const QuickOrderZaloPayPage: React.FC = () => {
                   <div>Không thể tạo mã QR</div>
                 )}
               </div>
-              <div style={{ marginTop: 16 }}>
-                <button onClick={() => navigate(-1)} className="btn-back">
+              <div style={{ marginTop: 24 }}>
+                <button onClick={() => navigate(-1)} className="btn-back" style={{ padding: '10px 28px', borderRadius: 8, background: '#C92A15', color: '#fff', fontWeight: 600, fontSize: 16, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', cursor: 'pointer' }}>
                   Quay lại
                 </button>
               </div>

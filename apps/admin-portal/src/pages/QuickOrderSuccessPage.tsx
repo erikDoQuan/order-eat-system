@@ -107,33 +107,37 @@ const QuickOrderSuccessPage: React.FC = () => {
       return;
     }
 
-    console.log('🔍 Order data:', orderData);
-    console.log('🔍 Dishes loaded:', dishes.length);
-
     // Lấy method từ order nếu có, nếu không thì mặc định là zalopay
     let paymentMethod = orderData.method || 'zalopay';
 
     const items = (orderData.orderItems?.items || []).map((item: any) => {
-      console.log('🔍 Processing item:', item);
-
-      // Lấy basePrice từ item trực tiếp (như QuickOrderPage)
-      let price = Number(item.basePrice) || 0;
+      // Unify price resolution logic with admin page
+      let price = 0;
       const quantity = Number(item.quantity) || 0;
+      const dish = dishes.find(d => d.id === item.dishId);
 
-      console.log('🔍 Price from basePrice:', price);
-
-      // Nếu không có basePrice, thử lấy từ dish database
-      if (price === 0) {
-        const dish = dishes.find(d => d.id === item.dishId);
-        console.log('🔍 Dish found:', dish);
-        price = Number(dish?.basePrice) || 0;
-        console.log('🔍 Price from dish:', price);
+      // Try all possible sources for price, in order
+      price =
+        Number(item.basePrice) ||
+        Number(dish?.basePrice) ||
+        Number(item.dishSnapshot?.price) ||
+        Number(item.dish?.price) ||
+        0;
+      if (!price && item.price) {
+        if (quantity > 0) {
+          price = Number(item.price) / quantity;
+        } else {
+          price = Number(item.price);
+        }
       }
 
-      console.log('✅ Final calculated price:', price, 'for item:', item.name);
-
       return {
-        name: getDishNameById(item.dishId) || item.dishSnapshot?.name || item.dish?.name || item.name || 'Không rõ tên món',
+        name:
+          getDishNameById(item.dishId) ||
+          item.dishSnapshot?.name ||
+          item.dish?.name ||
+          item.name ||
+          'Không rõ tên món',
         quantity: quantity,
         price: price,
         total: price * quantity,
@@ -150,17 +154,28 @@ const QuickOrderSuccessPage: React.FC = () => {
     // Lấy thông tin customer từ deliveryAddress
     const deliveryAddress = orderData.deliveryAddress || {};
     const customerName = deliveryAddress.name || getUserName(orderData.userId);
-    const customerPhone = deliveryAddress.phone || orderData.customerPhone || users.find(u => u.id === orderData.userId)?.phoneNumber || '';
+    const customerPhone =
+      deliveryAddress.phone ||
+      orderData.customerPhone ||
+      users.find(u => u.id === orderData.userId)?.phoneNumber || '';
     const customerAddress = deliveryAddress.address || '';
 
     const date = orderData.createdAt ? new Date(orderData.createdAt).toLocaleDateString('vi-VN') : '';
     const adminId = orderData.updatedBy || '';
 
-    console.log('📋 Final items for bill:', items);
-    console.log('💰 Total:', total);
-    console.log('👤 Customer info:', { customerName, customerPhone, customerAddress });
-
-    const url = `/bill/preview?id=${orderData.id}&customer=${encodeURIComponent(customerName)}&items=${encodeURIComponent(JSON.stringify(items))}&total=${total}&customerAddress=${encodeURIComponent(customerAddress)}&customerPhone=${encodeURIComponent(customerPhone)}&date=${encodeURIComponent(date)}&order_number=${orderData.order_number || orderData.orderNumber || ''}&adminId=${encodeURIComponent(adminId)}&paymentMethod=${paymentMethod}`;
+    const url = `/bill/preview?id=${orderData.id}&customer=${encodeURIComponent(
+      customerName,
+    )}&items=${encodeURIComponent(
+      JSON.stringify(items),
+    )}&total=${total}&customerAddress=${encodeURIComponent(
+      customerAddress,
+    )}&customerPhone=${encodeURIComponent(
+      customerPhone,
+    )}&date=${encodeURIComponent(
+      date,
+    )}&order_number=${
+      orderData.order_number || orderData.orderNumber || ''
+    }&adminId=${encodeURIComponent(adminId)}&paymentMethod=${paymentMethod}`;
     navigate(url);
   };
 
