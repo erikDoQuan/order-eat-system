@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { inArray } from 'drizzle-orm';
+
+import { DrizzleService } from '~/database/drizzle/drizzle.service';
 import { OrderRepository } from '~/database/repositories/order.repository';
 import { UserRepository } from '~/database/repositories/user.repository';
-import { DrizzleService } from '~/database/drizzle/drizzle.service';
 import { userTransactions } from '~/database/schema/user_transactions';
-import { inArray } from 'drizzle-orm';
 
 @Injectable()
 export class ReportsService {
@@ -26,16 +27,19 @@ export class ReportsService {
       userMap = Object.fromEntries(users.map(u => [u.id, u]));
     }
     // Lấy payment method và amount từ user_transactions (chỉ lấy status = 'success')
-    let paymentMap: Record<string, { method: string, amount: number }[]> = {};
+    const paymentMap: Record<string, { method: string; amount: number }[]> = {};
     const orderIds = ordersCompleted.map(o => o.id).filter(Boolean);
     let allTransactions: any[] = [];
     if (orderIds.length > 0) {
-      const transactions = await this.drizzleService.db.select({
-        orderId: userTransactions.orderId,
-        method: userTransactions.method,
-        amount: userTransactions.amount,
-        status: userTransactions.status,
-      }).from(userTransactions).where(inArray(userTransactions.orderId, orderIds));
+      const transactions = await this.drizzleService.db
+        .select({
+          orderId: userTransactions.orderId,
+          method: userTransactions.method,
+          amount: userTransactions.amount,
+          status: userTransactions.status,
+        })
+        .from(userTransactions)
+        .where(inArray(userTransactions.orderId, orderIds));
       allTransactions = transactions.filter(t => t.status === 'success');
       for (const t of allTransactions) {
         if (!paymentMap[t.orderId]) paymentMap[t.orderId] = [];
@@ -72,13 +76,13 @@ export class ReportsService {
     const totalOrders = ordersCompleted.length;
     const avgOrder = totalOrders ? Math.round(totalRevenue / totalOrders) : 0;
     // Dữ liệu biểu đồ theo ngày
-    const chartMap = new Map<string, { date: string, revenue: number, orders: number }>();
+    const chartMap = new Map<string, { date: string; revenue: number; orders: number }>();
     for (const o of ordersCompleted) {
       const d = new Date(o.createdAt);
       const dateStr = d.toISOString().slice(0, 10);
       if (!chartMap.has(dateStr)) chartMap.set(dateStr, { date: dateStr, revenue: 0, orders: 0 });
-      chartMap.get(dateStr)!.revenue += Number(o.totalAmount || 0);
-      chartMap.get(dateStr)!.orders += 1;
+      chartMap.get(dateStr).revenue += Number(o.totalAmount || 0);
+      chartMap.get(dateStr).orders += 1;
     }
     const chartData = Array.from(chartMap.values()).sort((a, b) => a.date.localeCompare(b.date));
     // Danh sách đơn hàng mẫu
@@ -97,7 +101,7 @@ export class ReportsService {
       let transactionTotal = 0;
       if (paymentMap[o.id] && paymentMap[o.id].length > 0) {
         // Lấy transaction thành công có amount lớn nhất
-        const maxTx = paymentMap[o.id].reduce((max, tx) => tx.amount > max.amount ? tx : max, paymentMap[o.id][0]);
+        const maxTx = paymentMap[o.id].reduce((max, tx) => (tx.amount > max.amount ? tx : max), paymentMap[o.id][0]);
         paymentMethod = maxTx.method;
         maxAmount = maxTx.amount;
         transactionTotal = paymentMap[o.id].reduce((sum, tx) => sum + tx.amount, 0);
@@ -127,4 +131,4 @@ export class ReportsService {
       zalopayRevenue,
     };
   }
-} 
+}

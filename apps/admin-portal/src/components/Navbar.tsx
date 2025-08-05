@@ -208,310 +208,297 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-transparent bg-white shadow-lg" style={{ boxShadow: '0 2px 12px 0 #C92A1520' }}>
       {/* Dòng trên: logo + tên + user + đăng nhập */}
-      <div className="mx-auto flex max-w-7xl items-center justify-between rounded-t-3xl bg-white px-6 py-3">
-        <div className="flex min-w-[220px] items-center gap-3">
-          <img
-            src="/logo.png"
-            alt="Logo"
-            className="h-11 w-11 cursor-pointer rounded-full border-2 border-[#C92A15] bg-white object-contain shadow"
-            onClick={() => navigate('/')}
-          />
-          <span className="cursor-pointer text-2xl font-extrabold tracking-wide" style={{ color: '#C92A15' }} onClick={() => navigate('/')}>
-            BẾP CỦA MẸ
-          </span>
-        </div>
-        <div className="flex min-w-[180px] items-center justify-end gap-4">
-          {isAuthPage ? (
-            <div className="flex items-center gap-1">
-              <LanguageSwitcher />
-            </div>
-          ) : user ? (
-            <div className="flex items-center gap-2">
-              <div
-                ref={userIconRef}
-                className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-[#C92A15] bg-[#e6f4ed] text-[#C92A15]"
-                onClick={() => setShowMenu(v => !v)}
-              >
-                <UserIcon size={20} />
-                {/* Dropdown menu */}
-                {showMenu && (
-                  <div className="absolute right-0 top-12 z-50 min-w-[180px] rounded-xl border bg-white py-2 shadow-xl">
-                    <button
-                      className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => {
-                        setShowMenu(false);
-                        navigate('/profile');
-                      }}
-                    >
-                      <UserIcon size={18} className="text-gray-500" />
-                      {t('account')}
-                    </button>
-                    <button
-                      className="flex w-full items-center gap-2 px-4 py-2 text-left text-red-600 hover:bg-gray-100"
-                      onClick={() => setShowLogoutConfirm(true)}
-                    >
-                      <LogOut size={18} className="text-red-400" />
-                      {t('logout')}
-                    </button>
-                  </div>
-                )}
+      <div className="w-full px-4 md:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between rounded-t-3xl bg-white py-3">
+          <div className="flex min-w-[180px] items-center gap-3 md:min-w-[220px]">
+            <img
+              src="/logo.png"
+              alt="Logo"
+              className="h-9 w-9 cursor-pointer rounded-full border-2 border-[#C92A15] bg-white object-contain shadow md:h-11 md:w-11"
+              onClick={() => navigate('/')}
+            />
+            <span
+              className="cursor-pointer text-lg font-extrabold tracking-wide md:text-2xl"
+              style={{ color: '#C92A15' }}
+              onClick={() => navigate('/')}
+            >
+              BẾP CỦA MẸ
+            </span>
+          </div>
+          <div className="flex min-w-[140px] items-center justify-end gap-2 md:min-w-[180px] md:gap-4">
+            {isAuthPage ? (
+              <div className="flex items-center gap-1">
+                <LanguageSwitcher />
               </div>
-              <span className="hidden text-base font-semibold text-black md:inline" style={{ cursor: 'pointer' }}>
-                {user.firstName || user.lastName
-                  ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
-                  : user.name
-                    ? user.name
-                    : user.email
-                      ? user.email
-                      : user.id || ''}
-              </span>
-              <span style={{ margin: '0 8px', color: '#ccc', fontWeight: 600 }}>|</span>
-              <LanguageSwitcher />
-            </div>
-          ) : (
-            <div className="flex items-center gap-1">
-              {!(isAuthPage && isMobile) ? (
-                <>
-                  <NavLink
-                    to="/login"
-                    className="flex items-center gap-2 rounded-xl bg-transparent px-4 py-2 text-base font-semibold transition hover:bg-[#e6f4ed]"
-                    style={{ fontWeight: 500 }}
-                  >
-                    <span
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: 36,
-                        height: 36,
-                        borderRadius: '50%',
-                        border: '2px solid #C92A15',
-                        background: '#e6f4ed',
-                        color: '#C92A15',
-                        marginRight: 8,
-                      }}
+            ) : user ? (
+              <div className="flex items-center gap-2">
+                <div
+                  ref={userIconRef}
+                  className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-[#C92A15] bg-[#e6f4ed] text-[#C92A15]"
+                  onClick={() => setShowMenu(v => !v)}
+                >
+                  <UserIcon size={20} />
+                  {/* Dropdown menu */}
+                  {showMenu && (
+                    <div className="absolute right-0 top-12 z-50 min-w-[180px] rounded-xl border bg-white py-2 shadow-xl">
+                      <button
+                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => {
+                          setShowMenu(false);
+                          navigate('/profile');
+                        }}
+                      >
+                        <UserIcon size={18} className="text-gray-500" />
+                        {t('account')}
+                      </button>
+                      <button
+                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-red-600 hover:bg-gray-100"
+                        onClick={() => setShowLogoutConfirm(true)}
+                      >
+                        <LogOut size={18} className="text-red-400" />
+                        {t('logout')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <span className="hidden text-base font-semibold text-black md:inline" style={{ cursor: 'pointer' }}>
+                  {user.firstName || user.lastName
+                    ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+                    : user.name
+                      ? user.name
+                      : user.email
+                        ? user.email
+                        : user.id || ''}
+                </span>
+                <span style={{ margin: '0 8px', color: '#ccc', fontWeight: 600 }}>|</span>
+                <LanguageSwitcher />
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                {!(isAuthPage && isMobile) ? (
+                  <>
+                    <NavLink
+                      to="/login"
+                      className="flex items-center gap-2 rounded-xl bg-transparent px-4 py-2 text-base font-semibold transition hover:bg-[#e6f4ed]"
+                      style={{ fontWeight: 500 }}
                     >
-                      <UserIcon size={24} />
-                    </span>
-                    {t('login')}
-                  </NavLink>
-                  <NavLink
-                    to="/register"
-                    className="rounded-xl bg-transparent py-2 text-base font-semibold transition hover:bg-[#e6f4ed]"
-                    style={{ fontWeight: 500 }}
-                  >
-                    {t('register')}
-                  </NavLink>
-                  <span style={{ margin: '0 8px', color: '#ccc', fontWeight: 600 }}>|</span>
-                </>
-              ) : null}
-              <LanguageSwitcher />
-            </div>
-          )}
+                      <span
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 36,
+                          height: 36,
+                          borderRadius: '50%',
+                          border: '2px solid #C92A15',
+                          background: '#e6f4ed',
+                          color: '#C92A15',
+                          marginRight: 8,
+                        }}
+                      >
+                        <UserIcon size={24} />
+                      </span>
+                      {t('login')}
+                    </NavLink>
+                    <NavLink
+                      to="/register"
+                      className="rounded-xl bg-transparent py-2 text-base font-semibold transition hover:bg-[#e6f4ed]"
+                      style={{ fontWeight: 500 }}
+                    >
+                      {t('register')}
+                    </NavLink>
+                    <span style={{ margin: '0 8px', color: '#ccc', fontWeight: 600 }}>|</span>
+                  </>
+                ) : null}
+                <LanguageSwitcher />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Dòng dưới: nav menu + giỏ hàng */}
-      <div className="mx-auto max-w-7xl pb-2">
-        <div className="flex w-full items-center justify-between rounded-[15px] bg-[#C92A15] px-6 py-2 shadow">
-          {/* Hamburger menu cho mobile */}
-          <button className="mr-2 block text-2xl text-white md:hidden" onClick={() => setShowMobileMenu(true)}>
-            <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-          {/* Menu trung tâm - ẩn trên mobile */}
-          <ul className="hidden max-w-[80%] flex-wrap items-center gap-x-3 text-sm font-semibold text-white md:flex">
-            {navItems.map(item =>
-              item.dropdown ? (
-                <li key={item.label} className="group relative">
-                  <button type="button" className="group relative flex items-center rounded-lg px-3 py-1.5 transition hover:bg-[#a01f10]">
-                    {item.label}
-                    <svg className="ml-1 h-4 w-4" fill="none" stroke="#fff" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                    <span className="absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 transform whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+      <div className="w-full px-4 pb-2 md:px-6">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex w-full items-center justify-between rounded-[15px] bg-[#C92A15] py-2 shadow">
+            {/* Hamburger menu cho mobile */}
+            <button className="mr-2 block text-2xl text-white md:hidden" onClick={() => setShowMobileMenu(true)}>
+              <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            {/* Menu trung tâm - ẩn trên mobile */}
+            <ul className="hidden max-w-[80%] flex-wrap items-center gap-x-3 text-sm font-semibold text-white md:flex">
+              {navItems.map(item =>
+                item.dropdown ? (
+                  <li key={item.label} className="group relative">
+                    <button type="button" className="group relative flex items-center rounded-lg px-3 py-1.5 transition hover:bg-[#a01f10]">
                       {item.label}
-                    </span>
-                  </button>
-                  <ul
-                    className="pointer-events-none absolute left-0 z-20 w-48 rounded-xl border bg-white opacity-0 shadow-xl transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100"
-                    style={{ borderColor: '#C92A15', top: '100%' }}
-                  >
-                    {item.dropdown.map(drop => (
-                      <li key={drop.path + '-' + drop.label}>
-                        <NavLink
-                          to={drop.path}
-                          className={({ isActive }) =>
-                            `block rounded-xl px-5 py-3 transition hover:bg-[#e6f4ed] ${isActive ? 'font-bold text-[#C92A15]' : 'text-[#C92A15]'}`
-                          }
-                        >
-                          {drop.label}
-                        </NavLink>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              ) : (
-                <li key={item.path + '-' + item.label}>
-                  <NavLink
-                    to={item.path}
-                    end={item.path === '/'}
-                    className={({ isActive }) =>
-                      `group relative rounded-xl px-3 py-1.5 transition hover:bg-[#a01f10] ${isActive ? 'font-bold text-white' : 'text-white'}`
-                    }
-                  >
-                    {item.label}
-                    <span className="absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 transform whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                      {item.label}
-                    </span>
-                  </NavLink>
-                </li>
-              ),
-            )}
-          </ul>
-          {/* Overlay menu mobile */}
-          {showMobileMenu && (
-            <>
-              <style>{`body { overflow: hidden !important; }`}</style>
-              <div className="fixed inset-0 z-[9999] flex md:hidden">
-                {/* Overlay mờ */}
-                <div className="fixed inset-0 bg-black/40" onClick={() => setShowMobileMenu(false)} />
-                {/* Sidebar */}
-                <div
-                  className="fixed left-0 top-0 z-[10000] flex h-screen w-4/5 max-w-xs flex-col bg-[#C92A15] shadow-xl"
-                  style={{ animation: 'slideInLeft 0.25s' }}
-                  onClick={e => e.stopPropagation()}
-                >
-                  <button
-                    className="absolute right-4 top-4 text-3xl font-bold text-white"
-                    onClick={() => setShowMobileMenu(false)}
-                    aria-label="Đóng menu"
-                  >
-                    &times;
-                  </button>
-                  <ul className="mt-16 flex flex-col gap-2 px-4">
-                    {navItems.map(item =>
-                      item.dropdown ? (
-                        <li key={item.label} className="w-full">
-                          <button
-                            className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-base font-bold text-white hover:bg-white/10 focus:outline-none"
-                            onClick={() => setOpenDropdown(openDropdown === item.label ? null : item.label)}
-                            type="button"
-                          >
-                            <span>{item.label}</span>
-                            <svg
-                              className={`ml-2 transition-transform duration-200 ${openDropdown === item.label ? 'rotate-180' : ''}`}
-                              width="20"
-                              height="20"
-                              viewBox="0 0 20 20"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path d="M6 8L10 12L14 8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          </button>
-                          {openDropdown === item.label && (
-                            <ul className="ml-2 flex flex-col gap-1">
-                              {item.dropdown.map(drop => (
-                                <li key={drop.path + '-' + drop.label} className="w-full">
-                                  <NavLink
-                                    to={drop.path}
-                                    className="block w-full rounded px-3 py-2 text-left text-sm text-white hover:bg-white/10"
-                                    onClick={() => setShowMobileMenu(false)}
-                                  >
-                                    {drop.label}
-                                  </NavLink>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </li>
-                      ) : (
-                        <li key={item.path + '-' + item.label} className="w-full">
+                      <svg className="ml-1 h-4 w-4" fill="none" stroke="#fff" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                      <span className="absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 transform whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                        {item.label}
+                      </span>
+                    </button>
+                    <ul
+                      className="pointer-events-none absolute left-0 z-20 w-48 rounded-xl border bg-white opacity-0 shadow-xl transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100"
+                      style={{ borderColor: '#C92A15', top: '100%' }}
+                    >
+                      {item.dropdown.map(drop => (
+                        <li key={drop.path + '-' + drop.label}>
                           <NavLink
-                            to={item.path}
-                            end={item.path === '/'}
-                            className="block w-full rounded px-3 py-2 text-left text-base font-semibold text-white hover:bg-white/10"
-                            onClick={() => setShowMobileMenu(false)}
+                            to={drop.path}
+                            className={({ isActive }) =>
+                              `block rounded-xl px-5 py-3 transition hover:bg-[#e6f4ed] ${isActive ? 'font-bold text-[#C92A15]' : 'text-[#C92A15]'}`
+                            }
                           >
-                            {item.label}
+                            {drop.label}
                           </NavLink>
                         </li>
-                      ),
-                    )}
-                  </ul>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Giỏ hàng nằm phía cuối bên phải (ĐÃ SỬA: thêm border-radius đẹp) */}
-          <div
-            className="ml-auto flex items-center gap-2 rounded-full border-2 border-white bg-white px-4 py-2 transition hover:shadow-lg"
-            style={{ cursor: 'pointer', position: 'relative' }}
-          >
-            <div onClick={handleNotificationClick} style={{ display: 'inline-block', position: 'relative' }}>
-              <FaBell size={22} style={{ marginRight: 18, cursor: 'pointer', color: '#C92A15', position: 'relative' }} />
-              {hasOrderNotification && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: '-2px',
-                    right: '14px',
-                    width: 16,
-                    height: 16,
-                    background: '#dc2626',
-                    borderRadius: '50%',
-                    border: '2.5px solid #fff',
-                    boxShadow: '0 1px 4px #0002',
-                    zIndex: 110,
-                    display: 'block',
-                  }}
-                ></span>
+                      ))}
+                    </ul>
+                  </li>
+                ) : (
+                  <li key={item.path + '-' + item.label}>
+                    <NavLink
+                      to={item.path}
+                      end={item.path === '/'}
+                      className={({ isActive }) =>
+                        `group relative rounded-xl px-3 py-1.5 transition hover:bg-[#a01f10] ${isActive ? 'font-bold text-white' : 'text-white'}`
+                      }
+                    >
+                      {item.label}
+                      <span className="absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 transform whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                        {item.label}
+                      </span>
+                    </NavLink>
+                  </li>
+                ),
               )}
-              {showNotificationPopup && (
-                <div style={{ position: 'absolute', top: 50, right: 0 }}>
-                  <NotificationPopup
-                    notifications={notifications}
-                    onClose={handleCloseNotification}
-                    className="notification-popup"
-                    loading={notificationLoading}
-                  />
-                </div>
-              )}
-            </div>
-            <div
-              onClick={() => {
-                if (showNotificationPopup) return;
-                if (window.innerWidth <= 600) {
-                  navigate('/cart');
-                  return;
-                }
-                setShowCartPopup(v => !v);
-              }}
-              style={{ display: 'inline-block', position: 'relative' }}
-            >
-              <CartIcon />
-              {showCartPopup && (
-                <>
-                  {/* Overlay để xử lý click ra ngoài */}
+            </ul>
+            {/* Overlay menu mobile */}
+            {showMobileMenu && (
+              <>
+                <style>{`body { overflow: hidden !important; }`}</style>
+                <div className="fixed inset-0 z-[9999] flex md:hidden">
+                  {/* Overlay mờ */}
+                  <div className="fixed inset-0 bg-black/40" onClick={() => setShowMobileMenu(false)} />
+                  {/* Sidebar */}
                   <div
-                    onClick={() => setShowCartPopup(false)}
-                    style={{
-                      position: 'fixed',
-                      top: 0,
-                      left: 0,
-                      width: '100vw',
-                      height: '100vh',
-                      zIndex: 99,
-                    }}
-                  />
-                  <CartPopup onClose={() => setShowCartPopup(false)} />
-                </>
-              )}
+                    className="fixed left-0 top-0 z-[10000] flex h-screen w-4/5 max-w-xs flex-col bg-[#C92A15] shadow-xl"
+                    style={{ animation: 'slideInLeft 0.25s' }}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <button
+                      className="absolute right-4 top-4 text-3xl font-bold text-white"
+                      onClick={() => setShowMobileMenu(false)}
+                      aria-label="Đóng menu"
+                    >
+                      &times;
+                    </button>
+                    <ul className="mt-16 flex flex-col gap-2 px-4">
+                      {navItems.map(item =>
+                        item.dropdown ? (
+                          <li key={item.label} className="w-full">
+                            <button
+                              className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-base font-bold text-white hover:bg-white/10 focus:outline-none"
+                              onClick={() => setOpenDropdown(openDropdown === item.label ? null : item.label)}
+                              type="button"
+                            >
+                              <span>{item.label}</span>
+                              <svg
+                                className={`ml-2 transition-transform duration-200 ${openDropdown === item.label ? 'rotate-180' : ''}`}
+                                width="20"
+                                height="20"
+                                viewBox="0 0 20 20"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path d="M6 8L10 12L14 8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </button>
+                            {openDropdown === item.label && (
+                              <ul className="ml-2 flex flex-col gap-1">
+                                {item.dropdown.map(drop => (
+                                  <li key={drop.path + '-' + drop.label} className="w-full">
+                                    <NavLink
+                                      to={drop.path}
+                                      className="block w-full rounded px-3 py-2 text-left text-sm text-white hover:bg-white/10"
+                                      onClick={() => setShowMobileMenu(false)}
+                                    >
+                                      {drop.label}
+                                    </NavLink>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </li>
+                        ) : (
+                          <li key={item.path + '-' + item.label} className="w-full">
+                            <NavLink
+                              to={item.path}
+                              end={item.path === '/'}
+                              className="block w-full rounded px-3 py-2 text-left text-base font-semibold text-white hover:bg-white/10"
+                              onClick={() => setShowMobileMenu(false)}
+                            >
+                              {item.label}
+                            </NavLink>
+                          </li>
+                        ),
+                      )}
+                    </ul>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Giỏ hàng nằm phía cuối bên phải (ĐÃ SỬA: thêm border-radius đẹp) */}
+            <div
+              className="ml-auto mr-4 flex items-center gap-0 rounded-full border-2 border-white bg-white px-6 py-2 transition hover:shadow-lg"
+              style={{ cursor: 'pointer', position: 'relative' }}
+            >
+              <div onClick={handleNotificationClick} style={{ display: 'inline-block', position: 'relative' }}>
+                <FaBell size={22} style={{ marginRight: 24, cursor: 'pointer', color: '#C92A15', position: 'relative' }} />
+                {showNotificationPopup && (
+                  <div style={{ position: 'absolute', top: 50, right: 0 }}>
+                    <NotificationPopup
+                      notifications={notifications}
+                      onClose={handleCloseNotification}
+                      className="notification-popup"
+                      loading={notificationLoading}
+                    />
+                  </div>
+                )}
+              </div>
+              <div
+                onClick={() => {
+                  if (showNotificationPopup) return;
+                  setShowCartPopup(v => !v);
+                }}
+                style={{ display: 'inline-block', position: 'relative' }}
+              >
+                <CartIcon />
+                {showCartPopup && (
+                  <>
+                    {/* Overlay để xử lý click ra ngoài */}
+                    <div
+                      onClick={() => setShowCartPopup(false)}
+                      style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100vw',
+                        height: '100vh',
+                        zIndex: 99,
+                      }}
+                    />
+                    <CartPopup onClose={() => setShowCartPopup(false)} />
+                  </>
+                )}
+              </div>
+              <span className="text-sm font-bold text-[#a01f10]">{t('cart')}</span>
             </div>
-            <span className="text-sm font-bold text-[#a01f10]">{t('cart')}</span>
           </div>
         </div>
       </div>

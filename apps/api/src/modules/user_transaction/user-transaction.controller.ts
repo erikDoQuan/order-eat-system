@@ -1,15 +1,17 @@
-import { Body, Controller, Post, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
+
 import { UserTransactionService } from './user-transaction.service';
-import { CreateUserTransactionDto } from './dto/create-user-transaction.dto';
 
 @Controller('user-transaction')
 export class UserTransactionController {
   constructor(private readonly userTransactionService: UserTransactionService) {}
 
-  @Post()
-  async create(@Body() createUserTransactionDto: CreateUserTransactionDto) {
-    return this.userTransactionService.create(createUserTransactionDto);
-  }
+  // ❌ Xóa endpoint POST để không cho phép tạo transaction trực tiếp
+  // Transaction chỉ nên được tạo thông qua business logic (như ZaloPay callback)
+  // @Post()
+  // async create(@Body() createUserTransactionDto: CreateUserTransactionDto) {
+  //   return this.userTransactionService.create(createUserTransactionDto);
+  // }
 
   @Get()
   async findAll(@Query('page') page = 1, @Query('limit') limit = 20) {
@@ -20,4 +22,4 @@ export class UserTransactionController {
   async findAllNoPaging() {
     return this.userTransactionService.findAllWithUserOrder(1, 100000);
   }
-} 
+}

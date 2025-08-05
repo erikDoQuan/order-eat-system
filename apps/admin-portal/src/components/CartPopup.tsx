@@ -99,47 +99,58 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       onClick={e => e.stopPropagation()}
       style={{
         position: 'absolute',
-        top: 50,
-        right: 0,
-        width: 420,
+        top: window.innerWidth <= 768 ? 40 : 35,
+        right: window.innerWidth <= 768 ? '50%' : 0,
+        transform: window.innerWidth <= 768 ? 'translateX(50%)' : 'none',
+        width: window.innerWidth <= 768 ? 'calc(100vw - 32px)' : 420,
+        maxWidth: window.innerWidth <= 768 ? 'calc(100vw - 32px)' : 420,
         background: '#fff',
         borderRadius: 16,
         boxShadow: '0 4px 32px #0003',
         zIndex: 101,
-        padding: 32,
+        padding: window.innerWidth <= 768 ? 16 : 32,
         display: 'flex',
         flexDirection: 'column',
-        maxHeight: 600,
+        maxHeight: window.innerWidth <= 768 ? 'calc(100vh - 100px)' : 600,
       }}
     >
-      <div style={{ fontWeight: 800, fontSize: 22, marginBottom: 18 }}>Giỏ hàng</div>
+      <div style={{ fontWeight: 800, fontSize: window.innerWidth <= 768 ? 18 : 22, marginBottom: window.innerWidth <= 768 ? 12 : 18 }}>Giỏ hàng</div>
       {loading || (dishes.length === 0 && orderItems.length > 0) ? (
-        <div style={{ color: '#888', textAlign: 'center', padding: 32 }}>Đang tải...</div>
+        <div style={{ color: '#888', textAlign: 'center', padding: window.innerWidth <= 768 ? 16 : 32 }}>Đang tải...</div>
       ) : orderItems.length === 0 ? (
-        <div style={{ color: '#888', textAlign: 'center', padding: 32 }}>Chưa có món nào trong giỏ hàng</div>
+        <div style={{ color: '#888', textAlign: 'center', padding: window.innerWidth <= 768 ? 16 : 32 }}>Chưa có món nào trong giỏ hàng</div>
       ) : (
         <>
-          <div className="cart-popup-content" style={{ flex: 1, maxHeight: 320, overflowY: 'auto', marginBottom: 12 }}>
+          <div
+            className="cart-popup-content"
+            style={{ flex: 1, maxHeight: window.innerWidth <= 768 ? 240 : 320, overflowY: 'auto', marginBottom: window.innerWidth <= 768 ? 8 : 12 }}
+          >
             {orderItems.map((item, idx) => {
               const dish = getDish(item.dishId);
               if (!dish) return null;
               return (
                 <div
                   key={`${item.dishId}-${item.size || ''}-${item.base || ''}-${item.note || ''}-${idx}`}
-                  style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}
+                  style={{ display: 'flex', alignItems: 'center', marginBottom: window.innerWidth <= 768 ? 10 : 14 }}
                 >
                   {dish.imageUrl && (
                     <img
                       src={getImageUrl(dish.imageUrl)}
                       alt={dish.name}
-                      style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, marginRight: 12 }}
+                      style={{
+                        width: window.innerWidth <= 768 ? 48 : 56,
+                        height: window.innerWidth <= 768 ? 48 : 56,
+                        objectFit: 'cover',
+                        borderRadius: 8,
+                        marginRight: window.innerWidth <= 768 ? 8 : 12,
+                      }}
                     />
                   )}
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 16 }}>{dish.name}</div>
-                    {dish.description && <div style={{ color: '#666', fontSize: 14 }}>{dish.description}</div>}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                      <span style={{ color: '#666', fontSize: 14 }}>Số lượng:</span>
+                    <div style={{ fontWeight: 600, fontSize: window.innerWidth <= 768 ? 14 : 16 }}>{dish.name}</div>
+                    {dish.description && <div style={{ color: '#666', fontSize: window.innerWidth <= 768 ? 12 : 14 }}>{dish.description}</div>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: window.innerWidth <= 768 ? 6 : 8, marginTop: 4 }}>
+                      <span style={{ color: '#666', fontSize: window.innerWidth <= 768 ? 12 : 14 }}>Số lượng:</span>
                       {/* Bộ đếm số lượng */}
                       <div
                         style={{
@@ -244,11 +255,28 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               );
             })}
           </div>
-          <div style={{ borderTop: '1px solid #eee', margin: '12px 0' }} />
-          <div style={{ fontWeight: 600, fontSize: 17, color: '#C92A15', textAlign: 'right', margin: '8px 0 12px' }}>
+          <div style={{ borderTop: '1px solid #eee', margin: window.innerWidth <= 768 ? '8px 0' : '12px 0' }} />
+          <div
+            style={{
+              fontWeight: 600,
+              fontSize: window.innerWidth <= 768 ? 15 : 17,
+              color: '#C92A15',
+              textAlign: 'right',
+              margin: window.innerWidth <= 768 ? '6px 0 8px' : '8px 0 12px',
+            }}
+          >
             Tổng tiền: {totalAmount.toLocaleString('vi-VN')}₫
           </div>
-          <div style={{ position: 'sticky', bottom: 0, background: '#fff', zIndex: 10, paddingTop: 8, paddingBottom: 8 }}>
+          <div
+            style={{
+              position: 'sticky',
+              bottom: 0,
+              background: '#fff',
+              zIndex: 10,
+              paddingTop: window.innerWidth <= 768 ? 6 : 8,
+              paddingBottom: window.innerWidth <= 768 ? 6 : 8,
+            }}
+          >
             <button
               style={{
                 width: '100%',
@@ -256,9 +284,9 @@ export const CartPopup: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 color: 'white',
                 border: 'none',
                 borderRadius: 8,
-                padding: '12px 0',
+                padding: window.innerWidth <= 768 ? '10px 0' : '12px 0',
                 fontWeight: 700,
-                fontSize: 17,
+                fontSize: window.innerWidth <= 768 ? 15 : 17,
                 marginTop: 0,
                 cursor: 'pointer',
               }}

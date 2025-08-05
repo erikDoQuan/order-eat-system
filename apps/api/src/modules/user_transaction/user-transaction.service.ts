@@ -11,9 +11,10 @@ import { CreateUserTransactionDto } from './dto/create-user-transaction.dto';
 export class UserTransactionService {
   constructor(private readonly drizzleService: DrizzleService) {}
 
-  async create(createUserTransactionDto: CreateUserTransactionDto) {
+  async create(createUserTransactionDto: CreateUserTransactionDto, trx?: any) {
+    const db = trx || this.drizzleService.db;
     // Lưu giao dịch vào bảng user_transactions
-    const [result] = await this.drizzleService.db
+    const [result] = await db
       .insert(userTransactions)
       .values({
         ...createUserTransactionDto,

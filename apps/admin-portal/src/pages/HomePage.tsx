@@ -197,34 +197,35 @@ export default function HomePage() {
 
   return (
     <div>
-      <div className="mb-6 w-full" style={{ display: 'flex', justifyContent: 'center', marginTop: '-20px' }}>
-        <div
-          className="mx-auto w-full max-w-7xl"
-          style={{
-            width: '100%',
-            aspectRatio: '1536/480', // Tỷ lệ 3.2:1 - tăng chiều cao thêm để thoải mái hơn nữa
-            overflow: 'hidden',
-            position: 'relative',
-            background: '#fff',
-            borderRadius: 24,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <img
-            src="/banner3.png"
-            alt="Banner"
+      <div className="mb-6 w-full px-4 md:px-6" style={{ display: 'flex', justifyContent: 'center', marginTop: '-20px' }}>
+        <div className="mx-auto max-w-7xl">
+          <div
             style={{
               width: '100%',
-              height: '100%',
-              objectFit: 'fill',
-              display: 'block',
+              aspectRatio: '1536/480', // Tỷ lệ 3.2:1 - tăng chiều cao thêm để thoải mái hơn nữa
+              overflow: 'hidden',
+              position: 'relative',
+              background: '#fff',
               borderRadius: 24,
-              maxHeight: '100%',
-              maxWidth: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
-          />
+          >
+            <img
+              src="/banner3.png"
+              alt="Banner"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'fill',
+                display: 'block',
+                borderRadius: 24,
+                maxHeight: '100%',
+                maxWidth: '100%',
+              }}
+            />
+          </div>
         </div>
       </div>
       {/* Nếu có selectedCategoryId thì chỉ render đúng 1 category đó */}

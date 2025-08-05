@@ -116,7 +116,18 @@ export class OrderService {
           baseName,
           toppingPrice,
           description,
+          note: item.note, // Đảm bảo note được giữ nguyên
         };
+
+        // Log note để debug
+        if (item.note) {
+          console.log('🔍 Item note found:', {
+            dishId: item.dishId,
+            name: result.name,
+            note: item.note,
+            finalNote: result.note,
+          });
+        }
 
         console.log('🔍 Final item result:', {
           dishId: item.dishId,
@@ -227,6 +238,7 @@ export class OrderService {
           dishSnapshotId: item.dishSnapshotId,
           name: item.name,
           price: item.price,
+          note: item.note,
           hasSnapshot: !!item.dishSnapshotId,
           hasName: !!item.name && item.name !== '-',
           hasPrice: !!item.price && item.price > 0,
@@ -494,12 +506,16 @@ export class OrderService {
       dto.totalAmount = total;
       console.log('🔍 Total amount calculated:', total);
     }
-    // Xử lý note cho đơn hàng
+
+    // Tự động tổng hợp note của từng món nếu có
     let note = dto.note || '';
-    if (dto.type === 'pickup') {
-      note = `Đơn hàng mang về - ${note}`.trim();
-    } else if (dto.type === 'delivery') {
-      note = `Đơn hàng giao tận nơi - ${note}`.trim();
+    if ((!note || note.trim() === '') && dto.orderItems?.items) {
+      const itemNotes = dto.orderItems.items
+        .filter((item: any) => item.note && item.note.trim())
+        .map((item: any) => `${item.name || item.dishId}: ${item.note}`);
+      if (itemNotes.length > 0) {
+        note = itemNotes.join(' | ');
+      }
     }
 
     // Tạo appTransId nếu có
@@ -522,6 +538,22 @@ export class OrderService {
         2,
       ),
     );
+
+    // Log chi tiết orderItems để kiểm tra note
+    if (dto.orderItems?.items) {
+      console.log('🔍 OrderItems details:');
+      dto.orderItems.items.forEach((item: any, index: number) => {
+        console.log(`  Item ${index}:`, {
+          dishId: item.dishId,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          note: item.note,
+          size: item.size,
+          base: item.base,
+        });
+      });
+    }
 
     // Tạo đơn hàng
     const order = await this.orderRepository.create({
@@ -551,6 +583,7 @@ export class OrderService {
         dishSnapshotId: item.dishSnapshotId,
         name: item.name,
         price: item.price,
+        note: item.note,
         hasSnapshot: !!item.dishSnapshotId,
         hasName: !!item.name && item.name !== '-',
         hasPrice: !!item.price && item.price > 0,

@@ -180,25 +180,18 @@ const PaymentInfoPage: React.FC = () => {
       };
       console.log('PaymentInfoPage - deliveryAddressObj for pickup:', deliveryAddressObj);
     }
+
     const payload: any = {
       userId: user?.id,
       orderItems: { items: items },
       totalAmount: totalAmountDisplay,
       type: orderType,
       deliveryAddress: deliveryAddressObj,
-      note: '', // lấy từ textarea nếu cần
     };
-
-    // Thêm pickupTime cho pickup orders
     if (orderType === 'pickup' && state?.pickupTime) {
       payload.pickupTime = state.pickupTime;
     }
-    console.log('PaymentInfoPage - final payload:', payload);
     console.log('PaymentInfoPage - orderType:', orderType);
-    console.log('PaymentInfoPage - deliveryAddressObj:', deliveryAddressObj);
-    console.log('PaymentInfoPage - deliveryAddress:', deliveryAddress);
-    console.log('PaymentInfoPage - store.hotline:', store.hotline);
-    console.log('PaymentInfoPage - store.name:', store.name);
     try {
       const orderRes = await createOrder(payload);
       navigate('/order-success', { state: { order: orderRes } });
@@ -206,6 +199,8 @@ const PaymentInfoPage: React.FC = () => {
       alert('Có lỗi khi đặt hàng, vui lòng thử lại!');
     }
   };
+
+
 
   return (
     <div className="payment-info-root">

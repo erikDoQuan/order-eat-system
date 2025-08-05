@@ -583,7 +583,6 @@ export default function OrderAdminPage() {
                   const items = order.orderItems?.items || [];
                   const maxItems = Math.max(1, items.length);
                   const isCompleted = ['completed', 'hoàn thành'].includes((order.status || '').toLowerCase());
-                  // Lấy method từ order nếu có, nếu không thì lấy từ transaction
                   let paymentMethod = order.method;
                   if (!paymentMethod) {
                     const tx = transactions.find(
@@ -594,383 +593,82 @@ export default function OrderAdminPage() {
                     );
                     paymentMethod = tx && tx.method ? tx.method : '-';
                   }
-                  // Hiển thị dạng tiếng Việt
                   let paymentMethodDisplay = paymentMethod === 'zalopay' ? 'ZaloPay' : paymentMethod === 'cash' ? 'Tiền mặt' : 'Không rõ';
-                  const relatedTxs = transactions.filter(
-                    (t: any) =>
-                      String(t.orderId).trim() === String(order.id).trim() ||
-                      String(t.orderId).trim() === String(order.order_number).trim() ||
-                      String(t.orderId).trim() === String(order.orderNumber).trim(),
-                  );
-                  return (
-                    <React.Fragment key={order.id}>
-                      {items.length === 0 ? (
-                        <tr className="transition hover:bg-gray-50">
-                          <td className="border-b px-3 py-2 font-medium">
+                  if (items.length === 0) {
+                    return (
+                      <tr className="transition hover:bg-gray-50" key={order.id}>
+                        <td className="border-b px-3 py-2 font-medium">
+                          {order.order_number || order.orderNumber ? `#${order.order_number || order.orderNumber}` : '-'}
+                        </td>
+                        <td className="border-b px-3 py-2">{formatDate(order.createdAt)}</td>
+                        <td className="border-b px-3 py-2">{getUserName(order.userId)}</td>
+                        <td className="border-b px-3 py-2"></td>
+                        <td className="border-b px-3 py-2"></td>
+                        <td className="border-b px-3 py-2">{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
+                        <td className="border-b px-3 py-2">{order.status}</td>
+                        <td className="border-b px-3 py-2">{order.type}</td>
+                        <td className="border-b px-3 py-2">{paymentMethodDisplay}</td>
+                        <td className="border-b px-3 py-2">{formatDeliveryAddress(order.deliveryAddress, order.type)}</td>
+                        <td className="border-b px-3 py-2">{order.note}</td>
+                        <td className="border-b px-3 py-2"></td>
+                      </tr>
+                    );
+                  }
+                  return items.map((item, i) => (
+                    <tr key={order.id + '-' + i} className="transition hover:bg-gray-50">
+                      {i === 0 && (
+                        <>
+                          <td className="border-b px-3 py-2 font-medium" rowSpan={maxItems}>
                             {order.order_number || order.orderNumber ? `#${order.order_number || order.orderNumber}` : '-'}
                           </td>
-                          <td className="border-b px-3 py-2">{formatDate(order.createdAt)}</td>
-                          <td className="border-b px-3 py-2">{getUserName(order.userId)}</td>
-                          <td className="border-b px-3 py-2"></td>
-                          <td className="border-b px-3 py-2"></td>
-                          <td className="border-b px-3 py-2">{Number(order.totalAmount).toLocaleString('vi-VN')}đ</td>
-                          <td className="border-b px-3 py-2">
-                            {order.status === 'completed' || order.status === 'cancelled' ? (
-                              <div className="flex flex-col gap-1">
-                                <span
-                                  className={`inline-block whitespace-nowrap rounded px-2 py-1 text-xs font-semibold ${
-                                    STATUS_LABEL[order.status]?.color || 'border border-gray-200 bg-gray-100 text-gray-800'
-                                  }`}
-                                >
-                                  {STATUS_LABEL[order.status]?.label || statusLabel[order.status] || order.status}
-                                </span>
-                                {order.status === 'cancelled' && (
-                                  <div className="flex flex-col gap-1">
-                                    <span className="text-xs text-gray-600">
-                                      {order.cancellationReason ? `(${order.cancellationReason})` : '(Không có lý do)'}
-                                    </span>
-                                    <button
-                                      onClick={() => {
-                                        console.log('🔍 Edit cancellation reason clicked for order:', order.id);
-                                        console.log('🔍 Order data:', order);
-                                        setCancellingOrder(order);
-                                        setCancelReason(order.cancellationReason || '');
-                                        setShowCancelModal(true);
-                                        console.log('🔍 Modal should be shown now');
-                                      }}
-                                      className="cursor-pointer text-xs text-blue-600 underline hover:text-blue-800"
-                                    >
-                                      Sửa lý do
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              <select
-                                value={order.status}
-                                onChange={async e => {
-                                  console.log('🔍 Select onChange triggered:', e.target.value);
-                                  const newStatus = e.target.value;
-                                  if (newStatus === 'cancelled') {
-                                    console.log('🔍 Cancelled selected, showing modal');
-                                    // Hiển thị modal để nhập lý do hủy
-                                    setCancellingOrder(order);
-                                    setCancelReason('');
-                                    setShowCancelModal(true);
-                                  } else {
-                                    try {
-                                      const payload: any = { status: newStatus };
-
-                                      // Đảm bảo pickupTime được lưu khi thay đổi status
-                                      if (order.pickupTime) {
-                                        payload.pickupTime = order.pickupTime;
-                                      }
-
-                                      // Tự động tạo pickupTime nếu chưa có và đơn hàng được xác nhận
-                                      if (!order.pickupTime && (newStatus === 'confirmed' || newStatus === 'preparing')) {
-                                        let pickupTime;
-
-                                        // Ưu tiên thời gian người dùng chọn nếu có
-                                        if (order.userPickupTime) {
-                                          pickupTime = new Date(order.userPickupTime);
-                                        } else {
-                                          // Nếu không có, tạo thời gian mặc định (15 phút từ hiện tại)
-                                          const now = new Date();
-                                          pickupTime = new Date(now.getTime() + 15 * 60000);
-                                        }
-
-                                        payload.pickupTime = pickupTime.toISOString();
-                                      }
-
-                                      if (['completed', 'hoàn thành'].includes(newStatus.toLowerCase())) {
-                                        payload.updatedBy = user?.id;
-                                      }
-                                      await updateOrder(order.id, payload);
-                                      fetchOrders(); // Refresh danh sách
-                                    } catch (error) {
-                                      console.error('Lỗi cập nhật status:', error);
-                                      alert('Cập nhật trạng thái thất bại');
-                                    }
-                                  }
-                                }}
-                                className={`rounded border px-2 py-1 text-xs font-semibold ${
-                                  STATUS_LABEL[order.status]?.color || 'border border-gray-200 bg-gray-100 text-gray-800'
-                                }`}
-                                style={{ minWidth: '80px' }}
-                              >
-                                <option value="pending">Chờ xác nhận</option>
-                                <option value="confirmed">Đã xác nhận</option>
-                                <option value="preparing">Đang chuẩn bị</option>
-                                <option value="delivering">Đang giao</option>
-                                <option value="completed">Hoàn thành</option>
-                                <option value="cancelled">Đã hủy</option>
-                              </select>
-                            )}
+                          <td className="border-b px-3 py-2" rowSpan={maxItems}>
+                            {formatDate(order.createdAt)}
                           </td>
-                          <td className="border-b px-3 py-2">
-                            {order.type === 'pickup' ? 'Pickup' : order.type === 'delivery' ? 'Delivery' : order.type}
+                          <td className="border-b px-3 py-2" rowSpan={maxItems}>
+                            {getUserName(order.userId)}
                           </td>
-                          <td className="border-b px-3 py-2">
-                            {paymentMethod === 'zalopay' ? (
-                              <a
-                                href={`/admin/user-transaction?orderId=${order.id}`}
-                                style={{ color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
-                                title="Xem giao dịch ZaloPay của đơn này"
-                              >
-                                {paymentMethodDisplay}
-                              </a>
-                            ) : (
-                              paymentMethodDisplay
-                            )}
-                          </td>
-                          <td className="border-b px-3 py-2">{formatPickupTimeWithUserPreference(order)}</td>
-                          <td className="border-b px-3 py-2">{formatDeliveryAddress(order.deliveryAddress, order.type)}</td>
-                          <td className="border-b px-3 py-2">{order.note}</td>
-                          <td className="border-b px-3 py-2">
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 120 }}>
-                              {isCompleted ? (
-                                <button
-                                  title="In hóa đơn"
-                                  onClick={() => printBill(order)}
-                                  style={{
-                                    border: 'none',
-                                    background: 'none',
-                                    color: '#2563eb',
-                                    cursor: 'pointer',
-                                    fontSize: 14,
-                                    fontWeight: 500,
-                                    textDecoration: 'underline',
-                                  }}
-                                >
-                                  In hóa đơn
-                                </button>
-                              ) : null}
-                            </div>
-                          </td>
-                        </tr>
-                      ) : (
-                        items.map((item, i) => (
-                          <tr key={order.id + '-' + i} className="transition hover:bg-gray-50">
-                            {i === 0 && (
-                              <>
-                                <td className="border-b px-3 py-2 font-medium" rowSpan={maxItems}>
-                                  {order.order_number || order.orderNumber ? `#${order.order_number || order.orderNumber}` : '-'}
-                                </td>
-                                <td className="border-b px-3 py-2" rowSpan={maxItems}>
-                                  {formatDate(order.createdAt)}
-                                </td>
-                                <td className="border-b px-3 py-2" rowSpan={maxItems}>
-                                  {getUserName(order.userId)}
-                                </td>
-                              </>
-                            )}
-                            <td className="border-b px-3 py-2">
-                              {item.dishSnapshot?.name || item.name || getDishName(item.dishId) || item.dish?.name || 'Không rõ tên món'}
-                            </td>
-                            <td className="border-b px-3 py-2">{item.quantity}</td>
-                            {i === 0 && (
-                              <>
-                                <td className="border-b px-3 py-2" rowSpan={maxItems}>
-                                  {Number(order.totalAmount).toLocaleString('vi-VN')}đ
-                                </td>
-                                <td className="border-b px-3 py-2" rowSpan={maxItems}>
-                                  {order.status === 'completed' || order.status === 'cancelled' ? (
-                                    <div className="flex flex-col items-center gap-1">
-                                      <span
-                                        className={`inline-block whitespace-nowrap rounded px-2 py-1 text-xs font-semibold ${
-                                          STATUS_LABEL[order.status]?.color || 'border border-gray-200 bg-gray-100 text-gray-800'
-                                        }`}
-                                      >
-                                        {STATUS_LABEL[order.status]?.label || statusLabel[order.status] || order.status}
-                                      </span>
-                                      {order.status === 'cancelled' && order.cancellationReason && (
-                                        <span className="text-center text-xs text-gray-600">({order.cancellationReason})</span>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <select
-                                      value={order.status}
-                                      onChange={async e => {
-                                        try {
-                                          const newStatus = e.target.value;
-
-                                          if (newStatus === 'cancelled') {
-                                            console.log('🔍 Cancelled selected in table, showing modal');
-                                            setCancellingOrder(order);
-                                            setCancelReason('');
-                                            setShowCancelModal(true);
-                                          } else {
-                                            const payload: any = { status: newStatus };
-
-                                            // Cập nhật transaction cho cả trường hợp chuyển sang completed và order đã completed từ trước
-                                            if (['completed', 'hoàn thành'].includes(newStatus.toLowerCase()) || order.status === 'completed') {
-                                              payload.updatedBy = user?.id;
-
-                                              // Cập nhật transaction status thành success khi đơn hàng hoàn thành
-                                              console.log('OrderAdminPage - All transactions:', transactions);
-                                              console.log('OrderAdminPage - Order ID:', order.id);
-                                              console.log('OrderAdminPage - Order Number:', order.order_number);
-                                              console.log('OrderAdminPage - Order Number (orderNumber):', order.orderNumber);
-                                              console.log('OrderAdminPage - Order Type:', order.type);
-                                              console.log('OrderAdminPage - Order Method:', order.method);
-
-                                              const relatedTxs = transactions.filter((t: any) => {
-                                                const matchId = String(t.orderId).trim() === String(order.id).trim();
-                                                const matchOrderNumber = String(t.orderId).trim() === String(order.order_number).trim();
-                                                const matchOrderNumberAlt = String(t.orderId).trim() === String(order.orderNumber).trim();
-                                                const isCashTransaction = t.method === 'cash';
-
-                                                console.log(
-                                                  'OrderAdminPage - Checking transaction:',
-                                                  t.id,
-                                                  'orderId:',
-                                                  t.orderId,
-                                                  'method:',
-                                                  t.method,
-                                                  'status:',
-                                                  t.status,
-                                                );
-                                                console.log(
-                                                  'OrderAdminPage - Match ID:',
-                                                  matchId,
-                                                  'Match Order Number:',
-                                                  matchOrderNumber,
-                                                  'Match Order Number Alt:',
-                                                  matchOrderNumberAlt,
-                                                  'Is Cash:',
-                                                  isCashTransaction,
-                                                );
-
-                                                return (matchId || matchOrderNumber || matchOrderNumberAlt) && isCashTransaction;
-                                              });
-
-                                              console.log('OrderAdminPage - Related transactions:', relatedTxs);
-
-                                              if (relatedTxs.length > 0) {
-                                                // Cập nhật tất cả transactions liên quan
-                                                for (const tx of relatedTxs) {
-                                                  try {
-                                                    console.log('OrderAdminPage - Updating transaction:', tx.id, 'from', tx.status, 'to success');
-                                                    await updateUserTransaction(tx.id, { status: 'success' });
-                                                    console.log('OrderAdminPage - Transaction updated successfully');
-                                                  } catch (error) {
-                                                    console.error('Error updating transaction status:', error);
-                                                    // Không tạo transaction mới, chỉ log lỗi
-                                                    console.log('OrderAdminPage - Failed to update transaction, but not creating new one');
-                                                  }
-                                                }
-                                              } else {
-                                                console.log('OrderAdminPage - No related transactions found');
-                                                // Không tạo transaction mới nếu không tìm thấy
-                                                console.log('OrderAdminPage - No transaction found for this order, skipping');
-                                              }
-                                            }
-
-                                            await updateOrder(order.id, payload);
-
-                                            // Refresh transactions nếu có cập nhật
-                                            if (['completed', 'hoàn thành'].includes(newStatus.toLowerCase()) && relatedTxs.length > 0) {
-                                              setTimeout(() => {
-                                                fetchOrders(); // Refresh danh sách sau 1 giây
-                                              }, 1000);
-                                            } else {
-                                              fetchOrders(); // Refresh danh sách ngay lập tức
-                                            }
-                                          }
-                                        } catch (error: any) {
-                                          console.error('Lỗi cập nhật status:', error);
-                                          console.error('Error details:', error.response?.data);
-                                          console.error('Error status:', error.response?.status);
-                                          alert('Cập nhật trạng thái thất bại');
-                                        }
-                                      }}
-                                      className={`rounded border px-2 py-1 text-xs font-semibold ${
-                                        STATUS_LABEL[order.status]?.color || 'border border-gray-200 bg-gray-100 text-gray-800'
-                                      }`}
-                                      style={{ minWidth: '80px' }}
-                                    >
-                                      <option value="pending">Chờ xác nhận</option>
-                                      <option value="confirmed">Đã xác nhận</option>
-                                      <option value="preparing">Đang chuẩn bị</option>
-                                      <option value="delivering">Đang giao</option>
-                                      <option value="completed">Hoàn thành</option>
-                                      <option value="cancelled">Đã hủy</option>
-                                    </select>
-                                  )}
-                                </td>
-                                <td className="border-b px-3 py-2" rowSpan={maxItems}>
-                                  {order.type === 'pickup' ? 'Pickup' : order.type === 'delivery' ? 'Delivery' : order.type}
-                                </td>
-                                <td className="border-b px-3 py-2" rowSpan={maxItems}>
-                                  {paymentMethod === 'zalopay' ? (
-                                    <a
-                                      href={`/admin/user-transaction?orderId=${order.id}`}
-                                      style={{ color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}
-                                      title="Xem giao dịch ZaloPay của đơn này"
-                                    >
-                                      {paymentMethodDisplay}
-                                    </a>
-                                  ) : (
-                                    paymentMethodDisplay
-                                  )}
-                                </td>
-                                <td className="border-b px-3 py-2" rowSpan={maxItems}>
-                                  {formatDeliveryAddress(order.deliveryAddress, order.type)}
-                                </td>
-                                <td className="border-b px-3 py-2" rowSpan={maxItems}>
-                                  {order.note}
-                                </td>
-                                <td className="border-b px-3 py-2" rowSpan={maxItems}>
-                                  <div
-                                    style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      width: '100%',
-                                      height: '100%',
-                                      minHeight: '40px',
-                                    }}
-                                  >
-                                    {isCompleted ? (
-                                      <button
-                                        title="In hóa đơn"
-                                        onClick={() => printBill(order)}
-                                        style={{
-                                          border: 'none',
-                                          background: 'none',
-                                          color: '#2563eb',
-                                          cursor: 'pointer',
-                                          fontSize: 13,
-                                          fontWeight: 500,
-                                          textDecoration: 'underline',
-                                          padding: '6px 12px',
-                                          borderRadius: '4px',
-                                          transition: 'all 0.2s',
-                                          whiteSpace: 'nowrap',
-                                          minWidth: '80px',
-                                          textAlign: 'center',
-                                        }}
-                                        onMouseEnter={e => {
-                                          (e.target as HTMLButtonElement).style.backgroundColor = '#f3f4f6';
-                                        }}
-                                        onMouseLeave={e => {
-                                          (e.target as HTMLButtonElement).style.backgroundColor = 'transparent';
-                                        }}
-                                      >
-                                        In hóa đơn
-                                      </button>
-                                    ) : (
-                                      <span style={{ color: '#9ca3af', fontSize: 14 }}>-</span>
-                                    )}
-                                  </div>
-                                </td>
-                              </>
-                            )}
-                          </tr>
-                        ))
+                        </>
                       )}
-                    </React.Fragment>
-                  );
+                      <td className="border-b px-3 py-2">
+                        {item.dishSnapshot?.name || item.name || getDishName(item.dishId) || item.dish?.name || 'Không rõ tên món'}
+                      </td>
+                      <td className="border-b px-3 py-2">{item.quantity}</td>
+                      {i === 0 && (
+                        <td className="border-b px-3 py-2" rowSpan={maxItems}>
+                          {Number(order.totalAmount).toLocaleString('vi-VN')}đ
+                        </td>
+                      )}
+                      {i === 0 && (
+                        <td className="border-b px-3 py-2" rowSpan={maxItems}>
+                          {order.status}
+                        </td>
+                      )}
+                      {i === 0 && (
+                        <td className="border-b px-3 py-2" rowSpan={maxItems}>
+                          {order.type}
+                        </td>
+                      )}
+                      {i === 0 && (
+                        <td className="border-b px-3 py-2" rowSpan={maxItems}>
+                          {paymentMethodDisplay}
+                        </td>
+                      )}
+                      {i === 0 && (
+                        <td className="border-b px-3 py-2" rowSpan={maxItems}>
+                          {formatDeliveryAddress(order.deliveryAddress, order.type)}
+                        </td>
+                      )}
+                      {/* NOTE COLUMN */}
+                      <td className="border-b px-3 py-2">
+                        {item.note && item.note.trim() ? (
+                          <span style={{ color: '#000', fontSize: 12 }}>{item.note}</span>
+                        ) : ''}
+                      </td>
+                      {i === 0 && (
+                        <td className="border-b px-3 py-2" rowSpan={maxItems}></td>
+                      )}
+                    </tr>
+                  ));
                 })}
               </tbody>
             </table>
@@ -1058,9 +756,7 @@ export default function OrderAdminPage() {
               <div>
                 <b>Trạng thái:</b> {statusLabel[detailOrder.status] || detailOrder.status}
               </div>
-              <div>
-                <b>Ghi chú:</b> {detailOrder.note || '-'}
-              </div>
+
               <div>
                 <b>Sản phẩm:</b>
               </div>
@@ -1068,6 +764,7 @@ export default function OrderAdminPage() {
                 {(detailOrder.orderItems?.items || []).map((item, i) => (
                   <li key={i}>
                     {item.name} x{item.quantity} - {(item.price || 0).toLocaleString('vi-VN')}đ
+                    {item.note && item.note.trim() && <div style={{ fontSize: 12, color: '#666', marginLeft: 16 }}>Ghi chú: {item.note}</div>}
                   </li>
                 ))}
               </ul>

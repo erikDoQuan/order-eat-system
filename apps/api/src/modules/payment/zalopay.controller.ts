@@ -2,11 +2,13 @@ import { Body, Controller, Get, HttpCode, Post, Query, Req, Res, UsePipes, Valid
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 
+import { DrizzleService } from '../../database/drizzle/drizzle.service';
 import { OrderService } from '../order/order.service';
 import { TransactionMethod, TransactionStatus } from '../user_transaction/dto/create-user-transaction.dto';
 import { UserTransactionService } from '../user_transaction/user-transaction.service';
 import { CreateZaloPayOrderDto } from './dto/create-zalopay-order.dto';
 import { ZaloPayCallbackDto } from './dto/zalopay-callback.dto';
+import { PaymentService } from './payment.service';
 import { ZaloPayService } from './zalopay.service';
 
 @Controller('zalopay')
@@ -16,6 +18,8 @@ export class ZaloPayController {
     private readonly zaloPayService: ZaloPayService,
     private readonly orderService: OrderService,
     private readonly userTransactionService: UserTransactionService,
+    private readonly drizzleService: DrizzleService,
+    private readonly paymentService: PaymentService,
   ) {}
 
   @Post('create-order')
@@ -94,16 +98,14 @@ export class ZaloPayController {
       // Không cập nhật order status, giữ nguyên pending để admin xử lý
       console.log('ℹ️ Giữ nguyên order status pending để admin xử lý');
 
-      // ✅ Thêm user_transaction
-      await this.userTransactionService.create({
+      // ✅ Sử dụng PaymentService để tạo transaction khi ZaloPay callback thành công
+      await this.paymentService.createZaloPayTransaction({
         userId: order.userId,
         orderId: order.id,
-        amount: String(data.amount),
-        method: TransactionMethod.ZALOPAY,
-        status: TransactionStatus.SUCCESS,
+        amount: String(data.amount || 0),
         transTime: new Date().toISOString(),
         transactionCode: data.zp_trans_id || data.zp_trans_token || '',
-        description: `Thanh toán ZaloPay cho đơn hàng #${order.orderNumber || order.id}`,
+        orderNumber: String(order.orderNumber || ''),
       });
 
       console.log('✅ User transaction created successfully');

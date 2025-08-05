@@ -124,14 +124,16 @@ export class EmailService {
       <tr style="border-bottom: 1px solid #eee;">
         <td style="padding: 12px; text-align: left; vertical-align: top;">${item.dish?.name || item.name}</td>
         <td style="padding: 12px; text-align: center; vertical-align: top;">${item.quantity}</td>
-        <td style="padding: 12px; text-align: right; vertical-align: top;">${item.price?.toLocaleString('vi-VN') || 0}</td>
-        <td style="padding: 12px; text-align: right; vertical-align: top;">${(item.quantity * (item.price || 0)).toLocaleString('vi-VN')}</td>
+        <td style="padding: 12px; text-align: right; vertical-align: top;">${Number(item.price || 0).toLocaleString('vi-VN')}</td>
+        <td style="padding: 12px; text-align: right; vertical-align: top;">${(item.quantity * Number(item.price || 0)).toLocaleString('vi-VN')}</td>
       </tr>
     `,
         )
         .join('') || '';
 
-    const totalAmount = orderData.total || 0;
+    const totalAmount = Number(orderData.total || 0);
+    const subtotal = orderData.items?.reduce((sum: number, item: any) => sum + item.quantity * Number(item.price || 0), 0) || 0;
+    const shippingFee = totalAmount - subtotal;
     const orderNumber = orderData.order_number || orderData.orderNumber || orderData.id;
 
     const mailOptions = {
@@ -174,13 +176,30 @@ export class EmailService {
               </table>
               
               <div style="text-align: right; padding: 15px; background: #f8f9fa; border-radius: 6px;">
-                <h3 style="margin: 0; color: #C92A15;">Tổng cộng: ${totalAmount.toLocaleString('vi-VN')}₫</h3>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                  <span>Tạm tính:</span>
+                  <span>${subtotal.toLocaleString('vi-VN')}₫</span>
+                </div>
+                ${
+                  shippingFee > 0
+                    ? `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                  <span>Phí vận chuyển:</span>
+                  <span>${shippingFee.toLocaleString('vi-VN')}₫</span>
+                </div>
+                `
+                    : ''
+                }
+                <div style="display: flex; justify-content: space-between; font-weight: bold; border-top: 1px solid #ddd; padding-top: 8px;">
+                  <span>Tổng cộng:</span>
+                  <span style="color: #C92A15;">${totalAmount.toLocaleString('vi-VN')}₫</span>
+                </div>
               </div>
             </div>
 
             <div style="background: #e6f4ed; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #C92A15;">
               <h3 style="color: #C92A15; margin-bottom: 10px;">Thông tin giao hàng</h3>
-              <p style="margin: 5px 0;"><strong>Địa chỉ:</strong> ${orderData.deliveryAddress || 'Chưa cập nhật'}</p>
+              <p style="margin: 5px 0;"><strong>Địa chỉ:</strong> ${typeof orderData.deliveryAddress === 'string' ? orderData.deliveryAddress : orderData.deliveryAddress?.address || orderData.deliveryAddress?.street || 'Chưa cập nhật'}</p>
               <p style="margin: 5px 0;"><strong>Số điện thoại:</strong> ${orderData.customerPhone || orderData.user?.phone || 'Chưa cập nhật'}</p>
             </div>
 

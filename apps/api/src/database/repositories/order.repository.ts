@@ -102,13 +102,11 @@ export class OrderRepository {
   }
 
   async update(id: string, data: UpdateOrderDto): Promise<Order | null> {
-    console.log('🔍 Repository update called with:', { id, data });
     const [updated] = await this.drizzle.db
       .update(orders)
       .set(data as OrderUpdate)
       .where(eq(orders.id, id))
       .returning();
-    console.log('🔍 Repository update result:', updated);
     return updated ?? null;
   }
 
