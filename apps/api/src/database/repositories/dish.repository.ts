@@ -81,7 +81,10 @@ export class DishRepository {
   }
 
   async create(data: CreateDishDto): Promise<any> {
-    const [dish] = await this.drizzle.db.insert(dishes).values(data).returning();
+    const [dish] = await this.drizzle.db.insert(dishes).values({
+      ...data,
+      basePrice: data.basePrice ?? '', // đảm bảo basePrice luôn có giá trị
+    }).returning();
     return this.findOne(dish.id);
   }
 

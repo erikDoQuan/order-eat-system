@@ -599,7 +599,7 @@ export default function OrderAdminPage() {
                       )}
                       {i === 0 && (
                         <td className="border-b px-3 py-2" rowSpan={maxItems}>
-                          {order.type}
+                          {order.type.charAt(0).toUpperCase() + order.type.slice(1)}
                         </td>
                       )}
                       {i === 0 && (

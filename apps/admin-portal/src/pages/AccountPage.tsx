@@ -336,22 +336,11 @@ export default function AccountPage() {
       setSearchResult(null);
       return;
     }
+    // Chỉ tìm kiếm theo mã đơn hàng (order_number hoặc order.id)
     const filtered = recentOrders.filter(order => {
-      const phone = order.phoneNumber || order.phone_number || '';
       const orderNum = String(order.order_number || order.orderNumber || '');
       const id = String(order.id || '');
-
-      // So sánh chính xác cho order_number và id
-      if (orderNum === value || id === value) {
-        return true;
-      }
-
-      // Với phone number, vẫn dùng includes để tìm kiếm linh hoạt hơn
-      if (phone.includes(value)) {
-        return true;
-      }
-
-      return false;
+      return orderNum === value || id === value;
     });
     setSearchResult(filtered);
   };
@@ -507,12 +496,12 @@ export default function AccountPage() {
               <div className="account-orders-box">
                 <h1 className="account-main-title">{t('order_lookup')}</h1>
                 <form onSubmit={handleSearch} style={{ marginBottom: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 10 }}>{t('enter_phone_or_order')}</div>
+                  <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 10 }}>Nhập mã đơn hàng để tra cứu</div>
                   <input
                     type="text"
                     value={searchValue}
                     onChange={e => setSearchValue(e.target.value)}
-                    placeholder={t('enter_phone_or_order')}
+                    placeholder="Nhập mã đơn hàng"
                     style={{
                       width: '100%',
                       padding: '16px',
@@ -822,9 +811,6 @@ export default function AccountPage() {
                     onSubmit={handleUpdate}
                     style={{
                       width: '100%',
-                      background: '#fff',
-                      borderRadius: 12,
-                      boxShadow: '0 2px 8px #0001',
                       padding: '18px 0 18px 0',
                       display: 'flex',
                       flexDirection: 'column',

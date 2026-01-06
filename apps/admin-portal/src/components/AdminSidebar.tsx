@@ -13,7 +13,7 @@ const adminMenu = [
   { label: 'Payment', path: '/admin/user-transaction' },
   { label: 'Review ', path: '/admin/reviews' },
   { label: 'Revenue Reports', path: '/admin/revenue-reports' },
-  { label: 'Settings', path: '/admin/settings' },
+  // { label: 'Settings', path: '/admin/settings' },
 ];
 
 export default function AdminSidebar() {
